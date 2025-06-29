@@ -133,6 +133,4 @@ Raise an issue, or join the discussion during the live workshop!
 
 Let’s defeat Chaos Agent together. 💥
 
-```
-
 ---

@@ -1,16 +1,48 @@
 site_name: CI/CD Chaos Workshop
+site_url: https://your-site-url.com
+repo_url: https://github.com/vellankikoti/testcontainers-python-guide
+repo_name: GitHub
 theme:
   name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+    - scheme: slate
+      primary: cyan
+      accent: indigo
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
   features:
-    - navigation.tabs
-    - navigation.sections
+    - navigation.instant
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.tabs.link
+    - toc.integrate
 nav:
   - Home: index.md
-  - Phases:
-      - Setup: phases/setup.md
-      - TestContainers: phases/tests.md
-      - Docker: phases/docker.md
-      - Jenkins: phases/jenkins.md
-      - Kubernetes: phases/k8s.md
+  - Setup:
+      - Setup Guide: phases/setup.md
+  - Database Testing:
+      - MySQL: databases/mysql.md
+      - MariaDB: databases/mariadb.md
+      - PostgreSQL: databases/postgres.md
+      - MongoDB: databases/mongodb.md
+      - Redis: databases/redis.md
+  - Docker:
+      - Docker Phase: phases/docker.md
+  - Jenkins:
+      - Jenkins Phase: phases/jenkins.md
+  - Kubernetes:
+      - Kubernetes Phase: phases/k8s.md
   - Certificate: certificate.md
-site_name: My Docs

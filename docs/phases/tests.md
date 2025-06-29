@@ -1,191 +1,167 @@
-# 🎯 Phase 1: Chaos Testing with Testcontainers 🐳
+# 🚀 Phase 1 - Database Testing with Testcontainers
 
-> **“Test your chaos before chaos tests you.”**  
-> — CI/CD Chaos Workshop
+Welcome to **Phase 1** of the CI/CD Chaos Workshop — where we learn how to spin up real databases on demand for automated testing using **Testcontainers**.
 
-Welcome to Phase 1 of our **CI/CD Chaos Workshop!**  
-This is where the fun truly begins.
-
----
-
-## 🚀 Why Testcontainers?
-
-✅ **Fast** → Starts real DBs in seconds  
-✅ **Real** → No mocks. No fakes. 100% real containers.  
-✅ **Clean** → Auto-removal guarantees a fresh start  
-✅ **Chaos-ready** → Simulate network slowness, latency, flaky services
-
-We use Python and Testcontainers to spin up real databases **on the fly** for integration testing.
+This phase demonstrates:
+✅ Running databases in real Docker containers  
+✅ Writing Python tests against real databases  
+✅ Generating HTML reports automatically  
+✅ Integrating tests into a CI/CD pipeline  
+✅ Chaos-inspired practices like random failures or delays
 
 ---
 
-## 🧪 What You’ll Learn
+## 🔍 What’s Inside?
 
-- How to **launch databases in Docker** via Python
-- How to write **real integration tests** against live DBs
-- How to add **chaos delays** to test resilience
-- How to generate **HTML reports** with pytest
-- How to impress your friends with **Testcontainers Desktop**
+This phase covers **five databases**, each with five practical test cases:
 
----
+- **MariaDB** → CRUD operations, constraints
+- **MySQL** → inserts, constraints, multiple rows
+- **PostgreSQL** → transactions, truncate checks
+- **MongoDB** → document inserts, updates, deletions
+- **Redis** → key-value operations, TTL expiration
 
-## 💻 Supported Databases
-
-We built beautiful chaos tests for:
-
-| Database     | Version |
-| ------------ | ------- |
-| ✅ PostgreSQL | 15      |
-| ✅ MySQL      | 8.0     |
-| ✅ MariaDB    | 11.1    |
-| ✅ MongoDB    | 7.0     |
-| ✅ Redis      | 7.2     |
-
-All tests:
-- Are **isolated** (no leftover data)
-- Automatically clean up between runs
-- Print logs so you can **SEE containers spin up & down**
-- Demonstrate real DB behaviors (e.g. constraints, transactions)
+All tests use **pytest** + **testcontainers** to spin up ephemeral containers.
 
 ---
 
-## 🛠️ How to Run Tests
+## ✨ How to Run All Tests
 
-### 🔥 Run All Tests
+### Run single tests file
+
+Example:
 
 ```bash
-python run_tests.py
+pytest tests/test_mariadb_container.py
 ````
 
-Or using pytest directly:
+Or with live logs:
 
 ```bash
-pytest -s tests/
+pytest -s tests/test_mariadb_container.py
 ```
 
 ---
 
-### ✅ Run a Specific Database (e.g. MySQL)
+### Run all tests at once
 
 ```bash
-pytest -s tests/test_mysql_container.py
+pytest tests/
 ```
+
+Or for HTML reports:
+
+```bash
+pytest tests/ --html=reports/test_report.html --self-contained-html
+```
+
+> ✅ This generates beautiful HTML reports under:
+>
+> ```
+> reports/test_report.html
+> ```
 
 ---
 
-### 🎨 Run MongoDB Tests + HTML Report
+## 🐳 How It Works
 
-If you want a fancy HTML report:
+✅ Containers spin up before each test (or test class).
+✅ Tests connect to real database ports.
+✅ After tests finish:
 
-```bash
-pytest -s tests/test_mongodb_container.py
-```
+* Containers auto-stop
+* No leftover state
+* Chaos achieved 😈
 
-Or generate a full HTML report:
+Testcontainers Desktop beautifully visualizes container lifecycles during test runs:
 
-```bash
-pytest tests/test_mongodb_container.py --html=reports/mongodb-test-report.html --self-contained-html
-```
+* **Green dots** = containers ready
+* **Yellow dots** = starting up
+* **Red dots** = stopping
 
-Then open:
-
-```
-reports/mongodb-test-report.html
-```
+This makes demos highly visual and engaging!
 
 ---
 
-## 💥 Example Chaos Test: MySQL
+## 💻 Example - PostgreSQL
 
-Here’s how easy it is to spin up a MySQL container **and break things:**
+Example test snippet:
 
 ```python
-from testcontainers.mysql import MySqlContainer
-from sqlalchemy import create_engine, text
-
-with MySqlContainer("mysql:8.0") as mysql:
-    url = mysql.get_connection_url().replace("mysql://", "mysql+pymysql://")
-    engine = create_engine(url)
-    with engine.connect() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INT PRIMARY KEY,
-                name VARCHAR(255)
-            );
-        """))
-        conn.execute(text("INSERT INTO users (id, name) VALUES (1, 'Alice');"))
+def test_postgres_version(pg_engine):
+    with pg_engine.connect() as conn:
+        result = conn.execute(text("SELECT version();"))
+        version = result.fetchone()[0]
+        assert "PostgreSQL" in version
 ```
 
 ---
 
-## 🎲 Adding Chaos Delays
+## ✅ Test Reports
 
-Want chaos?
+Tests generate HTML reports for awesome workshop demos.
 
-Add random delays in your tests:
+* Launch tests:
 
-```python
-import time
-import random
+  ```bash
+  pytest tests/test_mongodb_container.py \
+      --html=reports/mongodb-test-report.html \
+      --self-contained-html
+  ```
 
-delay = random.randint(0, 3)
-if delay:
-    print(f"🌪️ Introducing chaos delay of {delay} seconds...")
-    time.sleep(delay)
-```
-
-This simulates:
-
-* Network slowness
-* Slow container startups
-* Random production weirdness
+* Open the report in your browser and show logs, passing tests, failures, and timing.
 
 ---
 
-## 📊 Generating Test Reports
+## 🤯 Chaos Engineering Ideas
 
-We love **beautiful reports!**
+Enhance tests for chaos:
 
-✅ For HTML reports:
+* Random container kill signals
+* Random delays on DB calls
+* High CPU load during tests
 
-```bash
-pytest tests/test_mysql_container.py --html=reports/mysql-test-report.html --self-contained-html
-```
-
-Then open your browser to:
-
-```
-reports/mysql-test-report.html
-```
-
-These reports look gorgeous and help debug test failures during chaos experiments.
+These chaos practices teach why resilience matters in real-world pipelines!
 
 ---
 
-## 👀 Demo Tips
+## 📊 Demo Flow
 
-✅ Launch **Testcontainers Desktop**
-➡️ Watch containers start and stop in real-time!
+When demonstrating this phase:
 
-✅ Sprinkle in chaos delays
-➡️ Show how resilient tests handle slow DB starts.
+1. Start Testcontainers Desktop.
+2. Run tests with `pytest -s`.
+3. Show containers appearing/disappearing visually.
+4. Open HTML report live.
+5. Discuss:
 
-✅ Switch DB versions on the fly
-➡️ Just change Docker tags!
-
----
-
-## 🚀 Why This Matters
-
-This chaos testing is the **foundation of your CI/CD pipelines.**
-By testing real DBs, you avoid surprises in production:
-
-> **“If your tests don’t run against real services, they’re not real tests.”**
-
-Let’s break things early — so customers never see the chaos.
+   * How ephemeral containers help keep tests isolated.
+   * Why this improves CI/CD reliability.
+   * How Testcontainers saves infrastructure cost.
 
 ---
 
-[⬅️ Previous Phase](./setup.md) | [➡️ Next Phase → Docker Chaos](./docker.md)
+## 💡 Why Use Testcontainers?
+
+✅ No local DB installation
+✅ 100% reproducibility
+✅ Perfect for Dockerized CI/CD pipelines
+✅ Chaos Engineering experiments
+✅ Modern DevOps practice!
+
+Let’s keep it chaotic…and fun! 🎉
 
 ---
+
+> \[!TIP]
+> Try running:
+>
+> ```
+> pytest -s tests/test_redis_container.py
+> ```
+>
+> And watch Redis appear in Testcontainers Desktop!
+
+---
+
+[⬅️ Previous Phase Setup](./setup.md) | [➡️ Next Phase → Docker](./docker.md)

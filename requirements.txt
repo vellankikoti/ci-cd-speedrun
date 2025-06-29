@@ -10,3 +10,4 @@ pymongo
 redis
 redis
 pytest-html
+rich

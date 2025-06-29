@@ -1,192 +1,195 @@
-# 🚀 Phase 2: Docker Builds & Multi-Version Chaos
+# 🐳 Phase 2 - Docker Mastery
 
-> **“If you build it… make sure you can deploy it anywhere!”**  
-> — CI/CD Chaos Workshop
+Welcome to **Phase 2** of the CI/CD Chaos Workshop — the stage where we dive deep into Docker, learn how to build Python apps properly, and create chaos-worthy Docker images for production!
 
-Welcome to **Phase 2** of our CI/CD Chaos Workshop.  
-This is where we bring chaos to life in containers!
+This phase demonstrates:
 
----
-
-## 🐳 Why Docker?
-
-✅ Runs anywhere: laptop, cloud, Kubernetes  
-✅ Simplifies deployments  
-✅ Makes every app version reproducible  
-✅ Perfect for CI/CD pipelines  
-✅ Easy to test chaos versions side by side
+✅ Multi-stage builds  
+✅ Docker image size comparisons  
+✅ Production vs. dev Dockerfiles  
+✅ Deploying multiple versions of your app  
+✅ Generating Docker analysis reports  
+✅ Beautiful visuals and chaos engineering insights!
 
 ---
 
-## 🧩 What You’ll Learn
+## 🚀 What We’re Building
 
-- How to write a **production-grade Dockerfile**
-- How to use **multi-stage builds** for tiny images
-- How to build multiple app versions for chaos testing
-- How to deploy and switch versions with zero downtime
-- How to inject visual changes for a **WOW factor** in demos
+We’re developing a FastAPI Python app:
+- 5 different versions
+- Each with new features, animations, or visuals
+- Deployed via Docker
+- Automatically analyzed for:
+  - image size
+  - layer count
+  - potential vulnerabilities (future scope!)
 
----
-
-## 📦 Multi-Version Strategy
-
-For this workshop, we built **5 versions** of our Python app.
-
-| Version | Demo Content |
-| ------- | ------------ |
-| v1      | Simple Hello World |
-| v2      | Emoji animations |
-| v3      | Colored terminal output |
-| v4      | Multi-line ASCII art |
-| v5      | Randomized messages for a chaos surprise |
-
-Each version:
-- Has its own Python file (`main_vX.py`)
-- Builds into a separate Docker image tag
-- Runs on port **3000**
+> 🎯 **Goal:** Teach participants how tiny changes in Dockerfiles affect:
+> - Build times
+> - Image sizes
+> - Security
+> - Performance
 
 ---
 
-## 🔥 Example Multi-Stage Dockerfile
+## ✨ How to Deploy Versions
 
-Here’s our **Dockerfile** using Python 3.12 slim:
+Instead of manually switching files and building containers, we’ve automated everything!
+
+Run:
+
+```bash
+python workshop_tools/deploy_version.py --version 3
+````
+
+✅ This:
+
+* Copies the correct `main_vX.py` to `main.py`
+* Builds your Docker image
+* Stops/removes any container running on port 3000
+* Runs the new version
+* Generates a beautiful HTML Docker report under:
+
+  ```
+  reports/version_3/docker_report.html
+  ```
+
+---
+
+## 📊 Docker Analysis Reports
+
+Every deploy automatically runs:
+
+```bash
+python workshop_tools/generate_docker_report.py --version 3
+```
+
+This analyzes:
+
+* Image size (MB)
+* Number of layers
+* Base image used
+* Warnings about potential optimization
+
+And creates an HTML report like:
+
+> ![Docker Report Screenshot](https://dummyimage.com/600x300/2c3e50/ffffff\&text=Docker+Report+Screenshot)
+
+---
+
+## 🐍 Demo Scenarios
+
+During the workshop:
+✅ Deploy version 1 → tiny image
+✅ Deploy version 2 → adds emojis → image grows
+✅ Deploy version 3 → multi-stage build → shrinks image
+✅ Deploy version 4 → adds background workers → image grows
+✅ Deploy version 5 → chaos animations → biggest image
+
+Show how to:
+
+* Avoid large images
+* Use `.dockerignore` effectively
+* Minimize layers
+* Prefer multi-stage builds
+* Separate dev vs prod images
+
+---
+
+## 🤹 Why Multi-Stage Builds Matter
+
+Without multi-stage:
+
+* Images \~400MB or more
+* Contains unnecessary build tools
+* Slower deployment
+
+With multi-stage:
+
+* Images \~100MB or less
+* Production only includes:
+
+  * compiled Python code
+  * minimum runtime packages
+* Fewer attack surfaces
+
+Example snippet:
 
 ```dockerfile
-# Stage 1 - Builder
+# First stage
 FROM python:3.12-slim AS builder
-
 WORKDIR /app
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2 - Runtime
+# Second stage
 FROM python:3.12-slim
-
 WORKDIR /app
-
 COPY --from=builder /install /usr/local
-
 COPY ./app ./app
-
-ENV PYTHONPATH=/app
-
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3000"]
-````
-
-Benefits:
-✅ Tiny image size
-✅ Fast deploys
-✅ Clean environment for each build
+```
 
 ---
 
-## 🔨 Build & Run One Version
+## 💡 Tips for Workshop Demos
 
-Let’s build version 3:
+✅ Show:
+
+* Docker image size differences:
+
+  ```bash
+  docker images
+  ```
+* Layer differences:
+
+  ```bash
+  dive ci-cd-chaos-app:v3
+  ```
+* Why small images deploy faster
+* How multi-stage prevents secrets from leaking into images
+
+---
+
+## 🔥 Chaos Engineering with Docker
+
+Optional chaos ideas:
+
+* Randomly build wrong versions
+* Introduce slow builds to show caching
+* Simulate “docker build” errors
+* Show how CI/CD can detect these issues early
+
+---
+
+## ✅ Run It All Together
+
+To deploy version 5 and see a full chaos experience:
 
 ```bash
-# Copy the right main.py
-cp app/main_v3.py app/main.py
-
-# Build Docker image
-docker build -t ci-cd-chaos-app:v3 .
-
-# Run it
-docker run -d -p 3000:3000 --name chaos-app-v3 ci-cd-chaos-app:v3
+python workshop_tools/deploy_version.py --version 5
 ```
+
+Check:
+
+* App running at [http://localhost:3000](http://localhost:3000)
+* Docker report under:
+
+  ```
+  reports/version_5/docker_report.html
+  ```
 
 ---
 
-## 🪄 Deploy Different Versions Easily
+## 🏆 Why This Matters
 
-Instead of doing all those steps manually, we created a deploy script:
+By the end of Phase 2, you’ll understand:
+✅ Why Docker image size matters
+✅ How to keep production images secure
+✅ Why multi-stage builds are your friend
+✅ How to visualize Docker data for stakeholders
 
-```bash
-./deploy_version.sh 2
-```
-
-The script:
-
-* Stops & removes any running container on port 3000
-* Copies the version file into `main.py`
-* Builds the Docker image
-* Runs the new container
-
-This makes **live demos super smooth**!
-
----
-
-## ⚙️ Script Example
-
-Here’s our deploy script:
-
-```bash
-#!/bin/bash
-
-VERSION=$1
-
-echo "👉 Switching to version $VERSION"
-
-# Check for running containers
-EXISTING=$(docker ps --filter "publish=3000" --format "{{.ID}}")
-
-if [ ! -z "$EXISTING" ]; then
-    echo "⚠️  A container is running on port 3000. Stopping and removing it..."
-    docker stop $EXISTING
-    docker rm $EXISTING
-fi
-
-cp app/main_v${VERSION}.py app/main.py
-
-echo "🔨 Building Docker image..."
-docker build -t ci-cd-chaos-app:v${VERSION} .
-
-echo "🚀 Running container chaos-app-v${VERSION}..."
-docker run -d -p 3000:3000 --name chaos-app-v${VERSION} ci-cd-chaos-app:v${VERSION}
-```
-
----
-
-## 🌈 Demo Magic
-
-During your live workshop:
-
-✅ Switch versions on the fly:
-
-```bash
-./deploy_version.sh 4
-```
-
-✅ Hit the app in your browser:
-
-```
-http://localhost:3000/
-```
-
-✅ Show how each version has:
-
-* Different visuals
-* Different Python logos
-* Random chaos surprises (in v5)
-
-This demonstrates:
-
-* Reproducible Docker builds
-* Safe version switching
-* How small changes can become chaos in production
-
----
-
-## 🤯 Why This Rocks
-
-This phase proves:
-
-* You can package chaos into Docker images
-* You can confidently roll back or deploy new versions
-* You can show chaos visually—**people remember this!**
-
-This is pure CI/CD power.
+…and you’ll have fun chaos demos to prove it!
 
 ---
 

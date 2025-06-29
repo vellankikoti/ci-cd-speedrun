@@ -1,105 +1,147 @@
-# CI/CD Chaos Workshop
+# 🐙 CI/CD Chaos Workshop
 
-Welcome to the **CI/CD Chaos Workshop**!
+Welcome to the **CI/CD Chaos Workshop** — a unique journey where we don’t just build software, we break it, fix it, and make it better than ever.
 
 In this workshop, you’ll:
+✅ Build real apps in Python  
+✅ Containerize them with Docker  
+✅ Test them dynamically with Testcontainers  
+✅ Automate deployments with Jenkins & Kubernetes  
+✅ Learn chaos engineering techniques for CI/CD pipelines  
+✅ Generate interactive reports & visualizations
 
-✅ Learn how to spin up real databases in Docker containers  
-✅ Run integration tests in isolation using Testcontainers  
-✅ Simulate chaos scenarios safely  
-✅ Build confidence in your CI/CD pipelines
-
----
-
-## 🚀 Databases Covered
-
-Explore detailed test cases for:
-
-- [PostgreSQL](databases/postgres.md)
-- [MySQL](databases/mysql.md)
-- [MariaDB](databases/mariadb.md)
-- [MongoDB](databases/mongodb.md)
-- [Redis](databases/redis.md)
+…and leave with skills your future self will thank you for!
 
 ---
 
-## ✅ How to Run Tests
+## 🚀 Workshop Phases
 
-Each database has its own test file:
-
-```bash
-pytest -v tests/test_postgres_container.py
-pytest -v tests/test_mysql_container.py
-pytest -v tests/test_mariadb_container.py
-pytest -v tests/test_mongodb_container.py
-pytest -v tests/test_redis_container.py
-````
+Below is your roadmap through chaos:
 
 ---
 
-## 💡 Recommended Environment
+## 💻 **Setup & Prerequisites**
 
-* Docker Desktop (or Docker Engine)
-* Python 3.9+
-* Virtual environment for Python dependencies
+👉 See:
+- [Setup Guide](phases/setup.md)
 
----
-
-## 🎯 Why Chaos Testing?
-
-Modern systems are:
-
-* distributed
-* containerized
-* ephemeral
-
-Testing them in real containers ensures your pipeline **catches production-like issues early.**
+Covers:
+✅ Installing Python & Docker  
+✅ Virtual environments  
+✅ Local tools for testing and chaos
 
 ---
 
-Let’s break things safely — and learn how to fix them. 🚀
+## 🧪 **Dynamic Database Testing**
 
-````
+**Phase:** Databases + Testcontainers
 
----
+👉 See:
+- [Database Testing Docs](databases/mysql.md)
+- [Database Testing Docs](databases/mariadb.md)
+- [Database Testing Docs](databases/postgres.md)
+- [Database Testing Docs](databases/mongodb.md)
+- [Database Testing Docs](databases/redis.md)
 
-## ✅ `mkdocs.yml`
-
-To glue it all together, here’s a simple **mkdocs.yml**:
-
-```yaml
-site_name: CI/CD Chaos Workshop
-site_url: ""
-theme:
-  name: material
-  palette:
-    primary: deep purple
-    accent: lime
-
-nav:
-  - Home: index.md
-  - Databases:
-      - PostgreSQL: databases/postgres.md
-      - MySQL: databases/mysql.md
-      - MariaDB: databases/mariadb.md
-      - MongoDB: databases/mongodb.md
-      - Redis: databases/redis.md
-````
+You’ll:
+✅ Spin up real databases in Docker  
+✅ Write Python tests against live DBs  
+✅ Generate HTML test reports  
+✅ Visualize container startup/shutdown with Testcontainers Desktop  
+✅ Practice chaos scenarios like container crashes and delays
 
 ---
 
-## ✅ Serve Locally
+## 🐳 **Docker Mastery & Multi-Version Apps**
 
-Run:
+👉 See:
+- [Docker Phase](phases/docker.md)
 
-```bash
-mkdocs serve
-```
+Key takeaways:
+✅ Multi-stage Docker builds  
+✅ Python image best practices  
+✅ Deploy multiple versions of your app  
+✅ Compare image sizes & layers  
+✅ Generate Docker analysis reports  
+✅ Introduce chaos in builds
 
-Visit:
+---
 
-```
-http://127.0.0.1:8000/
-```
+## 🤖 **Jenkins Pipeline Chaos**
+
+👉 Placeholder for:
+- [Jenkins Phase](phases/jenkins.md)
+
+In progress:
+✅ Building Jenkins pipelines for:
+  - Docker builds
+  - Testcontainers tests
+  - Automated report publishing
+
+✅ Chaos ideas:
+- Randomly fail builds
+- Slow steps to simulate network lag
+- Break Docker layers intentionally
+
+---
+
+## ☸️ **Kubernetes Chaos & Scalability**
+
+👉 Placeholder for:
+- [Kubernetes Phase](phases/k8s.md)
+
+Coming soon:
+✅ Deploying our apps to Kubernetes  
+✅ Chaos experiments with:
+  - killing pods
+  - random delays
+  - pod resource limits
+✅ Using tools like:
+  - K9s
+  - Chaos Mesh
+  - Grafana dashboards for live insights
+
+---
+
+## 🎓 **Certificate of Chaos**
+
+Once you complete all phases, you’ll:
+✅ Receive a custom PDF Certificate  
+✅ Have live demos you can show future employers  
+✅ Feel confident in:
+- Python DevOps
+- Docker mastery
+- Chaos engineering
+- Dynamic testing
+
+👉 [Certificate Info](certificate.md)
+
+---
+
+## 🧭 Why This Workshop Exists
+
+Most workshops teach:
+> “Here’s how to build a perfect pipeline.”
+
+But real life looks like this:
+- Servers crash
+- DBs fail
+- Docker images bloat
+- Networks hang
+- Tests mysteriously fail
+
+This workshop prepares you for **the real world.** We deliberately cause chaos so you’ll know how to handle it—and look like a hero!
+
+---
+
+# Let’s Create Some Chaos. 🔥
+
+→ Start with:
+- [Setup Guide](phases/setup.md)
+- Then dive into:
+  - [Databases](databases/mysql.md)
+  - [Docker](phases/docker.md)
+
+…and prepare for chaos you’ll never forget!
 
 ---

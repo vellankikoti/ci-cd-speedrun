@@ -7,10 +7,10 @@ theme:
 nav:
   - Home: index.md
   - Phases:
-      - Phase 1: phases/phase-1.md
-      - Phase 2: phases/phase-2.md
-      - Phase 3: phases/phase-3.md
-      - Phase 4: phases/phase-4.md
-      - Phase 5: phases/phase-5.md
+      - Setup: phases/setup.md
+      - TestContainers: phases/tests.md
+      - Docker: phases/docker.md
+      - Jenkins: phases/jenkins.md
+      - Kubernetes: phases/k8s.md
   - Certificate: certificate.md
 site_name: My Docs

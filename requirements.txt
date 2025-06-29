@@ -9,3 +9,4 @@ pyodbc
 pymongo
 redis
 redis
+pytest-html

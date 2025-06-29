@@ -1,3 +1,11 @@
 fastapi
 uvicorn
-
+pytest
+testcontainers
+psycopg2-binary
+SQLAlchemy
+pymysql
+pyodbc
+pymongo
+redis
+redis

@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'ci-cd-chaos-python:latest'
+            args '-u root'
+        }
+    }
 
     parameters {
         choice(
@@ -10,7 +15,6 @@ pipeline {
     }
 
     environment {
-        CUSTOM_IMAGE_TAG = 'ci-cd-chaos-python:latest'
         TEST_SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_02_testcontainers"
     }
 
@@ -18,21 +22,13 @@ pipeline {
 
         stage('Checkout Repo') {
             steps {
-                sh '''
-                    rm -rf repo
-                    git clone --single-branch --branch phase-3-jenkins https://github.com/vellankikoti/ci-cd-chaos-workshop.git repo
-                '''
-            }
-        }
-
-        stage('Build Custom Python Image') {
-            steps {
-                sh '''
-                    echo "=== Building custom Python image ==="
-                    docker build -t $CUSTOM_IMAGE_TAG \
-                        -f repo/Jenkins/jenkins_scenarios/scenario_02_testcontainers/Dockerfile \
-                        repo
-                '''
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: 'phase-3-jenkins']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git'
+                    ]]
+                ])
             }
         }
 
@@ -46,43 +42,38 @@ pipeline {
             }
         }
 
-        stage('Run Inside Custom Python Image') {
-            agent {
-                docker {
-                    image "${CUSTOM_IMAGE_TAG}"
-                    args '-u root'
-                }
+        stage('Install Python Requirements') {
+            steps {
+                sh '''
+                    echo "🔧 Installing Python requirements..."
+                    pip install --no-cache-dir -r requirements.txt
+                '''
             }
+        }
+
+        stage('Run Selected Tests') {
             steps {
                 script {
                     def testFiles = []
 
                     if (params.TEST_MODE == 'fail') {
                         testFiles = [
-                            'tests/test_postgres_fail.py',
-                            'tests/test_redis_fail.py'
+                            'Jenkins/jenkins_scenarios/scenario_02_testcontainers/tests/test_postgres_fail.py',
+                            'Jenkins/jenkins_scenarios/scenario_02_testcontainers/tests/test_redis_fail.py'
                         ]
                         echo "Chaos Agent is laughing… we’re running failing tests!"
                     } else {
                         testFiles = [
-                            'tests/test_postgres_pass.py',
-                            'tests/test_redis_pass.py'
+                            'Jenkins/jenkins_scenarios/scenario_02_testcontainers/tests/test_postgres_pass.py',
+                            'Jenkins/jenkins_scenarios/scenario_02_testcontainers/tests/test_redis_pass.py'
                         ]
                         echo "Deploying TestContainers — Chaos Agent’s defeat is imminent!"
                     }
 
-                    // Install Python requirements
-                    sh """
-                        cd repo
-                        pip install --no-cache-dir -r requirements.txt
-                    """
-
-                    // Run each test file separately for clarity
                     testFiles.each { testFile ->
                         sh """
-                            cd repo
                             echo "=== Running test: ${testFile} ==="
-                            pytest Jenkins/jenkins_scenarios/scenario_02_testcontainers/${testFile}
+                            pytest ${testFile}
                         """
                     }
                 }

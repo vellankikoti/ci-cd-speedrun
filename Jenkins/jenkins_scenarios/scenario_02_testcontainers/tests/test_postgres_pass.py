@@ -3,13 +3,19 @@ from urllib.parse import urlparse
 from testcontainers.postgres import PostgresContainer
 
 def test_postgres_container():
-    with PostgresContainer("postgres:15") as postgres:
-        url = postgres.get_connection_url()
-
-        # Remove the +psycopg2 driver name
-        url = url.replace("postgresql+psycopg2", "postgresql")
-
+    # Force container port binding to localhost for Jenkins pipeline
+    with PostgresContainer("postgres:15").with_bind_ports(5432, 5432) as postgres:
+        url = postgres.get_connection_url().replace(
+            "postgresql+psycopg2", "postgresql"
+        )
         parsed = urlparse(url)
+
+        print("=== URL:", url)
+        print("Host:", parsed.hostname)
+        print("Port:", parsed.port)
+        print("User:", parsed.username)
+        print("Password:", parsed.password)
+        print("DB Name:", parsed.path.lstrip("/"))
 
         conn = psycopg2.connect(
             host=parsed.hostname,

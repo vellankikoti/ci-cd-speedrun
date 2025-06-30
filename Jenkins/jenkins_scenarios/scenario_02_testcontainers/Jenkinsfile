@@ -39,6 +39,8 @@ pipeline {
         stage('Pre-Cleanup') {
             steps {
                 sh '''
+                    echo "🔪 Pre-cleanup: Killing any leftover testcontainers..."
+
                     docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
                 '''
             }
@@ -69,11 +71,13 @@ pipeline {
                         echo "Deploying TestContainers — Chaos Agent’s defeat is imminent!"
                     }
 
+                    // Install Python requirements
                     sh """
                         cd repo
                         pip install --no-cache-dir -r requirements.txt
                     """
 
+                    // Run each test file separately for clarity
                     testFiles.each { testFile ->
                         sh """
                             cd repo

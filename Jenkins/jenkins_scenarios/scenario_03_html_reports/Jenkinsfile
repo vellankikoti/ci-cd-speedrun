@@ -31,8 +31,18 @@ pipeline {
             steps {
                 echo "✨ Cleaning workspace..."
                 sh '''
+                    rm -rf repo
                     rm -rf reports
                     mkdir -p reports
+                '''
+            }
+        }
+
+        stage('Checkout Repository') {
+            steps {
+                echo "📥 Cloning repository into workspace..."
+                sh '''
+                    git clone --single-branch --branch ${REPO_BRANCH} ${REPO_URL} repo
                 '''
             }
         }
@@ -42,8 +52,8 @@ pipeline {
                 echo "🛠️ Building Docker image from correct path..."
                 sh '''
                     docker build \
-                        -f Jenkins/jenkins_scenarios/scenario_03_html_reports/Dockerfile \
-                        Jenkins/jenkins_scenarios/scenario_03_html_reports \
+                        -f repo/Jenkins/jenkins_scenarios/scenario_03_html_reports/Dockerfile \
+                        repo/Jenkins/jenkins_scenarios/scenario_03_html_reports \
                         -t ci-cd-chaos-html:latest
                 '''
             }
@@ -60,28 +70,24 @@ pipeline {
                     if (params.RUN_API_HEALTH_FAIL) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
                     }
-
                     if (params.RUN_POSTGRES_PASS) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
                     }
                     if (params.RUN_POSTGRES_FAIL) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
                     }
-
                     if (params.RUN_REDIS_PASS) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
                     }
                     if (params.RUN_REDIS_FAIL) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
                     }
-
                     if (params.RUN_SECRET_SCAN_PASS) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
                     }
                     if (params.RUN_SECRET_SCAN_FAIL) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
                     }
-
                     if (params.RUN_CONFIG_VALIDATION_PASS) {
                         relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
                     }
@@ -101,10 +107,12 @@ pipeline {
                             echo '=== Files in repo ==='
                             ls -l /tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
 
+                            cd /tests
+
                             pytest \
                                 --html=/tests/reports/scenario_03_report.html \
                                 --self-contained-html \
-                                ${relativeTests.collect { "/tests/" + it }.join(' ')}
+                                ${relativeTests.join(' ')}
                         """
                     }
                 }

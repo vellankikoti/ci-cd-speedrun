@@ -61,34 +61,38 @@ pipeline {
                     def testFiles = []
 
                     if (params.RUN_API_HEALTH_PASS) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_pass.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_pass.py"
                     }
                     if (params.RUN_API_HEALTH_FAIL) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
                     }
+
                     if (params.RUN_POSTGRES_PASS) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
                     }
                     if (params.RUN_POSTGRES_FAIL) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
                     }
+
                     if (params.RUN_REDIS_PASS) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
                     }
                     if (params.RUN_REDIS_FAIL) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
                     }
+
                     if (params.RUN_SECRET_SCAN_PASS) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
                     }
                     if (params.RUN_SECRET_SCAN_FAIL) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
                     }
+
                     if (params.RUN_CONFIG_VALIDATION_PASS) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
                     }
                     if (params.RUN_CONFIG_VALIDATION_FAIL) {
-                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_fail.py"
+                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_fail.py"
                     }
 
                     if (testFiles.size() == 0) {
@@ -97,13 +101,15 @@ pipeline {
 
                     def tests = testFiles.join(" ")
 
-                    docker.image('ci-cd-chaos-html:latest').inside('-u root -v /var/run/docker.sock:/var/run/docker.sock') {
+                    docker.image('ci-cd-chaos-html:latest').inside(
+                        "-u root -v ${env.WORKSPACE}/${env.REPO_DIR}:/tests -v ${env.WORKSPACE}/reports:/reports"
+                    ) {
                         sh """
                             pytest \
-                                --html=reports/scenario_03_report.html \
+                                --html=/reports/scenario_03_report.html \
                                 --self-contained-html \
                                 --json-report \
-                                --json-report-file=reports/scenario_03_report.json \
+                                --json-report-file=/reports/scenario_03_report.json \
                                 ${tests}
                         """
                     }

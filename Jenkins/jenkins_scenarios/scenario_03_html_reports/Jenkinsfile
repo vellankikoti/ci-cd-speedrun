@@ -58,59 +58,64 @@ pipeline {
         stage('Run Selected Tests Inside Docker') {
             steps {
                 script {
-                    def testFiles = []
+                    def relativeTests = []
 
                     if (params.RUN_API_HEALTH_PASS) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_pass.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_pass.py"
                     }
                     if (params.RUN_API_HEALTH_FAIL) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
                     }
 
                     if (params.RUN_POSTGRES_PASS) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
                     }
                     if (params.RUN_POSTGRES_FAIL) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
                     }
 
                     if (params.RUN_REDIS_PASS) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
                     }
                     if (params.RUN_REDIS_FAIL) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
                     }
 
                     if (params.RUN_SECRET_SCAN_PASS) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
                     }
                     if (params.RUN_SECRET_SCAN_FAIL) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
                     }
 
                     if (params.RUN_CONFIG_VALIDATION_PASS) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
                     }
                     if (params.RUN_CONFIG_VALIDATION_FAIL) {
-                        testFiles << "/tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_fail.py"
+                        relativeTests << "Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_fail.py"
                     }
 
-                    if (testFiles.size() == 0) {
+                    if (relativeTests.size() == 0) {
                         error "⚠️ No tests selected. Chaos Agent cannot be defeated without tests!"
                     }
 
-                    def tests = testFiles.join(" ")
+                    def testArgs = relativeTests.collect { "/tests/" + it }.join(" ")
 
                     docker.image('ci-cd-chaos-html:latest').inside(
                         "-u root -v ${env.WORKSPACE}/${env.REPO_DIR}:/tests -v ${env.WORKSPACE}/reports:/reports"
                     ) {
                         sh """
+                            echo '=== Verify test files exist ==='
+                            ls -R /tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
+
+                            cd /tests
+
                             pytest \
                                 --html=/reports/scenario_03_report.html \
                                 --self-contained-html \
                                 --json-report \
                                 --json-report-file=/reports/scenario_03_report.json \
-                                ${tests}
+                                ${relativeTests.join(' ')}
                         """
                     }
                 }

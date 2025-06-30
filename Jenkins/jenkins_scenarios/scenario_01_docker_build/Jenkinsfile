@@ -16,26 +16,33 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Repo') {
+
+        stage('Clone Repo Manually') {
             steps {
-                git(
-                    url: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git',
-                    branch: '<your-branch>',
-                    credentialsId: '<your-creds-id-if-needed>'
-                )
+                sh '''
+                    rm -rf repo
+                    git clone --single-branch --branch phase-3-jenkins https://github.com/vellankikoti/ci-cd-chaos-workshop.git repo
+                '''
             }
         }
 
         stage('Verify Workspace') {
             steps {
                 sh '''
+                    cd repo
                     echo "=== WORKSPACE ==="
                     pwd
                     echo "=== Repo contents ==="
                     ls -la
                     echo "=== Checking Dockerfile path ==="
                     ls -la Jenkins/jenkins_scenarios/scenario_01_docker_build
-                    cat Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile
+
+                    if [ ! -f Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile ]; then
+                        echo "ERROR: Dockerfile missing!"
+                        exit 1
+                    else
+                        echo "✅ Dockerfile found!"
+                    fi
                 '''
             }
         }
@@ -48,8 +55,12 @@ pipeline {
                         echo '''
 🚫 CHAOS AGENT STRIKES AGAIN! 🚫
 Invalid version!
+
+Valid versions are: 1, 2, 3, 4, 5.
 '''
                         error("Invalid APP_VERSION: ${params.APP_VERSION}")
+                    } else {
+                        echo "✅ Version ${params.APP_VERSION} selected. Proceeding..."
                     }
                 }
             }
@@ -58,6 +69,7 @@ Invalid version!
         stage('Build Docker Image') {
             steps {
                 sh """
+                    cd repo
                     docker build -t $IMAGE_TAG \\
                         --build-arg APP_VERSION=${params.APP_VERSION} \\
                         -f $DOCKERFILE_PATH \\
@@ -85,29 +97,34 @@ Invalid version!
             }
         }
 
-        stage('Test App HTTP Response') {
+        stage('Check App Logs') {
             steps {
-                script {
-                    def result = sh(
-                        script: '''
-                            sleep 3
-                            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
-                            echo "HTTP Status: $STATUS_CODE"
-                            if [ "$STATUS_CODE" -ne 200 ]; then
-                                echo "❌ App did not respond correctly!"
-                                exit 1
-                            else
-                                echo "✅ App responded successfully!"
-                            fi
-                        ''',
-                        returnStatus: true
-                    )
-                    if (result != 0) {
-                        error("App HTTP test failed!")
-                    }
-                }
+                sh """
+                    sleep 5
+                    echo "=== Container Logs ==="
+                    docker logs $CONTAINER_NAME
+                """
             }
         }
+
+        stage('Test App HTTP Response') {
+            steps {
+                sh '''
+                    sleep 3
+                    docker exec $CONTAINER_NAME sh -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000" > status.txt
+                    STATUS_CODE=$(cat status.txt)
+                    echo "HTTP Status: $STATUS_CODE"
+                    if [ "$STATUS_CODE" -ne 200 ]; then
+                        echo "❌ App did not respond correctly!"
+                        exit 1
+                    else
+                        echo "✅ App responded successfully!"
+                    fi
+                '''
+            }
+        }
+
+
 
         stage('Final Cleanup') {
             steps {

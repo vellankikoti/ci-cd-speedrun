@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Generate Docker Report') {
+            steps {
+                echo "🚀 Generating Docker analysis report..."
+
+                sh '''
+                    # Simulate running the report generator script
+                    python workshop_tools/generate_docker_report.py 3
+                '''
+            }
+        }
+
+        stage('Archive HTML Report') {
+            steps {
+                echo "📊 Archiving Docker HTML report..."
+
+                archiveArtifacts artifacts: 'reports/version_3/docker_report.html', fingerprint: true
+            }
+        }
+    }
+}

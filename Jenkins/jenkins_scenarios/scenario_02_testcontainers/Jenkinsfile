@@ -1,0 +1,65 @@
+pipeline {
+    agent none
+
+    stages {
+        stage('Run Tests') {
+            agent {
+                docker {
+                    image 'chaos-python-runner:latest'
+                    args '-u 0:0 -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                ws('/var/jenkins_home/workspace/ci-cd-chaos-workshop') {
+                    sh '''
+                        echo "==== Setting up workspace ===="
+                        echo "Current location: $(pwd)"
+                        echo "Directory contents:"
+                        ls -la
+                        
+                        # Navigate to test directory
+                        cd Jenkins/jenkins_scenarios/scenario_02_testcontainers
+                        echo "\\nTest directory: $(pwd)"
+                        echo "Test directory contents:"
+                        ls -la
+                        
+                        echo "\\n==== Installing Python Requirements ===="
+                        # Upgrade pip first
+                        python -m pip install --upgrade pip
+                        
+                        # Install base test requirements
+                        pip install pytest testcontainers testcontainers-core
+                        
+                        # Install project requirements if available
+                        if [ -f requirements.txt ]; then
+                            echo "Installing from ./requirements.txt"
+                            pip install --no-cache-dir -r requirements.txt
+                        elif [ -f ../../requirements.txt ]; then
+                            echo "Installing from ../../requirements.txt"
+                            pip install --no-cache-dir -r ../../requirements.txt
+                        else
+                            echo "No requirements.txt found - continuing with base packages"
+                        fi
+                        
+                        echo "\\n==== Python Environment Info ===="
+                        python --version
+                        pip list
+                        
+                        echo "\\n==== Running Tests ===="
+                        # Run tests with detailed output and continue on error
+                        python -m pytest . -v --tb=short || true
+                    '''
+                }
+            }
+            post {
+                always {
+                    sh '''
+                        echo "=== Post-Build Cleanup ==="
+                        docker ps -a --filter name=testcontainers-ryuk -q | xargs -r docker rm -f || true
+                        docker ps -a --filter name=testcontainers -q | xargs -r docker rm -f || true
+                    '''
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_DEFAULT_REGION = "us-east-1"
+    }
+
+    stages {
+        stage('Prepare kubeconfig') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials'
+                ]]) {
+                    echo "🔧 Updating kubeconfig for EKS cluster..."
+
+                    sh '''
+                        aws eks update-kubeconfig --name my-cluster --region $AWS_DEFAULT_REGION
+                    '''
+                }
+            }
+        }
+
+        stage('Validate Deployment YAML') {
+            steps {
+                echo "✅ Validating Kubernetes YAML manifests..."
+
+                sh '''
+                    kubeval k8s/deployment.yaml
+                '''
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                echo "🚀 Applying Kubernetes manifests..."
+
+                sh '''
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl rollout status deployment my-deployment
+                '''
+            }
+        }
+    }
+}

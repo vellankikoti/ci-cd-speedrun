@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_DEFAULT_REGION = "us-east-1"
+    }
+
+    stages {
+        stage('Check AWS Identity') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials'
+                ]]) {
+                    echo "🔐 Running AWS CLI to verify identity..."
+
+                    sh '''
+                        aws sts get-caller-identity
+                    '''
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'APP_VERSION', defaultValue: '1', description: 'Which app version to build?')
+    }
+
+    environment {
+        BUILD_CONTEXT = '/var/jenkins_home/workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_01_docker_build'
+        CONTAINER_NAME = "chaos-app-v${params.APP_VERSION}"
+    }
+
+    stages {
+        stage('Debug Build Context') {
+            steps {
+                sh 'ls -la $BUILD_CONTEXT'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t ci-cd-chaos-app:v${params.APP_VERSION} \\
+                $BUILD_CONTEXT
+                """
+            }
+        }
+
+        stage('Full Cleanup') {
+            steps {
+                sh """
+                echo "Checking for containers using port 3000..."
+
+                ids=\$(docker ps --filter "publish=3000" -q)
+
+                if [ -n "\$ids" ]; then
+                  echo "Stopping containers using port 3000..."
+                  docker rm -f \$ids
+                else
+                  echo "No containers using port 3000."
+                fi
+
+                echo "Checking for existing container named $CONTAINER_NAME..."
+
+                cname_id=\$(docker ps -a --filter "name=^/$CONTAINER_NAME\$" -q)
+
+                if [ -n "\$cname_id" ]; then
+                  echo "Stopping and removing container named $CONTAINER_NAME..."
+                  docker rm -f \$cname_id
+                else
+                  echo "No container named $CONTAINER_NAME exists."
+                fi
+                """
+            }
+        }
+
+        stage('Run App Container') {
+            steps {
+                sh """
+                docker run -d --name $CONTAINER_NAME \\
+                    -p 3000:3000 \\
+                    ci-cd-chaos-app:v${params.APP_VERSION}
+                """
+            }
+        }
+
+        stage('Check App Logs') {
+            steps {
+                sh """
+                sleep 5
+                docker logs $CONTAINER_NAME
+                """
+            }
+        }
+
+        stage('Test App HTTP Response') {
+            steps {
+                sh """
+                sleep 3
+                curl -i http://localhost:3000 || echo "App not reachable"
+                """
+            }
+        }
+
+        stage('Final Cleanup') {
+            steps {
+                sh """
+                docker rm -f $CONTAINER_NAME || true
+                """
+            }
+        }
+    }
+}

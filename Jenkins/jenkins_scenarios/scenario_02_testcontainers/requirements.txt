@@ -1,0 +1,8 @@
+pytest
+pytest-html
+testcontainers==4.10.0
+SQLAlchemy
+psycopg2-binary
+pymysql
+pymongo
+redis

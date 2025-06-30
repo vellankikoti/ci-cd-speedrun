@@ -1,187 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Docker Report for Version 3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9fbfe;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #0069d9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #007bff;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            padding: 8px;
+        }
+        td {
+            padding: 8px;
+            word-break: break-all;
+        }
+        th:nth-child(1), td:nth-child(1) {
+            width: 50px;
+            text-align: center;
+        }
+        th:nth-child(2), td:nth-child(2) {
+            width: 450px;
+        }
+        th:nth-child(3), td:nth-child(3) {
+            width: 100px;
+            text-align: right;
+        }
+        th:nth-child(4), td:nth-child(4) {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Docker Report for Version 3</h1>
 
-    <html>
-    <head>
-      <style>
-        body { font-family: sans-serif; background: #1e1e2f; color: #eee; }
-        h1 { color: #6cf; }
-        pre { background: #333; padding: 1em; overflow-x: auto; }
-        table { border-collapse: collapse; width: 50%; }
-        td, th { border: 1px solid #555; padding: 8px; }
-      </style>
-    </head>
-    <body>
-      <h1>Docker Report - Version 3</h1>
-      <h2>Image Size</h2>
-      <p>67.13 MB</p>
+    <p><strong>Image Tag:</strong> ci-cd-chaos-app:v3</p>
+    <p><strong>Size:</strong> 68.8 MB</p>
+    <p><strong>Created At:</strong> 2025-06-29T23:06:40.20829138Z</p>
 
-      <h2>Layer History</h2>
-      <pre>IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT
-6f78f3dd50e5   6 minutes ago   CMD ["uvicorn" "app.main:app" "--host" "0.0.…   0B        buildkit.dockerfile.v0
-<missing>      6 minutes ago   ENV GREETING=Hello from the CI/CD Chaos Work…   0B        buildkit.dockerfile.v0
-<missing>      6 minutes ago   EXPOSE map[3000/tcp:{}]                         0B        buildkit.dockerfile.v0
-<missing>      6 minutes ago   COPY ./app ./app # buildkit                     36.9kB    buildkit.dockerfile.v0
-<missing>      6 minutes ago   COPY /install /usr/local # buildkit             90.6MB    buildkit.dockerfile.v0
-<missing>      2 hours ago     WORKDIR /app                                    8.19kB    buildkit.dockerfile.v0
-<missing>      3 weeks ago     CMD ["python3"]                                 0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB    buildkit.dockerfile.v0
-<missing>      3 weeks ago     RUN /bin/sh -c set -eux;   savedAptMark="$(a…   48.3MB    buildkit.dockerfile.v0
-<missing>      3 weeks ago     ENV PYTHON_SHA256=c30bb24b7f1e9a19b11b55a546…   0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     ENV PYTHON_VERSION=3.12.11                      0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     ENV GPG_KEY=7169605F62C751356D054A26A821E680…   0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     RUN /bin/sh -c set -eux;  apt-get update;  a…   10.3MB    buildkit.dockerfile.v0
-<missing>      3 weeks ago     ENV LANG=C.UTF-8                                0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B        buildkit.dockerfile.v0
-<missing>      3 weeks ago     # debian.sh --arch 'arm64' out/ 'bookworm' '…   108MB     debuerreotype 0.15</pre>
+    <h2>Base Image</h2>
+    <p>ENV GREETING=Hello from the CI/CD Chaos Workshop!</p>
 
-      <h2>SBOM</h2>
-      <pre>NAME                    VERSION                 TYPE   
-Jinja2                  3.1.6                   python  
-MarkupSafe              3.0.2                   python  
-PyMySQL                 1.1.1                   python  
-Pygments                2.19.2                  python  
-SQLAlchemy              2.0.41                  python  
-adduser                 3.134                   deb     
-annotated-types         0.7.0                   python  
-anyio                   4.9.0                   python  
-apt                     2.6.1                   deb     
-base-files              12.4+deb12u11           deb     
-base-passwd             3.6.1                   deb     
-bash                    5.2.15-2+b8             deb     
-bsdutils                1:2.38.1-5+deb12u3      deb     
-ca-certificates         20230311                deb     
-certifi                 2025.6.15               python  
-charset-normalizer      3.4.2                   python  
-click                   8.2.1                   python  
-coreutils               9.1-1                   deb     
-dash                    0.5.12-2                deb     
-debconf                 1.5.82                  deb     
-debian-archive-keyring  2023.3+deb12u2          deb     
-debianutils             5.7-0.5~deb12u1         deb     
-diffutils               1:3.8-4                 deb     
-dnspython               2.7.0                   python  
-docker                  7.1.0                   python  
-dpkg                    1.21.22                 deb     
-e2fsprogs               1.47.0-2                deb     
-fastapi                 0.115.14                python  
-findutils               4.9.0-4                 deb     
-gcc-12-base             12.2.0-14+deb12u1       deb     
-gpgv                    2.2.40-1.1              deb     
-greenlet                3.2.3                   python  
-grep                    3.8-5                   deb     
-gzip                    1.12-1                  deb     
-h11                     0.16.0                  python  
-hostname                3.23+nmu1               deb     
-idna                    3.10                    python  
-iniconfig               2.1.0                   python  
-init-system-helpers     1.65.2                  deb     
-libacl1                 2.3.1-3                 deb     
-libapt-pkg6.0           2.6.1                   deb     
-libattr1                1:2.5.1-4               deb     
-libaudit-common         1:3.0.9-1               deb     
-libaudit1               1:3.0.9-1               deb     
-libblkid1               2.38.1-5+deb12u3        deb     
-libbz2-1.0              1.0.8-5+b1              deb     
-libc-bin                2.36-9+deb12u10         deb     
-libc6                   2.36-9+deb12u10         deb     
-libcap-ng0              0.8.3-1+b3              deb     
-libcap2                 1:2.66-4+deb12u1        deb     
-libcom-err2             1.47.0-2                deb     
-libcrypt1               1:4.4.33-2              deb     
-libdb5.3                5.3.28+dfsg2-1          deb     
-libdebconfclient0       0.270                   deb     
-libext2fs2              1.47.0-2                deb     
-libffi8                 3.4.4-1                 deb     
-libgcc-s1               12.2.0-14+deb12u1       deb     
-libgcrypt20             1.10.1-3                deb     
-libgdbm6                1.23-3                  deb     
-libgmp10                2:6.2.1+dfsg1-1.1       deb     
-libgnutls30             3.7.9-2+deb12u4         deb     
-libgpg-error0           1.46-1                  deb     
-libgssapi-krb5-2        1.20.1-2+deb12u3        deb     
-libhogweed6             3.8.1-2                 deb     
-libidn2-0               2.3.3-1+b1              deb     
-libk5crypto3            1.20.1-2+deb12u3        deb     
-libkeyutils1            1.6.3-2                 deb     
-libkrb5-3               1.20.1-2+deb12u3        deb     
-libkrb5support0         1.20.1-2+deb12u3        deb     
-liblz4-1                1.9.4-1                 deb     
-liblzma5                5.4.1-1                 deb     
-libmd0                  1.0.4-2                 deb     
-libmount1               2.38.1-5+deb12u3        deb     
-libncursesw6            6.4-4                   deb     
-libnettle8              3.8.1-2                 deb     
-libnsl2                 1.3.0-2                 deb     
-libp11-kit0             0.24.1-2                deb     
-libpam-modules          1.5.2-6+deb12u1         deb     
-libpam-modules-bin      1.5.2-6+deb12u1         deb     
-libpam-runtime          1.5.2-6+deb12u1         deb     
-libpam0g                1.5.2-6+deb12u1         deb     
-libpcre2-8-0            10.42-1                 deb     
-libreadline8            8.2-1.3                 deb     
-libseccomp2             2.5.4-1+deb12u1         deb     
-libselinux1             3.4-1+b6                deb     
-libsemanage-common      3.4-1                   deb     
-libsemanage2            3.4-1+b5                deb     
-libsepol2               3.4-2.1                 deb     
-libsmartcols1           2.38.1-5+deb12u3        deb     
-libsqlite3-0            3.40.1-2+deb12u1        deb     
-libss2                  1.47.0-2                deb     
-libssl3                 3.0.16-1~deb12u1        deb     
-libstdc++6              12.2.0-14+deb12u1       deb     
-libsystemd0             252.38-1~deb12u1        deb     
-libtasn1-6              4.19.0-2+deb12u1        deb     
-libtinfo6               6.4-4                   deb     
-libtirpc-common         1.3.3+ds-1              deb     
-libtirpc3               1.3.3+ds-1              deb     
-libudev1                252.38-1~deb12u1        deb     
-libunistring2           1.0-2                   deb     
-libuuid1                2.38.1-5+deb12u3        deb     
-libxxhash0              0.8.1-1                 deb     
-libzstd1                1.5.4+dfsg2-5           deb     
-login                   1:4.13+dfsg1-1+deb12u1  deb     
-logsave                 1.47.0-2                deb     
-mawk                    1.3.4.20200120-3.1      deb     
-mount                   2.38.1-5+deb12u3        deb     
-ncurses-base            6.4-4                   deb     
-ncurses-bin             6.4-4                   deb     
-netbase                 6.4                     deb     
-openssl                 3.0.16-1~deb12u1        deb     
-packaging               25.0                    python  
-passwd                  1:4.13+dfsg1-1+deb12u1  deb     
-perl-base               5.36.0-7+deb12u2        deb     
-pip                     25.0.1                  python  
-pluggy                  1.6.0                   python  
-psycopg2-binary         2.9.10                  python  
-pydantic                2.11.7                  python  
-pydantic_core           2.33.2                  python  
-pymongo                 4.13.2                  python  
-pyodbc                  5.2.0                   python  
-pytest                  8.4.1                   python  
-pytest-html             4.1.1                   python  
-pytest-metadata         3.1.1                   python  
-python-dotenv           1.1.1                   python  
-readline-common         8.2-1.3                 deb     
-redis                   6.2.0                   python  
-requests                2.32.4                  python  
-sed                     4.9-1                   deb     
-sniffio                 1.3.1                   python  
-starlette               0.46.2                  python  
-sysvinit-utils          3.06-4                  deb     
-tar                     1.34+dfsg-1.2+deb12u1   deb     
-testcontainers          4.10.0                  python  
-typing-inspection       0.4.1                   python  
-typing_extensions       4.14.0                  python  
-tzdata                  2025b-0+deb12u1         deb     
-urllib3                 2.5.0                   python  
-usr-is-merged           37~deb12u1              deb     
-util-linux              2.38.1-5+deb12u3        deb     
-util-linux-extra        2.38.1-5+deb12u3        deb     
-uvicorn                 0.35.0                  python  
-wrapt                   1.17.2                  python  
-zlib1g                  1:1.2.13.dfsg-1         deb</pre>
+    <h2>Exposed Ports</h2>
+    <ul>
+        
+        <li>3000/tcp</li>
+        
+    </ul>
 
-      <h2>Vulnerabilities</h2>
-      <pre>Docker scan not supported.</pre>
-    </body>
-    </html>
+    <h2>Environment Variables</h2>
+    <ul>
+        
+        <li>PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</li>
+        
+        <li>LANG=C.UTF-8</li>
+        
+        <li>GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305</li>
+        
+        <li>PYTHON_VERSION=3.12.11</li>
+        
+        <li>PYTHON_SHA256=c30bb24b7f1e9a19b11b55a546434f74e739bb4c271a3e3a80ff4380d49f7adb</li>
+        
+        <li>GREETING=Hello from the CI/CD Chaos Workshop!</li>
+        
+    </ul>
+
+    <h2>Layer Digests (Filesystem Layers)</h2>
     
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Layer Digest</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+            <tr>
+                <td>1</td>
+                <td>sha256:6edfb9bfff297d06f01fa2685d7162e3d1b2ecdcc73666de3aa8b78c0ba0471d</td>
+            </tr>
+        
+            <tr>
+                <td>2</td>
+                <td>sha256:6128ef32a45e53df5b5d088050f5e548b7f607480853563126c6818ebb69c488</td>
+            </tr>
+        
+            <tr>
+                <td>3</td>
+                <td>sha256:b14c937a5866133e087f9976ab895d31486414fb14012fa14ec754220e56bfb1</td>
+            </tr>
+        
+            <tr>
+                <td>4</td>
+                <td>sha256:39180fa1de84f53d3b1bebaabe45e06a21306f5466feb59c373f564e67fa4f9a</td>
+            </tr>
+        
+            <tr>
+                <td>5</td>
+                <td>sha256:0acd99f0663b3ed895a70e26e4de05d06d804b314f1bc9cb5e6e65074f3dfe30</td>
+            </tr>
+        
+            <tr>
+                <td>6</td>
+                <td>sha256:85b6fad30a3c5d48829a96e938cd46cf98a57f398f5523a5412432eb202c59a3</td>
+            </tr>
+        
+            <tr>
+                <td>7</td>
+                <td>sha256:5d613eadcdd6775676f36ef50ac2dbd6afa39cf360deba22254468087a4839fc</td>
+            </tr>
+        
+        </tbody>
+    </table>
+    
+
+    <h2>Docker Build History</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Instruction</th>
+                <th>Size (MB)</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+            <tr>
+                <td>1</td>
+                <td># debian.sh --arch 'arm64' out/ 'bookworm' '@1749513600'</td>
+                <td>102.7</td>
+            </tr>
+        
+            <tr>
+                <td>2</td>
+                <td>ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>3</td>
+                <td>ENV LANG=C.UTF-8</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>4</td>
+                <td>RUN /bin/sh -c set -eux; 	apt-get update; 	apt-get install -y --no-install-recommends 		ca-certificates 		netbase 		tzdata 	; 	rm -rf /var/lib/apt/lists/* # buildkit</td>
+                <td>9.8</td>
+            </tr>
+        
+            <tr>
+                <td>5</td>
+                <td>ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>6</td>
+                <td>ENV PYTHON_VERSION=3.12.11</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>7</td>
+                <td>ENV PYTHON_SHA256=c30bb24b7f1e9a19b11b55a546434f74e739bb4c271a3e3a80ff4380d49f7adb</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>8</td>
+                <td>RUN /bin/sh -c set -eux; 		savedAptMark="$(apt-mark showmanual)"; 	apt-get update; 	apt-get install -y --no-install-recommends 		dpkg-dev 		gcc 		gnupg 		libbluetooth-dev 		libbz2-dev 		libc6-dev 		libdb-dev 		libffi-dev 		libgdbm-dev 		liblzma-dev 		libncursesw5-dev 		libreadline-dev 		libsqlite3-dev 		libssl-dev 		make 		tk-dev 		uuid-dev 		wget 		xz-utils 		zlib1g-dev 	; 		wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"; 	echo "$PYTHON_SHA256 *python.tar.xz" | sha256sum -c -; 	wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc"; 	GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; 	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$GPG_KEY"; 	gpg --batch --verify python.tar.xz.asc python.tar.xz; 	gpgconf --kill all; 	rm -rf "$GNUPGHOME" python.tar.xz.asc; 	mkdir -p /usr/src/python; 	tar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz; 	rm python.tar.xz; 		cd /usr/src/python; 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; 	./configure 		--build="$gnuArch" 		--enable-loadable-sqlite-extensions 		--enable-optimizations 		--enable-option-checking=fatal 		--enable-shared 		$(test "$gnuArch" != 'riscv64-linux-musl' && echo '--with-lto') 		--with-ensurepip 	; 	nproc="$(nproc)"; 	EXTRA_CFLAGS="$(dpkg-buildflags --get CFLAGS)"; 	LDFLAGS="$(dpkg-buildflags --get LDFLAGS)"; 	LDFLAGS="${LDFLAGS:--Wl},--strip-all"; 		arch="$(dpkg --print-architecture)"; arch="${arch##*-}"; 		case "$arch" in 			amd64|arm64) 				EXTRA_CFLAGS="${EXTRA_CFLAGS:-} -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"; 				;; 			i386) 				;; 			*) 				EXTRA_CFLAGS="${EXTRA_CFLAGS:-} -fno-omit-frame-pointer"; 				;; 		esac; 	make -j "$nproc" 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" 		"LDFLAGS=${LDFLAGS:-}" 	; 	rm python; 	make -j "$nproc" 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" 		python 	; 	make install; 		cd /; 	rm -rf /usr/src/python; 		find /usr/local -depth 		\( 			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) 			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) 		\) -exec rm -rf '{}' + 	; 		ldconfig; 		apt-mark auto '.*' > /dev/null; 	apt-mark manual $savedAptMark; 	find /usr/local -type f -executable -not \( -name '*tkinter*' \) -exec ldd '{}' ';' 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' 		| sort -u 		| xargs -r dpkg-query --search 		| cut -d: -f1 		| sort -u 		| xargs -r apt-mark manual 	; 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; 	rm -rf /var/lib/apt/lists/*; 		export PYTHONDONTWRITEBYTECODE=1; 	python3 --version; 	pip3 --version # buildkit</td>
+                <td>46.1</td>
+            </tr>
+        
+            <tr>
+                <td>9</td>
+                <td>RUN /bin/sh -c set -eux; 	for src in idle3 pip3 pydoc3 python3 python3-config; do 		dst="$(echo "$src" | tr -d 3)"; 		[ -s "/usr/local/bin/$src" ]; 		[ ! -e "/usr/local/bin/$dst" ]; 		ln -svT "$src" "/usr/local/bin/$dst"; 	done # buildkit</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>10</td>
+                <td>CMD ["python3"]</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>11</td>
+                <td>WORKDIR /app</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>12</td>
+                <td>COPY /install /usr/local # buildkit</td>
+                <td>97.0</td>
+            </tr>
+        
+            <tr>
+                <td>13</td>
+                <td>COPY ./app ./app # buildkit</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>14</td>
+                <td>EXPOSE map[3000/tcp:{}]</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>15</td>
+                <td>ENV GREETING=Hello from the CI/CD Chaos Workshop!</td>
+                <td>0.0</td>
+            </tr>
+        
+            <tr>
+                <td>16</td>
+                <td>CMD ["uvicorn" "app.main:app" "--host" "0.0.0.0" "--port" "3000"]</td>
+                <td>0.0</td>
+            </tr>
+        
+        </tbody>
+    </table>
+    
+
+    <h2>💡 Recommendations</h2>
+    <ul>
+        
+            <li>No recommendations. Looking good! 🎉</li>
+        
+    </ul>
+
+</body>
+</html>

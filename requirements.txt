@@ -11,3 +11,5 @@ redis
 redis
 pytest-html
 rich
+pyfiglet
+plotly

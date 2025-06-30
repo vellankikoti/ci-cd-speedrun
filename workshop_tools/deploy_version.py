@@ -3,109 +3,126 @@
 import subprocess
 import sys
 import os
+import time
 import shutil
-from pathlib import Path
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from pyfiglet import Figlet
 
 console = Console()
 
-CHAOS_ASCII = r"""
-██████╗  ██████╗ ███████╗██╗     ██████╗ 
-██╔══██╗██╔═══██╗██╔════╝██║     ██╔══██╗
-██║  ██║██║   ██║███████╗██║     ██║  ██║
-██║  ██║██║   ██║╚════██║██║     ██║  ██║
-██████╔╝╚██████╔╝███████║███████╗██████╔╝
-╚═════╝  ╚═════╝ ╚══════╝╚══════╝╚═════╝ 
-"""
+# ➤ Patch PATH so docker is always found
+# ------------------------------------------------------
+docker_path = "/usr/local/bin"
+if docker_path not in os.environ["PATH"]:
+    os.environ["PATH"] += f":{docker_path}"
 
-def print_banner():
-    console.print(f"[bold cyan]{CHAOS_ASCII}[/bold cyan]")
-    console.print("🐍 Welcome to the CI/CD Chaos Workshop Deploy Tool 🐍\n")
+# ➤ Utilities
+# ------------------------------------------------------
 
-def run_cmd(command, capture_output=False, shell=False):
-    if capture_output:
-        result = subprocess.run(command, check=True, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return result.stdout.strip()
-    else:
-        subprocess.run(command, check=True, shell=shell)
+def run_cmd(command, capture_output=False, shell=True):
+    """
+    Run a shell command and optionally capture output.
+    """
+    try:
+        result = subprocess.run(
+            command,
+            check=True,
+            shell=shell,
+            stdout=subprocess.PIPE if capture_output else None,
+            stderr=subprocess.PIPE if capture_output else None,
+            text=True,
+        )
+        if capture_output:
+            return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]❌ Error running command:[/red] {command}")
+        if e.stdout:
+            console.print("[yellow]STDOUT:[/yellow]", e.stdout)
+        if e.stderr:
+            console.print("[yellow]STDERR:[/yellow]", e.stderr)
+        sys.exit(1)
 
 def check_docker_daemon():
+    """
+    Verify that Docker is running.
+    """
+    console.print("[cyan]🔎 Checking if Docker daemon is running...[/cyan]")
     try:
         run_cmd("docker info", capture_output=True)
-    except subprocess.CalledProcessError:
-        console.print(
-            "[red]❌ Docker daemon does not appear to be running. "
-            "Please start Docker and try again.[/red]"
-        )
+        console.print("[green]✅ Docker daemon is running![/green]")
+    except Exception:
+        console.print("[red]❌ Docker does not seem to be running.[/red]")
         sys.exit(1)
+
+# ➤ Deployment logic
+# ------------------------------------------------------
 
 def deploy(version):
+    f = Figlet(font='slant')
+    console.print(f.renderText("CI/CD Chaos Workshop"), style="bold green")
+    console.print("🐍 Welcome to the CI/CD Chaos Workshop Deploy Tool 🐍\n")
+
     check_docker_daemon()
 
-    console.print(f"👉 [bold yellow]Switching to version {version}[/bold yellow]")
+    console.print(f"👉 [yellow]Switching to version {version}[/yellow]\n")
 
     # Replace main.py
-    source_file = f"app/main_v{version}.py"
-    target_file = "app/main.py"
-    if not os.path.exists(source_file):
-        console.print(f"[red]❌ File {source_file} not found![/red]")
-        sys.exit(1)
+    console.print("🔄 Replacing [blue]main.py[/blue] with new version file...")
+    run_cmd(f"cp app/main_v{version}.py app/main.py")
 
-    shutil.copy(source_file, target_file)
-    console.print(f"✅ Replaced [green]{target_file}[/green]")
+    container_name = f"chaos-app-v{version}"
 
-    # Stop any running container on port 3000
-    container_ids = run_cmd(
-        "docker ps --filter 'publish=3000' --format '{{.ID}}'", capture_output=True
+    # Check for containers running on port 3000
+    console.print("🔍 Checking for containers using port 3000...")
+    port_in_use = run_cmd(
+        "docker ps --filter 'publish=3000' --format '{{.ID}}'",
+        capture_output=True
     )
-    if container_ids:
-        console.print("⚠️  A container is running on port 3000. Stopping and removing it...")
-        for cid in container_ids.splitlines():
-            run_cmd(f"docker stop {cid}")
-            run_cmd(f"docker rm {cid}")
+
+    if port_in_use:
+        console.print(f"⚠️ [yellow]A container is running on port 3000. Stopping and removing it...[/yellow]")
+        run_cmd(f"docker stop {port_in_use}")
+        run_cmd(f"docker rm {port_in_use}")
 
     # Remove previous container with same name
-    container_name = f"chaos-app-v{version}"
-    exists = run_cmd(f"docker ps -aq -f name={container_name}", capture_output=True)
-    if exists:
-        console.print(f"⚠️  Removing previous container named {container_name}...")
+    existing = run_cmd(f"docker ps -aq -f name={container_name}", capture_output=True)
+    if existing:
+        console.print(f"🗑️ Removing old container named [cyan]{container_name}[/cyan]...")
         run_cmd(f"docker stop {container_name}")
         run_cmd(f"docker rm {container_name}")
 
-    # Build image
+    # Build image with progress spinner
     console.print("🔨 Building Docker image...")
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         transient=True,
-        console=console,
     ) as progress:
-        progress.add_task("Building Docker image...", total=None)
+        task = progress.add_task("Building Docker image...", start=False)
+        progress.start_task(task)
+        time.sleep(0.5)  # cosmetic delay
         run_cmd(f"docker build -t ci-cd-chaos-app:v{version} .")
+        progress.update(task, description="Docker build completed!")
 
-    # Run container
-    console.print(f"🚀 Running container chaos-app-v{version}...")
+    # Run new container
+    console.print(f"🚀 Running container [bold green]{container_name}[/bold green]...")
     run_cmd(f"docker run -d -p 3000:3000 --name {container_name} ci-cd-chaos-app:v{version}")
 
-    # Run Docker analysis
+    # Generate Docker report
     console.print("📊 Generating Docker analysis report...")
     run_cmd(f"python3 workshop_tools/docker_analysis.py {version}")
 
-    # Output clickable report path
-    report_path = f"reports/version_{version}/docker_report.html"
-    if Path(report_path).exists():
-        console.print(f"✅ Deployment complete for version [bold green]{version}[/bold green]!")
-        console.print(f"👉 [cyan]View Docker report here:[/cyan] {report_path}")
-    else:
-        console.print(f"[yellow]⚠️ Docker report not found at {report_path}[/yellow]")
+    console.print(f"\n✅ [bold green]Deployment complete for version {version}![/bold green]")
+    console.print(f"👉 View the Docker report here: [cyan]reports/version_{version}/docker_report.html[/cyan]")
+
+# ➤ Entry point
+# ------------------------------------------------------
 
 if __name__ == "__main__":
-    print_banner()
-
     if len(sys.argv) < 2:
         console.print("[red]❌ Please provide a version number. Example:[/red]")
-        console.print("    python3 workshop_tools/deploy_version.py 3")
+        console.print("    python deploy_version.py 2\n")
         sys.exit(1)
 
     version = sys.argv[1]

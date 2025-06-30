@@ -1,4 +1,4 @@
-# app/main_v2.py
+# app/main_v3.py
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -7,11 +7,11 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    version = 2
+    version = 3
     emojis = "🐍" * version
     message = f"{emojis} Hello from Version {version} of the CI/CD Chaos Workshop!"
     images = "".join(
-        f'<img src="https://www.python.org/static/community_logos/python-logo.png" width="150"/>' 
+        f'<img src="https://www.python.org/static/community_logos/python-logo.png" width="120"/>' 
         for _ in range(version)
     )
     html = f"""

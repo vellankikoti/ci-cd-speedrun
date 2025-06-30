@@ -1,4 +1,5 @@
-# 🐳 Phase 2 - Docker Mastery
+
+# 🐳 Phase 2 – Docker Mastery
 
 Welcome to **Phase 2** of the CI/CD Chaos Workshop — the stage where we dive deep into Docker, learn how to build Python apps properly, and create chaos-worthy Docker images for production!
 
@@ -8,27 +9,30 @@ This phase demonstrates:
 ✅ Docker image size comparisons  
 ✅ Production vs. dev Dockerfiles  
 ✅ Deploying multiple versions of your app  
-✅ Generating Docker analysis reports  
-✅ Beautiful visuals and chaos engineering insights!
+✅ Generating Docker analysis reports
+
+> 🎯 **Goal:** Show how tiny changes in Dockerfiles affect:
+> - Build times
+> - Image sizes
+> - Security
+> - Performance
 
 ---
 
 ## 🚀 What We’re Building
 
 We’re developing a FastAPI Python app:
+
 - 5 different versions
 - Each with new features, animations, or visuals
 - Deployed via Docker
 - Automatically analyzed for:
-  - image size
-  - layer count
-  - potential vulnerabilities (future scope!)
+    - image size
+    - layer count
+    - base image details
 
-> 🎯 **Goal:** Teach participants how tiny changes in Dockerfiles affect:
-> - Build times
-> - Image sizes
-> - Security
-> - Performance
+> **Chaos Agent says:** “Let’s bloat those images!”  
+> Our mission: keep images lean and secure.
 
 ---
 
@@ -39,20 +43,20 @@ Instead of manually switching files and building containers, we’ve automated e
 Run:
 
 ```bash
-python workshop_tools/deploy_version.py --version 3
-````
+python workshop_tools/deploy_version.py 3
+```
 
 ✅ This:
 
-* Copies the correct `main_vX.py` to `main.py`
-* Builds your Docker image
-* Stops/removes any container running on port 3000
-* Runs the new version
-* Generates a beautiful HTML Docker report under:
+- Copies the correct `main_vX.py` to `main.py`
+- Builds your Docker image
+- Stops/removes any container running on port 3000
+- Runs the new version
+- Generates a beautiful HTML Docker report under:
 
-  ```
-  reports/version_3/docker_report.html
-  ```
+```
+reports/version_3/docker_report.html
+```
 
 ---
 
@@ -61,38 +65,46 @@ python workshop_tools/deploy_version.py --version 3
 Every deploy automatically runs:
 
 ```bash
-python workshop_tools/generate_docker_report.py --version 3
+python workshop_tools/generate_docker_report.py 3
 ```
 
 This analyzes:
 
-* Image size (MB)
-* Number of layers
-* Base image used
-* Warnings about potential optimization
+✅ Image size (MB)  
+✅ Number of layers  
+✅ Base image used  
+✅ Recommendations for optimization
 
-And creates an HTML report like:
+It creates a report like:
 
-> ![Docker Report Screenshot](https://dummyimage.com/600x300/2c3e50/ffffff\&text=Docker+Report+Screenshot)
+> ![Docker Report Screenshot](https://dummyimage.com/600x300/2c3e50/ffffff&text=Docker+Report+Screenshot)
+
+**Why it matters:** This makes Docker transparent for developers and helps avoid bloat.
 
 ---
 
 ## 🐍 Demo Scenarios
 
-During the workshop:
-✅ Deploy version 1 → tiny image
-✅ Deploy version 2 → adds emojis → image grows
-✅ Deploy version 3 → multi-stage build → shrinks image
-✅ Deploy version 4 → adds background workers → image grows
+During the workshop, we’ll:
+
+✅ Deploy version 1 → tiny image  
+✅ Deploy version 2 → adds emojis → image grows  
+✅ Deploy version 3 → multi-stage build → image shrinks  
+✅ Deploy version 4 → adds background workers → image grows  
 ✅ Deploy version 5 → chaos animations → biggest image
 
-Show how to:
+We’ll learn how to:
 
-* Avoid large images
-* Use `.dockerignore` effectively
-* Minimize layers
-* Prefer multi-stage builds
-* Separate dev vs prod images
+- Avoid large images
+- Use `.dockerignore` effectively
+- Minimize layers
+- Prefer multi-stage builds
+- Separate dev vs prod images
+
+**Chaos Agent’s trap:**  
+> “Add one more pip install… what’s the harm?”
+
+We’ll prove why that’s dangerous.
 
 ---
 
@@ -100,20 +112,19 @@ Show how to:
 
 Without multi-stage:
 
-* Images \~400MB or more
-* Contains unnecessary build tools
-* Slower deployment
+- Images ~400MB or more
+- Contains unnecessary build tools
+- Slower deployments
 
 With multi-stage:
 
-* Images \~100MB or less
-* Production only includes:
+- Images ~100MB or less
+- Production only includes:
+    - compiled Python code
+    - minimal runtime packages
+- Fewer attack surfaces
 
-  * compiled Python code
-  * minimum runtime packages
-* Fewer attack surfaces
-
-Example snippet:
+Example Dockerfile:
 
 ```dockerfile
 # First stage
@@ -130,24 +141,38 @@ COPY ./app ./app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3000"]
 ```
 
+**Best Practice:** Keep the runtime image as slim as possible.
+
 ---
 
 ## 💡 Tips for Workshop Demos
 
-✅ Show:
+✅ Show Docker image size differences:
 
-* Docker image size differences:
+```bash
+docker images
+```
 
-  ```bash
-  docker images
-  ```
-* Layer differences:
+✅ Check layer digests:
 
-  ```bash
-  dive ci-cd-chaos-app:v3
-  ```
-* Why small images deploy faster
-* How multi-stage prevents secrets from leaking into images
+```bash
+docker inspect ci-cd-chaos-app:v3
+```
+
+✅ Show Docker build history:
+
+```bash
+docker history ci-cd-chaos-app:v3
+```
+
+✅ Explain why small images deploy faster.
+
+✅ Highlight how multi-stage prevents secrets from leaking into final images.
+
+**Chaos Agent:**  
+> “Let’s leave secrets in the image. No one will find them…”
+
+We’ll prove how scanning tools and image inspection can expose secrets.
 
 ---
 
@@ -155,44 +180,45 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3000"]
 
 Optional chaos ideas:
 
-* Randomly build wrong versions
-* Introduce slow builds to show caching
-* Simulate “docker build” errors
-* Show how CI/CD can detect these issues early
+- Randomly build incorrect versions
+- Introduce slow builds to show Docker caching
+- Simulate Docker build errors
+- Show how CI/CD detects Docker issues early
+
+**Mission:** Prove that pipelines protect you from Docker chaos.
 
 ---
 
 ## ✅ Run It All Together
 
-To deploy version 5 and see a full chaos experience:
+To deploy version 5 and see the full chaos experience:
 
 ```bash
 python workshop_tools/deploy_version.py --version 5
 ```
 
-Check:
+Then check:
 
-* App running at [http://localhost:3000](http://localhost:3000)
-* Docker report under:
+- App running at [http://localhost:3000](http://localhost:3000)
+- Docker report under:
 
-  ```
-  reports/version_5/docker_report.html
-  ```
+```
+reports/version_5/docker_report.html
+```
 
 ---
 
 ## 🏆 Why This Matters
 
 By the end of Phase 2, you’ll understand:
-✅ Why Docker image size matters
-✅ How to keep production images secure
-✅ Why multi-stage builds are your friend
+
+✅ Why Docker image size matters  
+✅ How to keep production images secure  
+✅ Why multi-stage builds are your friend  
 ✅ How to visualize Docker data for stakeholders
 
 …and you’ll have fun chaos demos to prove it!
 
 ---
 
-[⬅️ Previous Phase](./tests.md) | [➡️ Next Phase → CI/CD Pipelines](./jenkins.md)
-
----
+[⬅️ Previous Phase: TestContainers](./tests.md) | [Next Phase: CI/CD Pipelines ➡️](./jenkins.md)

@@ -10,24 +10,31 @@ pipeline {
     }
 
     environment {
-        CONTAINER_NAME = "testcontainers-demo"
-        IMAGE_TAG = "python:3.12-slim"
+        CUSTOM_IMAGE_TAG = 'ci-cd-chaos-python:latest'
         TEST_SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_02_testcontainers"
     }
 
     stages {
 
-        stage('Pre-Cleanup') {
+        stage('Build Custom Python Image') {
             steps {
                 sh '''
-                    echo "🔪 Pre-cleanup: Killing any leftover containers..."
-
-                    docker ps -q --filter name=$CONTAINER_NAME | xargs -r docker rm -f || true
+                    docker build -t $CUSTOM_IMAGE_TAG \
+                        -f Jenkins/jenkins_scenarios/scenario_02_testcontainers/Dockerfile \
+                        Jenkins/jenkins_scenarios/scenario_02_testcontainers
                 '''
             }
         }
 
-        stage('Clone Repo') {
+        stage('Pre-Cleanup') {
+            steps {
+                sh '''
+                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
+                '''
+            }
+        }
+
+        stage('Checkout Repo') {
             steps {
                 sh '''
                     rm -rf repo
@@ -36,16 +43,13 @@ pipeline {
             }
         }
 
-        stage('Install Python Requirements') {
-            steps {
-                sh '''
-                    cd repo
-                    pip install --no-cache-dir -r requirements.txt
-                '''
+        stage('Run Inside Custom Python Image') {
+            agent {
+                docker {
+                    image "${CUSTOM_IMAGE_TAG}"
+                    args '-u root'
+                }
             }
-        }
-
-        stage('Run Selected Tests') {
             steps {
                 script {
                     def testFiles = []
@@ -63,6 +67,11 @@ pipeline {
                         ]
                         echo "Deploying TestContainers — Chaos Agent’s defeat is imminent!"
                     }
+
+                    sh """
+                        cd repo
+                        pip install --no-cache-dir -r requirements.txt
+                    """
 
                     testFiles.each { testFile ->
                         sh """

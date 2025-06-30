@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.12-slim'
-            args '-u root'
-        }
-    }
+    agent any
 
     parameters {
         choice(
@@ -15,6 +10,8 @@ pipeline {
     }
 
     environment {
+        CONTAINER_NAME = "testcontainers-demo"
+        IMAGE_TAG = "python:3.12-slim"
         TEST_SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_02_testcontainers"
     }
 
@@ -23,12 +20,14 @@ pipeline {
         stage('Pre-Cleanup') {
             steps {
                 sh '''
-                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
+                    echo "🔪 Pre-cleanup: Killing any leftover containers..."
+
+                    docker ps -q --filter name=$CONTAINER_NAME | xargs -r docker rm -f || true
                 '''
             }
         }
 
-        stage('Checkout Repo') {
+        stage('Clone Repo') {
             steps {
                 sh '''
                     rm -rf repo

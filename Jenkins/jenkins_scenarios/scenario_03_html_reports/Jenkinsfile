@@ -1,24 +1,150 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Generate Docker Report') {
-            steps {
-                echo "🚀 Generating Docker analysis report..."
+    environment {
+        PYTHONUNBUFFERED = '1'
+        PIP_DISABLE_PIP_VERSION_CHECK = '1'
+        REPO_DIR = 'repo'
+    }
 
+    parameters {
+        string(name: 'REPO_URL', defaultValue: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git', description: 'GitHub repository URL')
+        string(name: 'REPO_BRANCH', defaultValue: 'phase-3-jenkins', description: 'Branch to clone')
+
+        booleanParam(name: 'RUN_API_HEALTH_PASS', defaultValue: true, description: 'Run passing API health check test')
+        booleanParam(name: 'RUN_API_HEALTH_FAIL', defaultValue: false, description: 'Run failing API health check test')
+
+        booleanParam(name: 'RUN_POSTGRES_PASS', defaultValue: true, description: 'Run passing Postgres connectivity test')
+        booleanParam(name: 'RUN_POSTGRES_FAIL', defaultValue: false, description: 'Run failing Postgres connectivity test')
+
+        booleanParam(name: 'RUN_REDIS_PASS', defaultValue: true, description: 'Run passing Redis connectivity test')
+        booleanParam(name: 'RUN_REDIS_FAIL', defaultValue: false, description: 'Run failing Redis connectivity test')
+
+        booleanParam(name: 'RUN_SECRET_SCAN_PASS', defaultValue: true, description: 'Run passing secret scanning test')
+        booleanParam(name: 'RUN_SECRET_SCAN_FAIL', defaultValue: false, description: 'Run failing secret scanning test')
+
+        booleanParam(name: 'RUN_CONFIG_VALIDATION_PASS', defaultValue: true, description: 'Run passing config validation test')
+        booleanParam(name: 'RUN_CONFIG_VALIDATION_FAIL', defaultValue: false, description: 'Run failing config validation test')
+    }
+
+    stages {
+        stage('Pre-Cleanup') {
+            steps {
+                echo "✨ Cleaning workspace and containers..."
                 sh '''
-                    # Simulate running the report generator script
-                    python workshop_tools/generate_docker_report.py 3
+                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
+                    rm -rf ${REPO_DIR} reports
+                    mkdir -p reports
                 '''
             }
         }
 
-        stage('Archive HTML Report') {
+        stage('Clone Repo') {
             steps {
-                echo "📊 Archiving Docker HTML report..."
-
-                archiveArtifacts artifacts: 'reports/version_3/docker_report.html', fingerprint: true
+                sh """
+                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} ${REPO_DIR}
+                """
             }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                    docker build -t ci-cd-chaos-html:latest ${REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports
+                """
+            }
+        }
+
+        stage('Run Selected Tests Inside Docker') {
+            steps {
+                script {
+                    def testFiles = []
+
+                    if (params.RUN_API_HEALTH_PASS) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_pass.py"
+                    }
+                    if (params.RUN_API_HEALTH_FAIL) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_api_health_fail.py"
+                    }
+                    if (params.RUN_POSTGRES_PASS) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_pass.py"
+                    }
+                    if (params.RUN_POSTGRES_FAIL) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_postgres_fail.py"
+                    }
+                    if (params.RUN_REDIS_PASS) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_pass.py"
+                    }
+                    if (params.RUN_REDIS_FAIL) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_redis_fail.py"
+                    }
+                    if (params.RUN_SECRET_SCAN_PASS) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_pass.py"
+                    }
+                    if (params.RUN_SECRET_SCAN_FAIL) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_secret_scan_fail.py"
+                    }
+                    if (params.RUN_CONFIG_VALIDATION_PASS) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_pass.py"
+                    }
+                    if (params.RUN_CONFIG_VALIDATION_FAIL) {
+                        testFiles << "${env.REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests/test_config_validation_fail.py"
+                    }
+
+                    if (testFiles.size() == 0) {
+                        error "⚠️ No tests selected. Chaos Agent cannot be defeated without tests!"
+                    }
+
+                    def tests = testFiles.join(" ")
+
+                    docker.image('ci-cd-chaos-html:latest').inside('-u root -v /var/run/docker.sock:/var/run/docker.sock') {
+                        sh """
+                            pytest \
+                                --html=reports/scenario_03_report.html \
+                                --self-contained-html \
+                                --json-report \
+                                --json-report-file=reports/scenario_03_report.json \
+                                ${tests}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Parse Test Results') {
+            steps {
+                script {
+                    def jsonPath = "reports/scenario_03_report.json"
+
+                    if (fileExists(jsonPath)) {
+                        def report = readJSON file: jsonPath
+                        def summary = report.get("summary", [:])
+                        def failed = summary.get("failed", 0)
+                        def passed = summary.get("passed", 0)
+                        def total = summary.get("total", 0)
+
+                        echo "🔎 Total Tests: ${total}"
+                        echo "✅ Passed: ${passed}"
+                        echo "❌ Failed: ${failed}"
+
+                        if (failed > 0) {
+                            error "❌ Chaos Agent strikes again! Some tests failed. Check the HTML report for details."
+                        } else {
+                            echo "✅ Chaos Agent defeated — all tests passed!"
+                        }
+                    } else {
+                        error "⚠️ Test report JSON not found. Something went wrong."
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "✨ Archiving Chaos Report Artifacts..."
+            archiveArtifacts artifacts: 'reports/**/*.html', fingerprint: true
+            archiveArtifacts artifacts: 'reports/**/*.json', fingerprint: true
         }
     }
 }

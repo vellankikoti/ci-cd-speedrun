@@ -1,0 +1,7 @@
+pytest
+pytest-html
+pytest-json-report
+requests
+psycopg2-binary
+redis
+testcontainers

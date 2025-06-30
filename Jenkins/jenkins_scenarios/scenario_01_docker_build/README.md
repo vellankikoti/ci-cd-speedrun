@@ -1,61 +1,165 @@
-# 🚀 Scenario 1 – Building Docker Images in Jenkins
 
-## ✅ Why It Matters
+# 🚀 Scenario 01 — Docker Build Chaos
 
-Building Docker images in Jenkins ensures **consistent deployments** and reliable environments for all future phases of your CI/CD pipeline.
-
-> **Chaos Event:**  
-> "Docker build fails with: `Cannot connect to the Docker daemon!`"
+> **Operation Chaos**  
+> Chaos Agent wants your Docker builds to fail and your containers to break!  
+> In this mission, we build Python Docker images, run containers, and prove our pipeline can defeat Docker sabotage.
 
 ---
 
-## ✅ What You’ll Do
+## 🎯 Scenario Goal
 
-✅ Build a Docker image for your Python app.  
-✅ Learn to pass parameters to Jenkins jobs.  
-✅ See how Jenkins pipelines handle Docker builds.
-
----
-
-## ✅ How to Run
-
-1. Start Jenkins via Docker:
-    ```bash
-    docker run -d \
-      -p 8080:8080 \
-      -v jenkins_home:/var/jenkins_home \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      jenkins/jenkins:lts-docker
-    ```
-
-2. Copy this Jenkinsfile into a new pipeline job.
-
-3. Run the job.
+✅ Learn how to:
+- Build Docker images from multiple app versions
+- Parameterize Docker builds in Jenkins
+- Run and test Docker containers dynamically
+- Detect and defeat Chaos Agent’s sabotage
 
 ---
 
-## ✅ Chaos Fixes
+## 🛠️ Technical Stack
 
-- Mount `/var/run/docker.sock` into your Jenkins container.
-- Avoid building Docker images on Jenkins master. Use agents if possible.
+- **Python 3.12+**
+- **Docker**
+- **Jenkins Pipeline**
+
 
 ---
 
-## ✅ Expected Output
+## 🚀 How It Works
 
-✅ Console log should show:
+You have **5 versions** of a Python app in:
+
+```
+
+app/v1/
+app/v2/
+...
+app/v5/
+
 ````
 
-✅ Built image: sha256\:xxxxxxxxxxxxxx
+Each version demonstrates:
+- Different Dockerfile configurations
+- Intentional Docker build or runtime problems (Chaos Agent sabotage!)
 
+---
+
+## ✅ Jenkins Pipeline Overview
+
+Your Jenkins pipeline:
+
+✅ Takes a **version number** as input:
+
+- `APP_VERSION = 1`
+- or `2`, `3`, etc.
+
+✅ Steps:
+1. **Cleanup** any containers running on port 3000
+2. Build Docker image:
+    ```
+    docker build -t ci-cd-chaos-app:v<APP_VERSION> .
+    ```
+3. Run Docker container:
+    ```
+    docker run -d -p 3000:3000 --name chaos-app-v<APP_VERSION> ...
+    ```
+4. Test HTTP response:
+    ```
+    curl http://localhost:3000
+    ```
+5. Clean up the container
+
+---
+
+## 🎯 Pipeline Parameters
+
+| Parameter      | Description                                  |
+|----------------|----------------------------------------------|
+| `APP_VERSION`  | Which app version to build (1-5)             |
+
+✅ If an invalid version is passed, Chaos Agent triggers a **funny error message**.
+
+---
+
+## ⚙️ Running Locally
+
+Build version 2 locally:
+
+```bash
+docker build -t ci-cd-chaos-app:v2 \
+    --build-arg APP_VERSION=2 \
+    .
+````
+
+Run it:
+
+```bash
+docker run -d --name chaos-app-v2 -p 3000:3000 ci-cd-chaos-app:v2
+```
+
+Test:
+
+```bash
+curl http://localhost:3000
+```
+
+Stop the container:
+
+```bash
+docker rm -f chaos-app-v2
 ```
 
 ---
 
-## ✅ Best Practices
+## 💥 Example Chaos
 
-- Always tag images with a unique version.
-- Keep images minimal for faster builds.
-- Clean up old images to save disk space.
+Chaos Agent might:
+
+* Break the Docker build (missing requirements)
+* Break the container startup (missing app)
+* Cause HTTP failures
+
+…but our pipeline **detects and fixes these issues!**
+
+---
+
+## ✅ Victory Condition
+
+✨ You’ve defeated Chaos Agent if:
+
+* Docker images build successfully
+* Containers start correctly
+* HTTP checks succeed
+* Chaos-induced problems are detected and reported
+
+---
+
+## 🤯 Sample Jenkins Logs
+
+```
+=== Listing Docker build context ===
+Dockerfile
+app/v2/...
+
+=== Building Docker image ===
+Successfully tagged ci-cd-chaos-app:v2
+
+=== Running container ===
+Uvicorn running on http://0.0.0.0:3000
+
+=== Testing app HTTP ===
+HTTP Status: 200
+✅ App responded successfully!
+```
+
+---
+
+## 👊 Remember:
+
+> **“Chaos is inevitable. Victory is optional. Choose wisely.”**
+> — CI/CD Chaos Workshop
+
+Go forth and defeat Chaos Agent! 🎉
 
 ---

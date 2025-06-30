@@ -4,6 +4,7 @@ pipeline {
     environment {
         PYTHONUNBUFFERED = '1'
         PIP_DISABLE_PIP_VERSION_CHECK = '1'
+        REPO_DIR = 'repo'
     }
 
     parameters {
@@ -41,15 +42,15 @@ pipeline {
         stage('Clone Repo Outside Docker') {
             steps {
                 sh """
-                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} repo
+                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} ${env.REPO_DIR}
                 """
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Image from Root Context') {
             steps {
                 sh """
-                    docker build -t ci-cd-chaos-html:latest repo/Jenkins/jenkins_scenarios/scenario_03_html_reports
+                    docker build -t ci-cd-chaos-html:latest ${env.REPO_DIR}
                 """
             }
         }
@@ -119,7 +120,7 @@ pipeline {
 
         stage('Copy Reports to Workspace') {
             steps {
-                // Copy reports from the Docker container to Jenkins workspace
+                // Copy reports from Docker container to Jenkins workspace
                 sh '''
                     docker cp $(docker ps -alq):/app/reports ./reports || true
                 '''

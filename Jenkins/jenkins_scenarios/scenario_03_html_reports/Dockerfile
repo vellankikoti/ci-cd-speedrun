@@ -7,22 +7,17 @@ LABEL scenario="Scenario 03 - HTML Reports"
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    libssl-dev \
-    curl \
-    git \
+        gcc \
+        libpq-dev \
+        libssl-dev \
+        curl \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create working dir
 WORKDIR /app
 
-# Copy requirements file if you wish to maintain one
-# (Optional — included for clarity)
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Python dependencies directly
+# Install Python dependencies
 RUN pip install --no-cache-dir \
     pytest \
     pytest-html \
@@ -32,5 +27,11 @@ RUN pip install --no-cache-dir \
     redis \
     testcontainers
 
-# By default, print pytest version
+# COPY your entire repo into the image
+COPY . /app
+
+# Create reports dir to avoid copy errors later
+RUN mkdir -p /app/reports
+
+# Default command prints pytest version
 CMD ["pytest", "--version"]

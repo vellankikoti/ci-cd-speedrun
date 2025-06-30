@@ -4,7 +4,6 @@ pipeline {
     environment {
         PYTHONUNBUFFERED = '1'
         PIP_DISABLE_PIP_VERSION_CHECK = '1'
-        REPO_DIR = 'repo'
     }
 
     parameters {
@@ -30,10 +29,10 @@ pipeline {
     stages {
         stage('Pre-Cleanup') {
             steps {
-                echo "✨ Cleaning workspace and containers..."
+                echo "✨ Cleaning workspace..."
                 sh '''
-                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
-                    rm -rf ${REPO_DIR} reports
+                    rm -rf repo
+                    rm -rf reports
                     mkdir -p reports
                 '''
             }
@@ -42,7 +41,7 @@ pipeline {
         stage('Clone Repo Outside Docker') {
             steps {
                 sh """
-                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} ${REPO_DIR}
+                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} repo
                 """
             }
         }
@@ -50,7 +49,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh """
-                    docker build -t ci-cd-chaos-html:latest ${REPO_DIR}/Jenkins/jenkins_scenarios/scenario_03_html_reports
+                    docker build -t ci-cd-chaos-html:latest repo/Jenkins/jenkins_scenarios/scenario_03_html_reports
                 """
             }
         }
@@ -99,24 +98,31 @@ pipeline {
                         error "⚠️ No tests selected. Chaos Agent cannot be defeated without tests!"
                     }
 
-                    docker.image('ci-cd-chaos-html:latest').inside(
-                        "-u root -v ${env.WORKSPACE}/${env.REPO_DIR}:/tests -v ${env.WORKSPACE}/reports:/reports"
-                    ) {
+                    docker.image('ci-cd-chaos-html:latest').inside('-u root') {
                         sh """
-                            echo '=== Verify test files exist ==='
-                            ls -R /tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
+                            cd /app
 
-                            cd /tests
+                            echo '=== Files in repo ==='
+                            ls -l Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
 
                             pytest \
-                                --html=/reports/scenario_03_report.html \
+                                --html=/app/reports/scenario_03_report.html \
                                 --self-contained-html \
                                 --json-report \
-                                --json-report-file=/reports/scenario_03_report.json \
+                                --json-report-file=/app/reports/scenario_03_report.json \
                                 ${relativeTests.join(' ')}
                         """
                     }
                 }
+            }
+        }
+
+        stage('Copy Reports to Workspace') {
+            steps {
+                // Copy reports from the Docker container to Jenkins workspace
+                sh '''
+                    docker cp $(docker ps -alq):/app/reports ./reports || true
+                '''
             }
         }
 

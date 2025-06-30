@@ -6,6 +6,10 @@ pipeline {
         }
     }
 
+    environment {
+        TESTCONTAINERS_RYUK_DISABLED = 'true'
+    }
+
     parameters {
         choice(
             name: 'TEST_MODE',

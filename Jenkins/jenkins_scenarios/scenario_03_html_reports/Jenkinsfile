@@ -4,7 +4,6 @@ pipeline {
     environment {
         PYTHONUNBUFFERED = '1'
         PIP_DISABLE_PIP_VERSION_CHECK = '1'
-        REPO_DIR = 'repo'
     }
 
     parameters {
@@ -32,26 +31,18 @@ pipeline {
             steps {
                 echo "✨ Cleaning workspace..."
                 sh '''
-                    rm -rf repo
                     rm -rf reports
                     mkdir -p reports
                 '''
             }
         }
 
-        stage('Clone Repo Outside Docker') {
+        stage('Build Docker Image') {
             steps {
-                sh """
-                    git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} ${env.REPO_DIR}
-                """
-            }
-        }
-
-        stage('Build Docker Image from Root Context') {
-            steps {
-                sh """
-                    docker build -t ci-cd-chaos-html:latest ${env.REPO_DIR}
-                """
+                echo "🛠️ Building Docker image..."
+                sh '''
+                    docker build -t ci-cd-chaos-html:latest .
+                '''
             }
         }
 
@@ -101,17 +92,16 @@ pipeline {
 
                     docker.image('ci-cd-chaos-html:latest').inside('-u root') {
                         sh """
-                            cd /app
+                            rm -rf /tests
+                            git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} /tests
 
                             echo '=== Files in repo ==='
-                            ls -l Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
+                            ls -l /tests/Jenkins/jenkins_scenarios/scenario_03_html_reports/tests || true
 
                             pytest \
-                                --html=/app/reports/scenario_03_report.html \
+                                --html=/tests/reports/scenario_03_report.html \
                                 --self-contained-html \
-                                --json-report \
-                                --json-report-file=/app/reports/scenario_03_report.json \
-                                ${relativeTests.join(' ')}
+                                ${relativeTests.collect { "/tests/" + it }.join(' ')}
                         """
                     }
                 }
@@ -120,9 +110,8 @@ pipeline {
 
         stage('Copy Reports to Workspace') {
             steps {
-                // Copy reports from Docker container to Jenkins workspace
                 sh '''
-                    docker cp $(docker ps -alq):/app/reports ./reports || true
+                    docker cp $(docker ps -alq):/tests/reports ./reports || true
                 '''
             }
         }
@@ -130,26 +119,12 @@ pipeline {
         stage('Parse Test Results') {
             steps {
                 script {
-                    def jsonPath = "reports/scenario_03_report.json"
+                    def htmlPath = "reports/scenario_03_report.html"
 
-                    if (fileExists(jsonPath)) {
-                        def report = readJSON file: jsonPath
-                        def summary = report.get("summary", [:])
-                        def failed = summary.get("failed", 0)
-                        def passed = summary.get("passed", 0)
-                        def total = summary.get("total", 0)
-
-                        echo "🔎 Total Tests: ${total}"
-                        echo "✅ Passed: ${passed}"
-                        echo "❌ Failed: ${failed}"
-
-                        if (failed > 0) {
-                            error "❌ Chaos Agent strikes again! Some tests failed. Check the HTML report for details."
-                        } else {
-                            echo "✅ Chaos Agent defeated — all tests passed!"
-                        }
+                    if (fileExists(htmlPath)) {
+                        echo "✅ HTML report generated at: ${htmlPath}"
                     } else {
-                        error "⚠️ Test report JSON not found. Something went wrong."
+                        error "⚠️ HTML report not found. Something went wrong."
                     }
                 }
             }
@@ -160,7 +135,6 @@ pipeline {
         always {
             echo "✨ Archiving Chaos Report Artifacts..."
             archiveArtifacts artifacts: 'reports/**/*.html', fingerprint: true
-            archiveArtifacts artifacts: 'reports/**/*.json', fingerprint: true
         }
     }
 }

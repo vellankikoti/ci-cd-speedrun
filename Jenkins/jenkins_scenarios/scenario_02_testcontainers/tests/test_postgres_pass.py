@@ -1,13 +1,24 @@
-from testcontainers.postgres import PostgresContainer
 import psycopg2
+from urllib.parse import urlparse
+from testcontainers.postgres import PostgresContainer
 
 def test_postgres_container():
     with PostgresContainer("postgres:15") as postgres:
-        # Fix URL for psycopg2
-        connection_url = postgres.get_connection_url().replace(
-            "postgresql+psycopg2", "postgresql"
+        url = postgres.get_connection_url()
+
+        # Remove the +psycopg2 driver name
+        url = url.replace("postgresql+psycopg2", "postgresql")
+
+        parsed = urlparse(url)
+
+        conn = psycopg2.connect(
+            host=parsed.hostname,
+            port=parsed.port,
+            user=parsed.username,
+            password=parsed.password,
+            dbname=parsed.path.lstrip("/"),
         )
-        conn = psycopg2.connect(connection_url)
+
         cursor = conn.cursor()
         cursor.execute("SELECT version();")
         version = cursor.fetchone()

@@ -11,6 +11,7 @@ RUN apt-get update && \
     libpq-dev \
     libssl-dev \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create working dir

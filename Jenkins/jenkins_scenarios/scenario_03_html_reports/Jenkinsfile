@@ -39,7 +39,7 @@ pipeline {
             }
         }
 
-        stage('Clone Repo') {
+        stage('Clone Repo Outside Docker') {
             steps {
                 sh """
                     git clone --single-branch --branch ${params.REPO_BRANCH} ${params.REPO_URL} ${REPO_DIR}
@@ -98,8 +98,6 @@ pipeline {
                     if (relativeTests.size() == 0) {
                         error "⚠️ No tests selected. Chaos Agent cannot be defeated without tests!"
                     }
-
-                    def testArgs = relativeTests.collect { "/tests/" + it }.join(" ")
 
                     docker.image('ci-cd-chaos-html:latest').inside(
                         "-u root -v ${env.WORKSPACE}/${env.REPO_DIR}:/tests -v ${env.WORKSPACE}/reports:/reports"

@@ -7,6 +7,11 @@ pipeline {
             defaultValue: '1',
             description: 'Which app version (1-5) do you want to build and run?'
         )
+        booleanParam(
+            name: 'KEEP_CONTAINER',
+            defaultValue: false,
+            description: 'Keep container running after pipeline ends (for demo)?'
+        )
     }
 
     environment {
@@ -124,9 +129,10 @@ Valid versions are: 1, 2, 3, 4, 5.
             }
         }
 
-
-
         stage('Final Cleanup') {
+            when {
+                expression { return !params.KEEP_CONTAINER }
+            }
             steps {
                 sh "docker rm -f $CONTAINER_NAME || true"
             }

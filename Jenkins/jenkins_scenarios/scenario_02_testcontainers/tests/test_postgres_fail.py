@@ -1,19 +1,15 @@
-import psycopg2
 import pytest
+import psycopg2
 from psycopg2 import OperationalError
 from testcontainers.postgres import PostgresContainer
 
 def test_postgres_container_failure():
     with PostgresContainer("postgres:15") as postgres:
-        # Intentionally break credentials
-        wrong_password = "wrongpass"
+        # Get the correct connection URL
+        connection_url = postgres.get_connection_url()
+
+        # Tamper the URL to simulate failure
+        wrong_url = connection_url.replace("test:test", "test:wrongpassword")
 
         with pytest.raises(OperationalError):
-            conn = psycopg2.connect(
-                host=postgres.get_container_host_ip(),
-                port=postgres.get_exposed_port(5432),
-                user=PostgresContainer.USER,
-                password=wrong_password,
-                database=PostgresContainer.DB
-            )
-            conn.close()
+            psycopg2.connect(wrong_url)

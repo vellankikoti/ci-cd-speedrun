@@ -2,26 +2,66 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'APP_VERSION', defaultValue: '1', description: 'Which app version to build?')
+        string(
+            name: 'APP_VERSION',
+            defaultValue: '1',
+            description: 'Which app version (1-5) do you want to build and run?'
+        )
     }
 
     environment {
-        BUILD_CONTEXT = '/var/jenkins_home/workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_01_docker_build'
         CONTAINER_NAME = "chaos-app-v${params.APP_VERSION}"
+        IMAGE_TAG = "ci-cd-chaos-app:v${params.APP_VERSION}"
+        DOCKERFILE_PATH = "Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile"
     }
 
     stages {
-        stage('Debug Build Context') {
+        stage('Checkout Repo') {
             steps {
-                sh 'ls -la $BUILD_CONTEXT'
+                git(
+                    url: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git',
+                    branch: '<your-branch>',
+                    credentialsId: '<your-creds-id-if-needed>'
+                )
+            }
+        }
+
+        stage('Verify Workspace') {
+            steps {
+                sh '''
+                    echo "=== WORKSPACE ==="
+                    pwd
+                    echo "=== Repo contents ==="
+                    ls -la
+                    echo "=== Checking Dockerfile path ==="
+                    ls -la Jenkins/jenkins_scenarios/scenario_01_docker_build
+                    cat Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile
+                '''
+            }
+        }
+
+        stage('Validate Version') {
+            steps {
+                script {
+                    def allowedVersions = ['1','2','3','4','5']
+                    if (!allowedVersions.contains(params.APP_VERSION)) {
+                        echo '''
+🚫 CHAOS AGENT STRIKES AGAIN! 🚫
+Invalid version!
+'''
+                        error("Invalid APP_VERSION: ${params.APP_VERSION}")
+                    }
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh """
-                docker build -t ci-cd-chaos-app:v${params.APP_VERSION} \\
-                $BUILD_CONTEXT
+                    docker build -t $IMAGE_TAG \\
+                        --build-arg APP_VERSION=${params.APP_VERSION} \\
+                        -f $DOCKERFILE_PATH \\
+                        .
                 """
             }
         }
@@ -29,27 +69,8 @@ pipeline {
         stage('Full Cleanup') {
             steps {
                 sh """
-                echo "Checking for containers using port 3000..."
-
-                ids=\$(docker ps --filter "publish=3000" -q)
-
-                if [ -n "\$ids" ]; then
-                  echo "Stopping containers using port 3000..."
-                  docker rm -f \$ids
-                else
-                  echo "No containers using port 3000."
-                fi
-
-                echo "Checking for existing container named $CONTAINER_NAME..."
-
-                cname_id=\$(docker ps -a --filter "name=^/$CONTAINER_NAME\$" -q)
-
-                if [ -n "\$cname_id" ]; then
-                  echo "Stopping and removing container named $CONTAINER_NAME..."
-                  docker rm -f \$cname_id
-                else
-                  echo "No container named $CONTAINER_NAME exists."
-                fi
+                    docker ps -q --filter publish=3000 | xargs -r docker rm -f || true
+                    docker ps -a --filter "name=$CONTAINER_NAME" -q | xargs -r docker rm -f || true
                 """
             }
         }
@@ -57,37 +78,47 @@ pipeline {
         stage('Run App Container') {
             steps {
                 sh """
-                docker run -d --name $CONTAINER_NAME \\
-                    -p 3000:3000 \\
-                    ci-cd-chaos-app:v${params.APP_VERSION}
-                """
-            }
-        }
-
-        stage('Check App Logs') {
-            steps {
-                sh """
-                sleep 5
-                docker logs $CONTAINER_NAME
+                    docker run -d --name $CONTAINER_NAME \\
+                        -p 3000:3000 \\
+                        $IMAGE_TAG
                 """
             }
         }
 
         stage('Test App HTTP Response') {
             steps {
-                sh """
-                sleep 3
-                curl -i http://localhost:3000 || echo "App not reachable"
-                """
+                script {
+                    def result = sh(
+                        script: '''
+                            sleep 3
+                            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+                            echo "HTTP Status: $STATUS_CODE"
+                            if [ "$STATUS_CODE" -ne 200 ]; then
+                                echo "❌ App did not respond correctly!"
+                                exit 1
+                            else
+                                echo "✅ App responded successfully!"
+                            fi
+                        ''',
+                        returnStatus: true
+                    )
+                    if (result != 0) {
+                        error("App HTTP test failed!")
+                    }
+                }
             }
         }
 
         stage('Final Cleanup') {
             steps {
-                sh """
-                docker rm -f $CONTAINER_NAME || true
-                """
+                sh "docker rm -f $CONTAINER_NAME || true"
             }
+        }
+    }
+
+    post {
+        always {
+            echo "✨ Chaos Agent defeated… for now! Pipeline finished."
         }
     }
 }

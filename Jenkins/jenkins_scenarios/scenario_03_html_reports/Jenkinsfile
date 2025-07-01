@@ -449,73 +449,418 @@ pipeline {
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
-                    // Copy report generator from scenario directory
-                    sh """
-                        echo "📋 Copying report generator..."
-                        cp ${SCENARIO_PATH}/report_generator.py .
-                        chmod +x report_generator.py
-                    """
-                    
-                    // Set environment variables for the report generator
-                    def envVars = []
-                    envVars.add("RUN_CONFIG_VALIDATION=${params.RUN_CONFIG_VALIDATION}")
-                    envVars.add("CONFIG_VALIDATION_PASS=${params.CONFIG_VALIDATION_PASS}")
-                    envVars.add("RUN_API_HEALTH=${params.RUN_API_HEALTH}")
-                    envVars.add("API_HEALTH_PASS=${params.API_HEALTH_PASS}")
-                    envVars.add("RUN_POSTGRES=${params.RUN_POSTGRES}")
-                    envVars.add("POSTGRES_PASS=${params.POSTGRES_PASS}")
-                    envVars.add("RUN_REDIS=${params.RUN_REDIS}")
-                    envVars.add("REDIS_PASS=${params.REDIS_PASS}")
-                    envVars.add("RUN_SECRET_SCAN=${params.RUN_SECRET_SCAN}")
-                    envVars.add("SECRET_SCAN_PASS=${params.SECRET_SCAN_PASS}")
-                    
-                    withEnv(envVars) {
-                        sh """
-                            echo "🎨 Generating enterprise-grade reports..."
-                            
-                            # Run the enterprise report generator
-                            docker run --rm \
-                                -v \$(pwd)/${REPORTS_DIR}:/app/reports \
-                                -v \$(pwd)/report_generator.py:/app/report_generator.py \
-                                -w /app \
-                                -e RUN_CONFIG_VALIDATION="${params.RUN_CONFIG_VALIDATION}" \
-                                -e CONFIG_VALIDATION_PASS="${params.CONFIG_VALIDATION_PASS}" \
-                                -e RUN_API_HEALTH="${params.RUN_API_HEALTH}" \
-                                -e API_HEALTH_PASS="${params.API_HEALTH_PASS}" \
-                                -e RUN_POSTGRES="${params.RUN_POSTGRES}" \
-                                -e POSTGRES_PASS="${params.POSTGRES_PASS}" \
-                                -e RUN_REDIS="${params.RUN_REDIS}" \
-                                -e REDIS_PASS="${params.REDIS_PASS}" \
-                                -e RUN_SECRET_SCAN="${params.RUN_SECRET_SCAN}" \
-                                -e SECRET_SCAN_PASS="${params.SECRET_SCAN_PASS}" \
-                                ${IMAGE_NAME}:${BUILD_TAG} \
-                                python report_generator.py reports
-                            
-                            echo "✅ Enterprise reports generated successfully!"
-                            echo "📋 Generated reports:"
-                            ls -la reports/ | grep "\\.html" || echo "No HTML reports found"
-                        """
-                    }
+                    // Generate a simple but beautiful consolidated report
+                    sh '''
+                        echo "🎨 Generating enterprise-grade reports..."
+                        
+                        cat > reports/index.html << 'REPORT_EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎪 CI/CD Chaos Workshop - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .build-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            margin: 1rem -2rem -2rem -2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            border-top: 4px solid #3498db;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card.success {
+            border-top-color: #27ae60;
+        }
+        
+        .stat-card.danger {
+            border-top-color: #e74c3c;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+        
+        .scenario-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .scenario-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .scenario-header {
+            padding: 1.5rem;
+            border-left: 4px solid #3498db;
+        }
+        
+        .scenario-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .scenario-icon {
+            font-size: 1.5rem;
+        }
+        
+        .scenario-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+        
+        .status-enabled {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-disabled {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .status-pass {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-fail {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .scenario-body {
+            padding: 1.5rem;
+            padding-top: 0;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Dark Theme */
+        [data-theme="dark"] {
+            color: #ecf0f1;
+        }
+        
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+        
+        [data-theme="dark"] .container {
+            background: #2c3e50;
+        }
+        
+        [data-theme="dark"] .stat-card,
+        [data-theme="dark"] .scenario-card {
+            background: #34495e;
+            color: #ecf0f1;
+        }
+        
+        [data-theme="dark"] .stats-grid {
+            background: #34495e;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🎪 CI/CD Chaos Workshop</h1>
+            <div class="subtitle">Enterprise Test Execution Dashboard</div>
+            <div class="build-info">
+                <strong>Build #''' + env.BUILD_NUMBER + '''</strong> | 
+                <strong>Generated:</strong> ''' + new Date().toString() + ''' |
+                <strong>Repository:</strong> github.com/vellankikoti/ci-cd-chaos-workshop |
+                <strong>Branch:</strong> phase-3-jenkins
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Available Scenarios</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-number">''' + (params.RUN_CONFIG_VALIDATION as String == 'true' ? '1' : '0') + '''</div>
+                <div class="stat-label">Config Tests</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-number">''' + (params.RUN_API_HEALTH as String == 'true' ? '1' : '0') + '''</div>
+                <div class="stat-label">API Tests</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-number">''' + (params.RUN_POSTGRES as String == 'true' ? '1' : '0') + '''</div>
+                <div class="stat-label">Database Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">✅</div>
+                <div class="stat-label">Status: Ready</div>
+            </div>
+        </div>
+
+        <div style="padding: 0 2rem 2rem;">
+            <h2>🎯 Test Scenarios</h2>
+            <div class="scenarios-grid">
+                <div class="scenario-card">
+                    <div class="scenario-header" style="border-left-color: #3498db">
+                        <div class="scenario-title">
+                            <span class="scenario-icon">⚙️</span>
+                            <span>Config Validation</span>
+                            <span class="scenario-status ''' + (params.RUN_CONFIG_VALIDATION ? 'status-enabled">ENABLED' : 'status-disabled">DISABLED') + '''</span>
+                        </div>
+                        <div>Mode: <span class="scenario-status ''' + (params.CONFIG_VALIDATION_PASS ? 'status-pass">PASS' : 'status-fail">FAIL') + '''</span></div>
+                    </div>
+                    <div class="scenario-body">
+                        <p>Validates application configuration files, environment variables, and system settings.</p>
+                    </div>
+                </div>
+
+                <div class="scenario-card">
+                    <div class="scenario-header" style="border-left-color: #2ecc71">
+                        <div class="scenario-title">
+                            <span class="scenario-icon">🏥</span>
+                            <span>API Health Check</span>
+                            <span class="scenario-status ''' + (params.RUN_API_HEALTH ? 'status-enabled">ENABLED' : 'status-disabled">DISABLED') + '''</span>
+                        </div>
+                        <div>Mode: <span class="scenario-status ''' + (params.API_HEALTH_PASS ? 'status-pass">PASS' : 'status-fail">FAIL') + '''</span></div>
+                    </div>
+                    <div class="scenario-body">
+                        <p>Verifies API endpoints, response times, and service availability.</p>
+                    </div>
+                </div>
+
+                <div class="scenario-card">
+                    <div class="scenario-header" style="border-left-color: #9b59b6">
+                        <div class="scenario-title">
+                            <span class="scenario-icon">🐘</span>
+                            <span>Postgres Database</span>
+                            <span class="scenario-status ''' + (params.RUN_POSTGRES ? 'status-enabled">ENABLED' : 'status-disabled">DISABLED') + '''</span>
+                        </div>
+                        <div>Mode: <span class="scenario-status ''' + (params.POSTGRES_PASS ? 'status-pass">PASS' : 'status-fail">FAIL') + '''</span></div>
+                    </div>
+                    <div class="scenario-body">
+                        <p>Tests database connectivity, queries, and data integrity using simulated operations.</p>
+                    </div>
+                </div>
+
+                <div class="scenario-card">
+                    <div class="scenario-header" style="border-left-color: #e74c3c">
+                        <div class="scenario-title">
+                            <span class="scenario-icon">📦</span>
+                            <span>Redis Cache</span>
+                            <span class="scenario-status ''' + (params.RUN_REDIS ? 'status-enabled">ENABLED' : 'status-disabled">DISABLED') + '''</span>
+                        </div>
+                        <div>Mode: <span class="scenario-status ''' + (params.REDIS_PASS ? 'status-pass">PASS' : 'status-fail">FAIL') + '''</span></div>
+                    </div>
+                    <div class="scenario-body">
+                        <p>Validates caching mechanisms, Redis connectivity, and data persistence.</p>
+                    </div>
+                </div>
+
+                <div class="scenario-card">
+                    <div class="scenario-header" style="border-left-color: #f39c12">
+                        <div class="scenario-title">
+                            <span class="scenario-icon">🔐</span>
+                            <span>Secret Scanning</span>
+                            <span class="scenario-status ''' + (params.RUN_SECRET_SCAN ? 'status-enabled">ENABLED' : 'status-disabled">DISABLED') + '''</span>
+                        </div>
+                        <div>Mode: <span class="scenario-status ''' + (params.SECRET_SCAN_PASS ? 'status-pass">PASS' : 'status-fail">FAIL') + '''</span></div>
+                    </div>
+                    <div class="scenario-body">
+                        <p>Scans for exposed secrets, credentials, and security vulnerabilities.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🎪 <strong>CI/CD Chaos Workshop</strong> - Enterprise Test Dashboard</p>
+            <p>Master CI/CD resilience through controlled chaos engineering</p>
+            <p style="margin-top: 1rem;">
+                <strong>🎓 Learning Objectives:</strong> Build bulletproof pipelines | Handle real-world failures | 
+                Generate enterprise reports | Master chaos engineering
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const toggle = document.querySelector('.theme-toggle');
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            toggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const toggle = document.querySelector('.theme-toggle');
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            toggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        });
+    </script>
+</body>
+</html>
+REPORT_EOF
+
+                        echo "✅ Enterprise dashboard generated successfully!"
+                        echo "📋 Generated reports:"
+                        ls -la reports/ | grep "\\.html" || echo "Dashboard created: index.html"
+                    '''
                     
                     echo """
-🎉 STUNNING REPORTS GENERATED!
+🎉 STUNNING ENTERPRISE DASHBOARD GENERATED!
 
-📊 Available Reports:
-• index.html - Main Dashboard (START HERE!)
-• Individual scenario reports with beautiful visualizations
-• Interactive charts and graphs
-• Dark/light theme toggle
-• Mobile-responsive design
+📊 Features Include:
+• Beautiful gradient design with modern UI
+• Interactive theme toggle (dark/light mode)
+• Responsive design for all devices
+• Real-time parameter display
+• Color-coded scenario status
+• Professional enterprise styling
 
-🎯 Features Include:
-• Real-time test metrics
-• Pass/fail distribution charts
-• Execution time analysis
-• Color-coded status indicators
-• Collapsible test details
-• Professional enterprise design
+💡 The dashboard shows:
+• Which scenarios are enabled/disabled
+• Pass/fail mode for each scenario
+• Beautiful visual indicators
+• Build and repository information
 
-💡 These reports will WOW your workshop attendees!
+🎯 This simplified but stunning dashboard will still WOW your attendees!
                     """
                 }
             }

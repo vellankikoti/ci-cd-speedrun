@@ -1,331 +1,174 @@
-# 📊 Scenario 03: HTML Reports Chaos - Complete Setup Guide
+# 🔧 Jenkins SCM Setup Guide for Scenario 03
 
-## 🎯 Overview
+## 📋 Step-by-Step Jenkins Configuration
 
-**Scenario 03** focuses on **HTML test reporting under chaotic conditions**. This scenario teaches attendees how to generate beautiful, robust test reports even when systems are failing, connections are dropping, and chaos is everywhere.
+### **Step 1: Create New Jenkins Pipeline Job**
 
-## 🗂️ Project Structure
+1. **In Jenkins Dashboard**, click **"New Item"**
+2. **Enter item name**: `CI-CD-Chaos-Workshop-Scenario-03`
+3. **Select**: **"Pipeline"** (the pipeline icon with the branching lines)
+4. **Click**: **"OK"**
+
+### **Step 2: Configure Pipeline Settings**
+
+In the pipeline configuration page:
+
+#### **General Section**
+- ✅ **Description**: `Scenario 03: HTML Reports Chaos - Master test reporting under chaotic conditions`
+- ✅ **Discard old builds**: Check this and set to keep 10 builds
+
+#### **Build Triggers** (Optional)
+- ✅ **GitHub hook trigger for GITScm polling** (if you want automatic builds)
+- ✅ **Poll SCM**: `H/5 * * * *` (poll every 5 minutes)
+
+#### **Pipeline Section** (This is the important part!)
+- **Definition**: Select **"Pipeline script from SCM"**
+- **SCM**: Select **"Git"**
+- **Repository URL**: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
+- **Credentials**: Select appropriate credentials (or leave empty for public repo)
+- **Branches to build**: `*/phase-3-jenkins`
+- **Script Path**: `Jenkins/jenkins_scenarios/scenario_03_html_reports/Jenkinsfile`
+
+#### **Advanced Options** (Click "Advanced" under Pipeline)
+- **Lightweight checkout**: ✅ Check this for faster checkouts
+
+### **Step 3: Save and Test**
+
+1. **Click**: **"Save"**
+2. **Click**: **"Build with Parameters"** (this should now be available)
+3. **Set parameters**:
+   - All scenarios: ✅ **ENABLED**
+   - All modes: ✅ **PASS** (for first test)
+4. **Click**: **"Build"**
+
+## 🎯 Expected Repository Structure
+
+Your GitHub repo should have this structure:
 
 ```
-Jenkins/jenkins_scenarios/scenario_03_html_reports/
-├── Dockerfile                              # Container for isolated test execution
-├── requirements.txt                        # Python dependencies
-├── Jenkinsfile                            # Jenkins pipeline configuration
-├── tests/                                 # Test files directory
-│   ├── test_config_validation_pass.py     # Configuration validation (success)
-│   ├── test_config_validation_fail.py     # Configuration validation (failure)
-│   ├── test_api_health_pass.py           # API health checks (success)
-│   ├── test_api_health_fail.py           # API health checks (failure)
-│   ├── test_postgres_pass.py             # PostgreSQL tests (success)
-│   ├── test_postgres_fail.py             # PostgreSQL tests (failure)
-│   ├── test_redis_pass.py                # Redis cache tests (success)
-│   ├── test_redis_fail.py                # Redis cache tests (failure)
-│   ├── test_secret_scan_pass.py          # Secret scanning (success)
-│   └── test_secret_scan_fail.py          # Secret scanning (failure)
-└── SCENARIO_03_SETUP.md                  # This file
+ci-cd-chaos-workshop/
+├── Jenkins/
+│   └── jenkins_scenarios/
+│       └── scenario_03_html_reports/
+│           ├── Jenkinsfile                    ← Pipeline script
+│           ├── Dockerfile                     ← Container definition
+│           ├── requirements.txt               ← Python dependencies
+│           └── tests/                         ← Test files
+│               ├── test_config_validation_pass.py
+│               ├── test_config_validation_fail.py
+│               ├── test_api_health_pass.py
+│               ├── test_api_health_fail.py
+│               ├── test_postgres_pass.py
+│               ├── test_postgres_fail.py
+│               ├── test_redis_pass.py
+│               ├── test_redis_fail.py
+│               ├── test_secret_scan_pass.py
+│               └── test_secret_scan_fail.py
+└── README.md
 ```
 
-## 🔧 Prerequisites
+## 🔧 Updated Jenkinsfile Features
 
-### Required Software
-- **Docker** 20.10+ with Docker Compose
-- **Jenkins** 2.400+ with required plugins
-- **Python** 3.11+
-- **Git**
+The updated Jenkinsfile now includes:
 
-### Jenkins Plugins Required
-- HTML Publisher Plugin
-- Pipeline Plugin
-- Docker Pipeline Plugin
-- Workspace Cleanup Plugin
+### **✅ SCM Integration**
+- **Automatic checkout** from your GitHub repository
+- **File verification** to ensure all required files exist
+- **Branch-specific** configuration (`phase-3-jenkins`)
 
-### System Requirements
-- 8GB RAM (minimum 4GB)
-- 15GB free disk space
-- Internet connectivity for container pulls
+### **✅ Self-Contained Execution**
+- **No manual file copying** required
+- **All paths resolved** automatically from SCM
+- **Git information** displayed in reports
 
-## 🚀 Quick Setup
+### **✅ Enhanced Error Handling**
+- **Pre-flight checks** for required files
+- **Detailed error messages** if files are missing
+- **Graceful failure handling** with educational messages
 
-### 1. **Copy Files to Your Repository**
+### **✅ Beautiful Reporting**
+- **Git repository info** displayed in consolidated report
+- **Build metadata** with timestamps
+- **Enhanced visual design** with gradients and hover effects
 
-Place all the scenario files in your repository structure:
+## 🚀 Quick Test Commands
+
+If you want to test locally before Jenkins:
 
 ```bash
-# Create the scenario directory
-mkdir -p Jenkins/jenkins_scenarios/scenario_03_html_reports/tests
+# Clone your repo
+git clone https://github.com/vellankikoti/ci-cd-chaos-workshop.git
+cd ci-cd-chaos-workshop
+git checkout phase-3-jenkins
 
-# Copy all files to the correct locations
-# (Copy the Jenkinsfile, Dockerfile, requirements.txt, and all test files)
-```
-
-### 2. **Build and Test Locally (Optional)**
-
-```bash
-# Navigate to scenario directory
+# Navigate to scenario
 cd Jenkins/jenkins_scenarios/scenario_03_html_reports
 
 # Build Docker image
 docker build -t scenario-03-test .
 
-# Test a simple passing scenario
+# Run a quick test
+mkdir -p test-reports
 docker run --rm \
   -v $(pwd)/test-reports:/app/reports \
   scenario-03-test \
   pytest tests/test_config_validation_pass.py \
-    --html=reports/local_test.html \
+    --html=reports/test.html \
     --self-contained-html \
     -v
 
-# Check the generated report
-open test-reports/local_test.html
+# Check the report
+open test-reports/test.html  # On Mac
+# or
+xdg-open test-reports/test.html  # On Linux
 ```
-
-### 3. **Setup Jenkins Pipeline**
-
-1. **Create New Pipeline Job** in Jenkins
-2. **Configure Pipeline**:
-   - Pipeline script from SCM
-   - Repository URL: `<your-repository-url>`
-   - Script Path: `Jenkins/jenkins_scenarios/scenario_03_html_reports/Jenkinsfile`
-3. **Save Configuration**
-
-### 4. **Run Your First Test**
-
-1. Click **"Build with Parameters"**
-2. **Start Simple**: Enable all mini-scenarios, set all to "pass" mode
-3. **Execute Build** and watch the beautiful output!
-
-## 🎪 Mini-Scenarios Explained
-
-### ⚙️ **Config Validation**
-- **Purpose**: Test configuration file parsing and validation
-- **Pass Mode**: Valid YAML/JSON configs, proper environment variables
-- **Fail Mode**: Malformed configs, missing variables, security violations
-
-### 🏥 **API Health Checks**
-- **Purpose**: Test API endpoint health monitoring
-- **Pass Mode**: Healthy APIs, proper response formats, good performance
-- **Fail Mode**: Service unavailable, timeouts, malformed responses
-
-### 🐘 **PostgreSQL Database**
-- **Purpose**: Test database connectivity using testcontainers
-- **Pass Mode**: Successful CRUD operations, transactions, connection pooling
-- **Fail Mode**: Connection failures, constraint violations, deadlocks
-
-### 📦 **Redis Cache**
-- **Purpose**: Test caching mechanisms and Redis operations
-- **Pass Mode**: Successful cache operations, data persistence, pub/sub
-- **Fail Mode**: Connection timeouts, memory exhaustion, data corruption
-
-### 🔐 **Secret Scanning**
-- **Purpose**: Test security scanning and secret management
-- **Pass Mode**: Proper secret handling, secure storage, masked logging
-- **Fail Mode**: Exposed secrets, weak encryption, plaintext passwords
-
-## 🎛️ Pipeline Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `RUN_CONFIG_VALIDATION` | Enable/disable config validation tests | `true` |
-| `RUN_API_HEALTH` | Enable/disable API health check tests | `true` |
-| `RUN_POSTGRES` | Enable/disable PostgreSQL tests | `true` |
-| `RUN_REDIS` | Enable/disable Redis cache tests | `true` |
-| `RUN_SECRET_SCAN` | Enable/disable secret scanning tests | `true` |
-| `CONFIG_VALIDATION_PASS` | Config validation: pass (true) or fail (false) | `true` |
-| `API_HEALTH_PASS` | API health: pass (true) or fail (false) | `true` |
-| `POSTGRES_PASS` | PostgreSQL: pass (true) or fail (false) | `true` |
-| `REDIS_PASS` | Redis: pass (true) or fail (false) | `true` |
-| `SECRET_SCAN_PASS` | Secret scan: pass (true) or fail (false) | `true` |
-
-## 📊 Understanding the Reports
-
-### **HTML Reports**
-Each mini-scenario generates a beautiful HTML report with:
-- ✅ **Test execution summary** with pass/fail counts
-- 📈 **Detailed test results** with stack traces for failures
-- 🕒 **Execution timeline** showing performance metrics
-- 📸 **Screenshots and logs** where applicable
-- 🎨 **Responsive design** that works on mobile and desktop
-
-### **JSON Reports**
-Machine-readable reports containing:
-- 📊 **Structured test data** for automated analysis
-- 🔍 **Detailed error information** for debugging
-- ⏱️ **Performance metrics** and timing information
-- 🏷️ **Test metadata** and tags
-
-### **Consolidated Report**
-A beautiful index page that:
-- 🎯 **Summarizes all mini-scenarios** in one view
-- 🔗 **Links to detailed reports** for each scenario
-- 📋 **Shows overall health** of the testing pipeline
-- 🎪 **Provides workshop progress** tracking
-
-## 🔧 Customization Guide
-
-### **Adding New Test Cases**
-
-1. **Create new test file**:
-```python
-# tests/test_my_feature_pass.py
-import pytest
-
-def test_my_feature_works():
-    """Test that my feature works correctly"""
-    assert True, "My feature should work"
-```
-
-2. **Update Jenkinsfile** to include your new mini-scenario
-3. **Add parameters** for enable/disable and pass/fail control
-
-### **Modifying Existing Tests**
-
-Each test file follows this pattern:
-```python
-class TestFeaturePass:  # or TestFeatureFail
-    """Test feature scenarios that should pass/fail"""
-    
-    def test_specific_functionality(self):
-        """Test description for learning purposes"""
-        # Test implementation
-        assert condition, "Helpful error message"
-```
-
-### **Customizing Reports**
-
-The pipeline generates reports using:
-```bash
-pytest tests/test_*.py \
-    --html=reports/report.html \
-    --self-contained-html \
-    --json-report \
-    --json-report-file=reports/report.json \
-    -v --tb=short --color=yes
-```
-
-You can modify report generation by:
-- Adding custom pytest plugins
-- Modifying HTML templates
-- Adding additional report formats
-
-## 🎓 Learning Paths
-
-### 🔰 **Beginner Path**
-1. **Run all scenarios in PASS mode** - understand the baseline
-2. **Enable individual FAIL scenarios** - see what chaos looks like
-3. **Study the HTML reports** - learn to read test results
-4. **Fix simple issues** - modify tests to understand behavior
-
-### 🏅 **Intermediate Path**
-1. **Mix pass/fail scenarios** - simulate real-world conditions
-2. **Analyze report patterns** - understand failure correlation
-3. **Modify test parameters** - experiment with different configurations
-4. **Create custom scenarios** - add your own mini-scenarios
-
-### 🚀 **Advanced Path**
-1. **Run full chaos mode** - all scenarios in FAIL mode
-2. **Implement monitoring** - track report metrics over time
-3. **Integrate with CI/CD** - use in your real pipelines
-4. **Teach others** - become a chaos engineering mentor
 
 ## 🔍 Troubleshooting
 
-### **Common Issues**
+### **Issue: "Pipeline script from SCM" not visible**
+- Make sure you selected **"Pipeline"** project type, not "Freestyle"
+- The SCM option appears in the **Pipeline section** at the bottom of the config page
 
-#### **Docker Build Failures**
-```bash
-# Check Docker daemon
-docker info
+### **Issue: Repository not found**
+- Verify the repository URL: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
+- Check if the repository is public or if you need credentials
+- Verify the branch exists: `phase-3-jenkins`
 
-# Clean up Docker resources
-docker system prune -f
+### **Issue: Script path not found**
+- Verify the Jenkinsfile exists at: `Jenkins/jenkins_scenarios/scenario_03_html_reports/Jenkinsfile`
+- Check file permissions and that it's committed to the branch
 
-# Rebuild with no cache
-docker build --no-cache -t scenario-03-test .
-```
-
-#### **Testcontainer Issues**
-```bash
-# Ensure Docker socket is accessible
-ls -la /var/run/docker.sock
-
-# Check Docker permissions
-docker run hello-world
-
-# Clean up testcontainer resources
-docker container prune -f
-```
-
-#### **Report Generation Issues**
-```bash
-# Install pytest dependencies manually
-pip install pytest-html pytest-json-report
-
-# Test report generation locally
-pytest tests/test_config_validation_pass.py \
-  --html=test_report.html \
-  --self-contained-html
-
-# Check file permissions
-chmod 755 reports/
-```
-
-#### **Jenkins Permission Issues**
+### **Issue: Docker permissions**
 ```bash
 # Add jenkins user to docker group
 sudo usermod -aG docker jenkins
-
-# Restart Jenkins service
 sudo systemctl restart jenkins
 
-# Check Jenkins can access Docker
+# Test Docker access
 sudo -u jenkins docker ps
 ```
 
-### **Environment Variables**
+### **Issue: No test files found**
+The pipeline will check for required files and show detailed error messages if anything is missing.
 
-The scenario uses these environment variables:
-```bash
-# Required for secret scanning tests
-export SECRET_API_KEY="demo-secret-key-12345"
-export DATABASE_PASSWORD="super-secret-password"
+## 🎉 Success Indicators
 
-# Optional for extended testing
-export ENVIRONMENT="test"
-export DEBUG_MODE="false"
-```
+You'll know everything is working when:
 
-## 🎉 Success Metrics
+1. **✅ Build starts** with "Build with Parameters" button
+2. **✅ Checkout stage** shows your repository URL and branch
+3. **✅ Docker build** completes successfully  
+4. **✅ Test stages** run (pass or fail as configured)
+5. **✅ Reports generated** with beautiful HTML output
+6. **✅ HTML Publisher** shows multiple report links
 
-Track your learning progress:
+## 🎪 Ready to Go!
 
-- **📊 Report Quality**: Can you interpret test results effectively?
-- **🔧 Problem Resolution**: How quickly can you identify and fix issues?
-- **🎯 Scenario Mastery**: Can you explain each failure mode's root cause?
-- **🔄 Pipeline Improvement**: Can you enhance the reporting pipeline?
-- **👥 Knowledge Transfer**: Can you teach others what you've learned?
+Once this is set up, you can:
+- **Experiment** with different pass/fail combinations
+- **Study** the beautiful HTML reports
+- **Learn** from intentional failures
+- **Share** your pipeline with team members
+- **Extend** with additional scenarios
 
-## 🔗 Additional Resources
-
-### **Documentation Links**
-- [pytest Documentation](https://docs.pytest.org/)
-- [pytest-html Plugin](https://pytest-html.readthedocs.io/)
-- [Testcontainers Python](https://testcontainers-python.readthedocs.io/)
-- [Jenkins HTML Publisher](https://plugins.jenkins.io/htmlpublisher/)
-
-### **Best Practices**
-- Always use testcontainers for database/cache testing
-- Generate self-contained HTML reports for portability
-- Include both positive and negative test cases
-- Use descriptive test names and error messages
-- Archive reports for historical analysis
-
-### **Next Steps**
-1. Master this scenario completely
-2. Move to Scenario 04 (Secrets Management)
-3. Integrate learnings into your production pipelines
-4. Share your experience with the community
-
----
-
-**🚀 Ready to master HTML reporting under chaos? Let's build some resilient test pipelines!**
+The pipeline is now **fully self-contained** and will pull everything from your GitHub repository automatically! 🚀

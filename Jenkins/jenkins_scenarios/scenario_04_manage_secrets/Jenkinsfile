@@ -45,7 +45,7 @@ pipeline {
             when { expression { params.RUN_SCENARIO_4 } }
             steps {
                 echo "\uD83D\uDCC1 Archiving reports..."
-                archiveArtifacts artifacts: "${env.SCENARIO_DIR}/reports/*.html,${env.SCENARIO_DIR}/reports/*.json", fingerprint: true
+                archiveArtifacts artifacts: 'reports/*.html,reports/*.json,reports/*.csv', allowEmptyArchive: true
             }
         }
     }
@@ -64,7 +64,7 @@ pipeline {
         }
 
         // FIXED archiveArtifacts path
-        archiveArtifacts artifacts: 'reports/*.html, reports/*.json, reports/*.csv', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'reports/*.html,reports/*.json,reports/*.csv', allowEmptyArchive: true
 
         // Clean up Docker image
         sh 'docker rmi $IMAGE_NAME || true'

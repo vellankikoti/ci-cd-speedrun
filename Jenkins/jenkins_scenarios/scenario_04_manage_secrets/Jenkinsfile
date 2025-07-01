@@ -51,20 +51,32 @@ pipeline {
     }
 
     post {
-        always {
-            script {
-                echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
-                echo "Reports directory: ${env.SCENARIO_DIR}/reports"
-                echo "See Jenkins artifacts for HTML and JSON reports."
-            }
-            // Clean up Docker images (optional, for CI hygiene)
-            sh 'docker rmi $IMAGE_NAME || true'
+    always {
+        script {
+            echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
+
+            // Print contents of reports folder
+            sh 'echo "Listing reports directory:"'
+            sh 'ls -l reports || echo "No reports found."'
+
+            echo "Reports directory: reports"
+            echo "See Jenkins artifacts for HTML and JSON reports."
         }
-        failure {
-            echo "\u274C Scenario 4 failed! Check the HTML/JSON reports for details."
-        }
-        success {
-            echo "\u2705 Scenario 4 passed! No secrets found (if PASS mode)."
-        }
+
+        // Archive artifacts from correct path
+        archiveArtifacts artifacts: 'reports/*.html, reports/*.json', allowEmptyArchive: true
+
+        // Clean up Docker image
+        sh 'docker rmi $IMAGE_NAME || true'
     }
+
+    failure {
+        echo "❌ Scenario 4 failed! Check the HTML/JSON reports for details."
+    }
+
+    success {
+        echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
+    }
+}
+
 }

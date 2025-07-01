@@ -1,5 +1,3 @@
-# Jenkins/jenkins_scenarios/scenario_04_manage_secrets/Dockerfile
-
 FROM python:3.12-slim
 
 # Install system dependencies
@@ -10,21 +8,20 @@ RUN apt-get update && \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install gitleaks (Linux x64 static binary)
-# Pinning a specific version is safer for reproducibility
-ARG GITLEAKS_VERSION="8.18.2"
-
+# Install gitleaks
 RUN curl -sSL \
-      -o /usr/local/bin/gitleaks \
-      "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64" \
+      -o /tmp/gitleaks.tar.gz \
+      "https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz" \
+    && tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin \
     && chmod +x /usr/local/bin/gitleaks \
+    && rm /tmp/gitleaks.tar.gz \
     && gitleaks version
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy test scripts and report templates
+# Copy test scripts and templates
 COPY tests/ /tests/
 COPY report_templates/ /report_templates/
 

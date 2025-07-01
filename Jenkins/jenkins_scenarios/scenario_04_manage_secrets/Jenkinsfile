@@ -9,15 +9,16 @@ pipeline {
     environment {
         REPORTS_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets/reports"
         SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets"
+        IMAGE_NAME = "scenario4-secrets"
     }
 
     stages {
         stage('Build Docker Image') {
             when { expression { params.RUN_SCENARIO_4 } }
             steps {
-                echo "Building Docker image for Scenario 4..."
+                echo "\uD83D\uDEE0 Building Docker image for Scenario 4..."
                 dir("${env.SCENARIO_DIR}") {
-                    sh 'docker build -t scenario4-secrets .'
+                    sh 'docker build --pull --no-cache -t $IMAGE_NAME .'
                 }
             }
         }
@@ -25,16 +26,16 @@ pipeline {
         stage('Run Secret Scan') {
             when { expression { params.RUN_SCENARIO_4 } }
             steps {
-                echo "Running Secret Scan in Docker..."
+                echo "\uD83D\uDD0E Running Secret Scan in Docker..."
                 dir("${env.SCENARIO_DIR}") {
                     sh '''
+                        set -e
                         mkdir -p reports
+                        echo "\n\uD83D\uDCC2 Reports directory: $(pwd)/reports\n"
                         docker run --rm \
                             -e SCENARIO_4_PASS=${SCENARIO_4_PASS} \
-                            -v $(pwd)/tests:/tests \
-                            -v $(pwd)/report_templates:/report_templates \
                             -v $(pwd)/reports:/reports \
-                            scenario4-secrets
+                            $IMAGE_NAME
                     '''
                 }
             }
@@ -43,7 +44,7 @@ pipeline {
         stage('Archive Reports') {
             when { expression { params.RUN_SCENARIO_4 } }
             steps {
-                echo "Archiving reports..."
+                echo "\uD83D\uDCC1 Archiving reports..."
                 archiveArtifacts artifacts: "${env.SCENARIO_DIR}/reports/*.html,${env.SCENARIO_DIR}/reports/*.json", fingerprint: true
             }
         }
@@ -57,13 +58,13 @@ pipeline {
                 echo "See Jenkins artifacts for HTML and JSON reports."
             }
             // Clean up Docker images (optional, for CI hygiene)
-            sh 'docker rmi scenario4-secrets || true'
+            sh 'docker rmi $IMAGE_NAME || true'
         }
         failure {
-            echo "❌ Scenario 4 failed! Check the HTML/JSON reports for details."
+            echo "\u274C Scenario 4 failed! Check the HTML/JSON reports for details."
         }
         success {
-            echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
+            echo "\u2705 Scenario 4 passed! No secrets found (if PASS mode)."
         }
     }
 }

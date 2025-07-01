@@ -55,21 +55,25 @@ pipeline {
         script {
             echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
 
-            // Show files so we confirm existence
+            // Show contents of the reports folder
             sh 'echo "Listing reports directory:"'
             sh 'ls -l reports || echo "No reports found."'
 
             echo "Reports directory: reports"
-            echo "See Jenkins artifacts for HTML and JSON reports."
+            echo "See Jenkins artifacts for HTML, JSON, and CSV reports."
         }
 
+        // FIXED archiveArtifacts path
         archiveArtifacts artifacts: 'reports/*.html, reports/*.json, reports/*.csv', allowEmptyArchive: true
 
+        // Clean up Docker image
         sh 'docker rmi $IMAGE_NAME || true'
     }
+
     failure {
         echo "❌ Scenario 4 failed! Check the HTML/JSON reports for details."
     }
+
     success {
         echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
     }

@@ -109,21 +109,15 @@ pipeline {
                             exit 1
                         fi
                         
-                        # Check for Dockerfile
-                        if [ -f "${SCENARIO_PATH}/Dockerfile" ]; then
-                            echo "✅ Dockerfile found"
-                        else
-                            echo "❌ Dockerfile not found in ${SCENARIO_PATH}"
-                            exit 1
-                        fi
-                        
-                        # Check for requirements.txt
-                        if [ -f "${SCENARIO_PATH}/requirements.txt" ]; then
-                            echo "✅ requirements.txt found"
-                        else
-                            echo "❌ requirements.txt not found in ${SCENARIO_PATH}"
-                            exit 1
-                        fi
+                        # Check for required files
+                        for file in Dockerfile requirements.txt report_generator.py; do
+                            if [ -f "${SCENARIO_PATH}/${file}" ]; then
+                                echo "✅ ${file} found"
+                            else
+                                echo "❌ ${file} not found in ${SCENARIO_PATH}"
+                                exit 1
+                            fi
+                        done
                         
                         # Check for tests directory
                         if [ -d "${SCENARIO_PATH}/tests" ]; then
@@ -446,230 +440,83 @@ pipeline {
             }
         }
         
-        stage('📊 Generate Consolidated Report') {
+        stage('🎨 Generate Enterprise Reports') {
             steps {
                 script {
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                      📊 GENERATING CONSOLIDATED REPORT                      ║
+║                      🎨 GENERATING ENTERPRISE REPORTS                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
-                    // Generate consolidated HTML report
-                    sh '''
-                        echo "📊 Creating consolidated report..."
-                        
-                        cat > reports/scenario_03_consolidated_report.html << 'REPORT_EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>📊 Scenario 03: HTML Reports Chaos - Consolidated Report</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 40px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            background: white; 
-            padding: 40px; 
-            border-radius: 15px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-        h1 { 
-            color: #2c3e50; 
-            text-align: center; 
-            margin-bottom: 40px; 
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-        .test-section { 
-            margin: 30px 0; 
-            padding: 25px; 
-            border: 2px solid #ecf0f1; 
-            border-radius: 10px; 
-            background: #f8f9fa;
-            transition: all 0.3s ease;
-        }
-        .test-section:hover {
-            border-color: #3498db;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
-        }
-        .test-section h3 { 
-            color: #3498db; 
-            margin-top: 0; 
-            font-size: 1.5em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .status { 
-            padding: 8px 16px; 
-            border-radius: 25px; 
-            color: white; 
-            font-weight: bold; 
-            font-size: 0.9em;
-            display: inline-block;
-            margin-left: auto;
-        }
-        .pass { background: linear-gradient(45deg, #27ae60, #2ecc71); }
-        .fail { background: linear-gradient(45deg, #e74c3c, #c0392b); }
-        .skip { background: linear-gradient(45deg, #95a5a6, #7f8c8d); }
-        a { 
-            color: #3498db; 
-            text-decoration: none; 
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        a:hover { 
-            text-decoration: underline; 
-            color: #2980b9;
-        }
-        .summary { 
-            background: linear-gradient(45deg, #f39c12, #e67e22); 
-            color: white; 
-            padding: 25px; 
-            border-radius: 10px; 
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        .summary h2 {
-            margin: 0 0 15px 0;
-            font-size: 1.8em;
-        }
-        .footer { 
-            text-align: center; 
-            margin-top: 50px; 
-            color: #7f8c8d; 
-            font-style: italic;
-        }
-        .icon { font-size: 1.2em; }
-        .build-info {
-            background: #ecf0f1;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: center;
-            color: #2c3e50;
-        }
-        .git-info {
-            background: #3498db;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📊 Scenario 03: HTML Reports Chaos</h1>
-        
-        <div class="git-info">
-            <strong>🔄 Repository:</strong> https://github.com/vellankikoti/ci-cd-chaos-workshop.git<br>
-            <strong>🌿 Branch:</strong> phase-3-jenkins
-        </div>
-        
-        <div class="build-info">
-            <strong>🏗️ Build #''' + env.BUILD_NUMBER + '''</strong> | Generated on ''' + new Date().toString() + '''
-        </div>
-        
-        <div class="summary">
-            <h2>🎯 Mission Summary</h2>
-            <p>Testing HTML report generation under chaotic conditions across 5 critical enterprise scenarios.</p>
-        </div>
-REPORT_EOF
+                    // Copy report generator from scenario directory
+                    sh """
+                        echo "📋 Copying report generator..."
+                        cp ${SCENARIO_PATH}/report_generator.py .
+                        chmod +x report_generator.py
+                    """
+                    
+                    // Set environment variables for the report generator
+                    def envVars = []
+                    envVars.add("RUN_CONFIG_VALIDATION=${params.RUN_CONFIG_VALIDATION}")
+                    envVars.add("CONFIG_VALIDATION_PASS=${params.CONFIG_VALIDATION_PASS}")
+                    envVars.add("RUN_API_HEALTH=${params.RUN_API_HEALTH}")
+                    envVars.add("API_HEALTH_PASS=${params.API_HEALTH_PASS}")
+                    envVars.add("RUN_POSTGRES=${params.RUN_POSTGRES}")
+                    envVars.add("POSTGRES_PASS=${params.POSTGRES_PASS}")
+                    envVars.add("RUN_REDIS=${params.RUN_REDIS}")
+                    envVars.add("REDIS_PASS=${params.REDIS_PASS}")
+                    envVars.add("RUN_SECRET_SCAN=${params.RUN_SECRET_SCAN}")
+                    envVars.add("SECRET_SCAN_PASS=${params.SECRET_SCAN_PASS}")
+                    
+                    withEnv(envVars) {
+                        sh """
+                            echo "🎨 Generating enterprise-grade reports..."
+                            
+                            # Run the enterprise report generator
+                            docker run --rm \
+                                -v \$(pwd)/${REPORTS_DIR}:/app/reports \
+                                -v \$(pwd)/report_generator.py:/app/report_generator.py \
+                                -w /app \
+                                -e RUN_CONFIG_VALIDATION="${params.RUN_CONFIG_VALIDATION}" \
+                                -e CONFIG_VALIDATION_PASS="${params.CONFIG_VALIDATION_PASS}" \
+                                -e RUN_API_HEALTH="${params.RUN_API_HEALTH}" \
+                                -e API_HEALTH_PASS="${params.API_HEALTH_PASS}" \
+                                -e RUN_POSTGRES="${params.RUN_POSTGRES}" \
+                                -e POSTGRES_PASS="${params.POSTGRES_PASS}" \
+                                -e RUN_REDIS="${params.RUN_REDIS}" \
+                                -e REDIS_PASS="${params.REDIS_PASS}" \
+                                -e RUN_SECRET_SCAN="${params.RUN_SECRET_SCAN}" \
+                                -e SECRET_SCAN_PASS="${params.SECRET_SCAN_PASS}" \
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                python report_generator.py reports
+                            
+                            echo "✅ Enterprise reports generated successfully!"
+                            echo "📋 Generated reports:"
+                            ls -la reports/ | grep "\\.html" || echo "No HTML reports found"
+                        """
+                    }
+                    
+                    echo """
+🎉 STUNNING REPORTS GENERATED!
 
-                        # Add test sections based on enabled parameters
-                        if [ "''' + params.RUN_CONFIG_VALIDATION + '''" = "true" ]; then
-                            cat >> reports/scenario_03_consolidated_report.html << 'SECTION_EOF'
-        <div class="test-section">
-            <h3>
-                <span class="icon">⚙️</span> Config Validation Tests
-                <span class="status ''' + (params.CONFIG_VALIDATION_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') + '''</span>
-            </h3>
-            <p>Validates application configuration files, environment variables, and system settings.</p>
-            <a href="config_validation_''' + (params.CONFIG_VALIDATION_PASS ? 'pass' : 'fail') + '''_report.html">📊 View Detailed Report</a>
-        </div>
-SECTION_EOF
-                        fi
+📊 Available Reports:
+• index.html - Main Dashboard (START HERE!)
+• Individual scenario reports with beautiful visualizations
+• Interactive charts and graphs
+• Dark/light theme toggle
+• Mobile-responsive design
 
-                        if [ "''' + params.RUN_API_HEALTH + '''" = "true" ]; then
-                            cat >> reports/scenario_03_consolidated_report.html << 'SECTION_EOF'
-        <div class="test-section">
-            <h3>
-                <span class="icon">🏥</span> API Health Check Tests
-                <span class="status ''' + (params.API_HEALTH_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') + '''</span>
-            </h3>
-            <p>Verifies API endpoints, response times, and service availability.</p>
-            <a href="api_health_''' + (params.API_HEALTH_PASS ? 'pass' : 'fail') + '''_report.html">📊 View Detailed Report</a>
-        </div>
-SECTION_EOF
-                        fi
+🎯 Features Include:
+• Real-time test metrics
+• Pass/fail distribution charts
+• Execution time analysis
+• Color-coded status indicators
+• Collapsible test details
+• Professional enterprise design
 
-                        if [ "''' + params.RUN_POSTGRES + '''" = "true" ]; then
-                            cat >> reports/scenario_03_consolidated_report.html << 'SECTION_EOF'
-        <div class="test-section">
-            <h3>
-                <span class="icon">🐘</span> Postgres Database Tests
-                <span class="status ''' + (params.POSTGRES_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') + '''</span>
-            </h3>
-            <p>Tests database connectivity, queries, and data integrity using testcontainers.</p>
-            <a href="postgres_''' + (params.POSTGRES_PASS ? 'pass' : 'fail') + '''_report.html">📊 View Detailed Report</a>
-        </div>
-SECTION_EOF
-                        fi
-
-                        if [ "''' + params.RUN_REDIS + '''" = "true" ]; then
-                            cat >> reports/scenario_03_consolidated_report.html << 'SECTION_EOF'
-        <div class="test-section">
-            <h3>
-                <span class="icon">📦</span> Redis Cache Tests
-                <span class="status ''' + (params.REDIS_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') + '''</span>
-            </h3>
-            <p>Validates caching mechanisms, Redis connectivity, and data persistence.</p>
-            <a href="redis_''' + (params.REDIS_PASS ? 'pass' : 'fail') + '''_report.html">📊 View Detailed Report</a>
-        </div>
-SECTION_EOF
-                        fi
-
-                        if [ "''' + params.RUN_SECRET_SCAN + '''" = "true" ]; then
-                            cat >> reports/scenario_03_consolidated_report.html << 'SECTION_EOF'
-        <div class="test-section">
-            <h3>
-                <span class="icon">🔐</span> Secret Scanning Tests
-                <span class="status ''' + (params.SECRET_SCAN_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') + '''</span>
-            </h3>
-            <p>Scans for exposed secrets, credentials, and security vulnerabilities.</p>
-            <a href="secret_scan_''' + (params.SECRET_SCAN_PASS ? 'pass' : 'fail') + '''_report.html">📊 View Detailed Report</a>
-        </div>
-SECTION_EOF
-                        fi
-
-                        cat >> reports/scenario_03_consolidated_report.html << 'FOOTER_EOF'
-        
-        <div class="footer">
-            <p>🎪 CI/CD Chaos Workshop - Scenario 03 Complete!</p>
-            <p>Ready to tackle real-world HTML reporting challenges? 🚀</p>
-        </div>
-    </div>
-</body>
-</html>
-FOOTER_EOF
-
-                        echo "✅ Consolidated report generated successfully"
-                        
-                        # List generated reports
-                        echo "📋 Generated reports:"
-                        ls -la reports/ || echo "No reports directory found"
-                    '''
+💡 These reports will WOW your workshop attendees!
+                    """
                 }
             }
         }
@@ -687,17 +534,16 @@ FOOTER_EOF
                 // Archive all reports
                 archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true, fingerprint: true
                 
-                // Since HTML Publisher plugin is not available, we'll use a workaround
-                // The reports are archived and can be downloaded from Jenkins artifacts
                 echo """
-📊 REPORTS ARCHIVED SUCCESSFULLY!
+📊 ENTERPRISE REPORTS ARCHIVED SUCCESSFULLY!
 
-🎯 How to view your reports:
+🎯 How to view your stunning reports:
 1. Go to this build's page in Jenkins
 2. Click on "Artifacts" 
-3. Download and open the HTML files:
-   • scenario_03_consolidated_report.html (Main report)
-   • Individual test reports in the reports/ folder
+3. Download and open index.html (MAIN DASHBOARD)
+4. Navigate through individual scenario reports
+5. Toggle dark/light theme for optimal viewing
+6. Share with your team for maximum impact!
 
 📋 Available reports:
                 """
@@ -705,10 +551,10 @@ FOOTER_EOF
                 // List available reports
                 sh '''
                     if [ -d "reports" ]; then
-                        echo "📁 Reports generated:"
-                        find reports -name "*.html" -exec echo "   📊 {}" \\;
+                        echo "📁 Enterprise Dashboard & Reports:"
+                        find reports -name "*.html" -exec echo "   🎨 {}" \\;
                         echo ""
-                        echo "📄 JSON reports:"
+                        echo "📄 Raw JSON data:"
                         find reports -name "*.json" -exec echo "   📋 {}" \\;
                     else
                         echo "❌ No reports directory found"
@@ -721,17 +567,26 @@ FOOTER_EOF
 📖 What you accomplished:
 • Built Docker images for isolated testing
 • Executed multiple chaos testing scenarios
-• Generated beautiful HTML reports
+• Generated STUNNING enterprise-grade HTML reports
+• Created interactive dashboards with charts and graphs
 • Learned about CI/CD resilience patterns
 
 🚀 Next steps:
-• Download and review the HTML reports
+• Download and review the beautiful HTML reports
+• Start with index.html for the main dashboard
 • Experiment with different parameter combinations
 • Try running some scenarios in FAIL mode for learning
-• Apply these patterns to your real-world pipelines
+• Share these gorgeous reports with your team!
 
-💡 Pro tip: The consolidated report gives you a great overview,
-   then dive into individual scenario reports for details!
+💡 Pro tip: The reports include:
+   • Interactive pie charts showing pass/fail distribution
+   • Bar charts for performance analysis
+   • Dark/light theme toggle
+   • Mobile-responsive design
+   • Professional color coding
+   • Collapsible error details
+
+🎪 These reports will be remembered for LIFE!
                 """
                 
                 // Clean up Docker resources
@@ -748,8 +603,8 @@ FOOTER_EOF
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                     🎉 SCENARIO 03 COMPLETED SUCCESSFULLY! 🎉               ║
 ║  All enabled mini-scenarios have completed their test execution.            ║
-║  Download the archived reports to see beautiful HTML insights!              ║
-║  Your HTML reporting pipeline is now bulletproof! 📊✨                      ║
+║  Download the archived reports to see STUNNING enterprise visualizations!  ║
+║  Your HTML reporting pipeline is now BULLETPROOF! 📊✨🎨                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
         }
@@ -759,7 +614,8 @@ FOOTER_EOF
 ║                    ⚠️ SCENARIO 03 ENCOUNTERED FAILURES ⚠️                   ║
 ║  Some mini-scenarios failed - this might be intentional for learning!      ║
 ║  Download the archived reports to understand what went wrong.               ║
-║  Remember: Every failure is a learning opportunity! 💪📊                    ║
+║  The beautiful reports will show you exactly what happened! 📊💪            ║
+║  Remember: Every failure is a learning opportunity!                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
         }
@@ -768,7 +624,8 @@ FOOTER_EOF
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                          🔶 SCENARIO 03 UNSTABLE BUILD 🔶                   ║
 ║  Some tests were unstable - perfect for learning edge cases!               ║
-║  Download the archived reports for detailed analysis.                       ║
+║  The enterprise reports will show detailed analysis of what happened.       ║
+║  Download and explore the beautiful visualizations! 🎨📊                   ║
 ║  Keep experimenting and learning! 🔬                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """

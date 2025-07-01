@@ -687,84 +687,52 @@ FOOTER_EOF
                 // Archive all reports
                 archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true, fingerprint: true
                 
-                // Publish consolidated HTML report
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'reports',
-                    reportFiles: 'scenario_03_consolidated_report.html',
-                    reportName: '📊 Scenario 03 Consolidated Report',
-                    reportTitles: 'HTML Reports Chaos Summary'
-                ])
+                // Since HTML Publisher plugin is not available, we'll use a workaround
+                // The reports are archived and can be downloaded from Jenkins artifacts
+                echo """
+📊 REPORTS ARCHIVED SUCCESSFULLY!
+
+🎯 How to view your reports:
+1. Go to this build's page in Jenkins
+2. Click on "Artifacts" 
+3. Download and open the HTML files:
+   • scenario_03_consolidated_report.html (Main report)
+   • Individual test reports in the reports/ folder
+
+📋 Available reports:
+                """
                 
-                // Publish individual reports if they exist
-                script {
-                    if (params.RUN_CONFIG_VALIDATION) {
-                        def testType = params.CONFIG_VALIDATION_PASS ? 'pass' : 'fail'
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: "config_validation_${testType}_report.html",
-                            reportName: "⚙️ Config Validation (${testType.toUpperCase()})",
-                            reportTitles: 'Config Validation Test Report'
-                        ])
-                    }
-                    
-                    if (params.RUN_API_HEALTH) {
-                        def testType = params.API_HEALTH_PASS ? 'pass' : 'fail'
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: "api_health_${testType}_report.html",
-                            reportName: "🏥 API Health (${testType.toUpperCase()})",
-                            reportTitles: 'API Health Check Test Report'
-                        ])
-                    }
-                    
-                    if (params.RUN_POSTGRES) {
-                        def testType = params.POSTGRES_PASS ? 'pass' : 'fail'
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: "postgres_${testType}_report.html",
-                            reportName: "🐘 Postgres (${testType.toUpperCase()})",
-                            reportTitles: 'Postgres Database Test Report'
-                        ])
-                    }
-                    
-                    if (params.RUN_REDIS) {
-                        def testType = params.REDIS_PASS ? 'pass' : 'fail'
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: "redis_${testType}_report.html",
-                            reportName: "📦 Redis (${testType.toUpperCase()})",
-                            reportTitles: 'Redis Cache Test Report'
-                        ])
-                    }
-                    
-                    if (params.RUN_SECRET_SCAN) {
-                        def testType = params.SECRET_SCAN_PASS ? 'pass' : 'fail'
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: "secret_scan_${testType}_report.html",
-                            reportName: "🔐 Secret Scan (${testType.toUpperCase()})",
-                            reportTitles: 'Secret Scanning Test Report'
-                        ])
-                    }
-                }
+                // List available reports
+                sh '''
+                    if [ -d "reports" ]; then
+                        echo "📁 Reports generated:"
+                        find reports -name "*.html" -exec echo "   📊 {}" \\;
+                        echo ""
+                        echo "📄 JSON reports:"
+                        find reports -name "*.json" -exec echo "   📋 {}" \\;
+                    else
+                        echo "❌ No reports directory found"
+                    fi
+                '''
+                
+                echo """
+🎉 SUCCESS! Your Scenario 03 chaos workshop has completed!
+
+📖 What you accomplished:
+• Built Docker images for isolated testing
+• Executed multiple chaos testing scenarios
+• Generated beautiful HTML reports
+• Learned about CI/CD resilience patterns
+
+🚀 Next steps:
+• Download and review the HTML reports
+• Experiment with different parameter combinations
+• Try running some scenarios in FAIL mode for learning
+• Apply these patterns to your real-world pipelines
+
+💡 Pro tip: The consolidated report gives you a great overview,
+   then dive into individual scenario reports for details!
+                """
                 
                 // Clean up Docker resources
                 sh '''
@@ -780,7 +748,7 @@ FOOTER_EOF
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                     🎉 SCENARIO 03 COMPLETED SUCCESSFULLY! 🎉               ║
 ║  All enabled mini-scenarios have completed their test execution.            ║
-║  Check the consolidated report and individual HTML reports for insights.    ║
+║  Download the archived reports to see beautiful HTML insights!              ║
 ║  Your HTML reporting pipeline is now bulletproof! 📊✨                      ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
@@ -790,7 +758,7 @@ FOOTER_EOF
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    ⚠️ SCENARIO 03 ENCOUNTERED FAILURES ⚠️                   ║
 ║  Some mini-scenarios failed - this might be intentional for learning!      ║
-║  Review the individual test reports to understand what went wrong.          ║
+║  Download the archived reports to understand what went wrong.               ║
 ║  Remember: Every failure is a learning opportunity! 💪📊                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
@@ -800,7 +768,7 @@ FOOTER_EOF
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                          🔶 SCENARIO 03 UNSTABLE BUILD 🔶                   ║
 ║  Some tests were unstable - perfect for learning edge cases!               ║
-║  Check the individual scenario reports for detailed analysis.               ║
+║  Download the archived reports for detailed analysis.                       ║
 ║  Keep experimenting and learning! 🔬                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """

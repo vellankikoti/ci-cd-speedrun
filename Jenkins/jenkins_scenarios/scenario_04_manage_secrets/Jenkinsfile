@@ -1,24 +1,69 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(name: 'RUN_SCENARIO_4', defaultValue: true, description: 'Run Scenario 4: Manage Secrets')
+        booleanParam(name: 'SCENARIO_4_PASS', defaultValue: true, description: 'Run PASS (clean) or FAIL (leaky) test')
+    }
+
     environment {
-        AWS_DEFAULT_REGION = "us-east-1"
+        REPORTS_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets/reports"
+        SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets"
     }
 
     stages {
-        stage('Check AWS Identity') {
+        stage('Build Docker Image') {
+            when { expression { params.RUN_SCENARIO_4 } }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'
-                ]]) {
-                    echo "🔐 Running AWS CLI to verify identity..."
+                echo "Building Docker image for Scenario 4..."
+                dir("${env.SCENARIO_DIR}") {
+                    sh 'docker build -t scenario4-secrets .'
+                }
+            }
+        }
 
+        stage('Run Secret Scan') {
+            when { expression { params.RUN_SCENARIO_4 } }
+            steps {
+                echo "Running Secret Scan in Docker..."
+                dir("${env.SCENARIO_DIR}") {
                     sh '''
-                        aws sts get-caller-identity
+                        mkdir -p reports
+                        docker run --rm \
+                            -e SCENARIO_4_PASS=${SCENARIO_4_PASS} \
+                            -v $(pwd)/tests:/tests \
+                            -v $(pwd)/report_templates:/report_templates \
+                            -v $(pwd)/reports:/reports \
+                            scenario4-secrets
                     '''
                 }
             }
+        }
+
+        stage('Archive Reports') {
+            when { expression { params.RUN_SCENARIO_4 } }
+            steps {
+                echo "Archiving reports..."
+                archiveArtifacts artifacts: "${env.SCENARIO_DIR}/reports/*.html,${env.SCENARIO_DIR}/reports/*.json", fingerprint: true
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
+                echo "Reports directory: ${env.SCENARIO_DIR}/reports"
+                echo "See Jenkins artifacts for HTML and JSON reports."
+            }
+            // Clean up Docker images (optional, for CI hygiene)
+            sh 'docker rmi scenario4-secrets || true'
+        }
+        failure {
+            echo "❌ Scenario 4 failed! Check the HTML/JSON reports for details."
+        }
+        success {
+            echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
         }
     }
 }

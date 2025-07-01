@@ -2,572 +2,498 @@ pipeline {
     agent any
     
     parameters {
-        // Scenario Enable/Disable Controls
-        booleanParam(name: 'RUN_SCENARIO_1', defaultValue: true, description: '🐳 Run Scenario 1: Docker Build Chaos')
-        booleanParam(name: 'RUN_SCENARIO_2', defaultValue: true, description: '🧪 Run Scenario 2: Testcontainers Chaos')
-        booleanParam(name: 'RUN_SCENARIO_3', defaultValue: true, description: '📊 Run Scenario 3: HTML Test Reports Chaos')
-        booleanParam(name: 'RUN_SCENARIO_4', defaultValue: true, description: '🔐 Run Scenario 4: Secrets & Security Scan Chaos')
-        booleanParam(name: 'RUN_SCENARIO_5', defaultValue: true, description: '☁️ Run Scenario 5: EKS Deployment Chaos')
+        // Enable/Disable each mini-scenario
+        booleanParam(name: 'RUN_CONFIG_VALIDATION', defaultValue: true, description: '⚙️ Run Config Validation Tests')
+        booleanParam(name: 'RUN_API_HEALTH', defaultValue: true, description: '🏥 Run API Health Check Tests')
+        booleanParam(name: 'RUN_POSTGRES', defaultValue: true, description: '🐘 Run Postgres Database Tests')
+        booleanParam(name: 'RUN_REDIS', defaultValue: true, description: '📦 Run Redis Cache Tests')
+        booleanParam(name: 'RUN_SECRET_SCAN', defaultValue: true, description: '🔐 Run Secret Scanning Tests')
         
-        // Pass/Fail Controls for each scenario
-        booleanParam(name: 'SCENARIO_1_PASS', defaultValue: true, description: '✅ Scenario 1: Pass (true) or Fail (false)')
-        booleanParam(name: 'SCENARIO_2_PASS', defaultValue: true, description: '✅ Scenario 2: Pass (true) or Fail (false)')
-        booleanParam(name: 'SCENARIO_3_PASS', defaultValue: true, description: '✅ Scenario 3: Pass (true) or Fail (false)')
-        booleanParam(name: 'SCENARIO_4_PASS', defaultValue: true, description: '✅ Scenario 4: Pass (true) or Fail (false)')
-        booleanParam(name: 'SCENARIO_5_PASS', defaultValue: true, description: '✅ Scenario 5: Pass (true) or Fail (false)')
+        // Pass/Fail mode for each mini-scenario
+        booleanParam(name: 'CONFIG_VALIDATION_PASS', defaultValue: true, description: '✅ Config Validation: Pass (true) or Fail (false)')
+        booleanParam(name: 'API_HEALTH_PASS', defaultValue: true, description: '✅ API Health: Pass (true) or Fail (false)')
+        booleanParam(name: 'POSTGRES_PASS', defaultValue: true, description: '✅ Postgres: Pass (true) or Fail (false)')
+        booleanParam(name: 'REDIS_PASS', defaultValue: true, description: '✅ Redis: Pass (true) or Fail (false)')
+        booleanParam(name: 'SECRET_SCAN_PASS', defaultValue: true, description: '✅ Secret Scan: Pass (true) or Fail (false)')
     }
     
     environment {
         DOCKER_BUILDKIT = '1'
         PYTHONUNBUFFERED = '1'
-        WORKSPACE_PATH = "${env.WORKSPACE}"
+        SCENARIO_NAME = 'scenario_03_html_reports'
+        IMAGE_NAME = "chaos-workshop-${SCENARIO_NAME}"
+        BUILD_TAG = "${BUILD_NUMBER}"
+        REPORTS_DIR = 'reports'
     }
     
     stages {
-        stage('🎯 Workshop Initialization') {
+        stage('🎪 Scenario 03: HTML Reports Chaos - Initialization') {
             steps {
                 script {
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    🎪 CI/CD CHAOS WORKSHOP STARTED 🎪                        ║
+║                   📊 SCENARIO 03: HTML REPORTS CHAOS                        ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  Welcome to the CI/CD Chaos Engineering Workshop!                           ║
-║  We'll simulate real-world pipeline failures and teach you how to fix them. ║
-║                                                                              ║
-║  📋 SCENARIOS TO RUN:                                                        ║
-║  • Scenario 1 (Docker Build): ${params.RUN_SCENARIO_1 ? '✅ ENABLED' : '❌ DISABLED'}                           ║
-║  • Scenario 2 (Testcontainers): ${params.RUN_SCENARIO_2 ? '✅ ENABLED' : '❌ DISABLED'}                         ║
-║  • Scenario 3 (HTML Reports): ${params.RUN_SCENARIO_3 ? '✅ ENABLED' : '❌ DISABLED'}                           ║
-║  • Scenario 4 (Secrets/Security): ${params.RUN_SCENARIO_4 ? '✅ ENABLED' : '❌ DISABLED'}                       ║
-║  • Scenario 5 (EKS Deployment): ${params.RUN_SCENARIO_5 ? '✅ ENABLED' : '❌ DISABLED'}                         ║
+║  🎯 MISSION: Master HTML test reporting under chaotic conditions            ║
+║  📋 MINI-SCENARIOS TO EXECUTE:                                              ║
+║  • Config Validation: ${params.RUN_CONFIG_VALIDATION ? '✅ ENABLED' : '❌ DISABLED'} (${params.CONFIG_VALIDATION_PASS ? 'PASS' : 'FAIL'} mode)   ║
+║  • API Health Check: ${params.RUN_API_HEALTH ? '✅ ENABLED' : '❌ DISABLED'} (${params.API_HEALTH_PASS ? 'PASS' : 'FAIL'} mode)    ║
+║  • Postgres Database: ${params.RUN_POSTGRES ? '✅ ENABLED' : '❌ DISABLED'} (${params.POSTGRES_PASS ? 'PASS' : 'FAIL'} mode)     ║
+║  • Redis Cache: ${params.RUN_REDIS ? '✅ ENABLED' : '❌ DISABLED'} (${params.REDIS_PASS ? 'PASS' : 'FAIL'} mode)          ║
+║  • Secret Scanning: ${params.RUN_SECRET_SCAN ? '✅ ENABLED' : '❌ DISABLED'} (${params.SECRET_SCAN_PASS ? 'PASS' : 'FAIL'} mode)    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
                     // Create reports directory
-                    sh 'mkdir -p reports'
+                    sh "mkdir -p ${REPORTS_DIR}"
                     
-                    // Clean up any existing Docker containers/images from previous runs
-                    sh '''
+                    // Clean up any existing containers
+                    sh """
                         echo "🧹 Cleaning up previous Docker resources..."
-                        docker system prune -f || true
                         docker container prune -f || true
-                    '''
+                        docker image rm ${IMAGE_NAME}:${BUILD_TAG} || true
+                    """
                 }
             }
         }
         
-        stage('🐳 Scenario 1: Docker Build Chaos') {
+        stage('🐳 Docker Build') {
+            steps {
+                script {
+                    echo """
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            🐳 DOCKER BUILD PHASE                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+                    """
+                    
+                    dir("Jenkins/jenkins_scenarios/${SCENARIO_NAME}") {
+                        sh """
+                            echo "🏗️ Building Docker image: ${IMAGE_NAME}:${BUILD_TAG}"
+                            docker build -t ${IMAGE_NAME}:${BUILD_TAG} .
+                            echo "✅ Docker build completed successfully"
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('⚙️ Config Validation Tests') {
             when {
-                expression { params.RUN_SCENARIO_1 }
+                expression { params.RUN_CONFIG_VALIDATION }
             }
             steps {
                 script {
-                    def testType = params.SCENARIO_1_PASS ? 'pass' : 'fail'
-                    def status = params.SCENARIO_1_PASS ? '✅ PASS' : '❌ FAIL'
+                    def testType = params.CONFIG_VALIDATION_PASS ? 'pass' : 'fail'
+                    def status = params.CONFIG_VALIDATION_PASS ? '✅ PASS' : '❌ FAIL'
                     
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                     🐳 SCENARIO 1: DOCKER BUILD CHAOS                       ║
-╠══════════════════════════════════════════════════════════════════════════════╣
+║                        ⚙️ CONFIG VALIDATION TESTS                           ║
 ║  Status: ${status}                                                      ║
-║  Test Type: ${testType.toUpperCase()}                                                        ║
-║  Learning: How to handle Docker build failures in CI/CD pipelines          ║
+║  Test Mode: ${testType.toUpperCase()}                                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
                     try {
-                        // Build Docker image for scenario 1
                         sh """
-                            echo "🏗️ Building Docker image for Scenario 1..."
-                            cd Jenkins/jenkins_scenarios/scenario_01_docker_build
-                            docker build -t chaos-workshop-scenario-1:${BUILD_NUMBER} -f Dockerfile .
-                        """
-                        
-                        // Run tests in Docker container
-                        sh """
-                            echo "🧪 Running Scenario 1 tests (${testType})..."
                             docker run --rm \
-                                -v ${WORKSPACE_PATH}/reports:/app/reports \
+                                -v ${WORKSPACE}/${REPORTS_DIR}:/app/reports \
                                 -w /app \
-                                chaos-workshop-scenario-1:${BUILD_NUMBER} \
-                                sh -c "
-                                    pytest tests/test_*_${testType}.py \
-                                        --html=reports/scenario_1_report.html \
-                                        --self-contained-html \
-                                        --json-report \
-                                        --json-report-file=reports/scenario_1_report.json \
-                                        -v
-                                "
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                pytest tests/test_config_validation_${testType}.py \
+                                    --html=reports/config_validation_${testType}_report.html \
+                                    --self-contained-html \
+                                    --json-report \
+                                    --json-report-file=reports/config_validation_${testType}_report.json \
+                                    -v --tb=short --color=yes
                         """
-                        
-                        echo "✅ Scenario 1 completed successfully!"
-                        
+                        echo "✅ Config Validation tests completed successfully"
                     } catch (Exception e) {
-                        echo "❌ Scenario 1 failed as expected (this might be intentional for learning purposes)"
-                        if (!params.SCENARIO_1_PASS) {
-                            echo "💡 This failure was intentional to demonstrate error handling!"
+                        echo "❌ Config Validation tests failed (this might be intentional for learning)"
+                        if (!params.CONFIG_VALIDATION_PASS) {
+                            echo "💡 This failure was intentional to demonstrate config validation issues!"
                         }
                         throw e
                     }
                 }
             }
-            post {
-                always {
-                    script {
-                        // Archive reports
-                        archiveArtifacts artifacts: 'reports/scenario_1_*', allowEmptyArchive: true
-                        
-                        // Publish HTML report
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: 'scenario_1_report.html',
-                            reportName: '🐳 Scenario 1 Test Report',
-                            reportTitles: 'Docker Build Chaos Report'
-                        ])
+        }
+        
+        stage('🏥 API Health Check Tests') {
+            when {
+                expression { params.RUN_API_HEALTH }
+            }
+            steps {
+                script {
+                    def testType = params.API_HEALTH_PASS ? 'pass' : 'fail'
+                    def status = params.API_HEALTH_PASS ? '✅ PASS' : '❌ FAIL'
+                    
+                    echo """
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          🏥 API HEALTH CHECK TESTS                          ║
+║  Status: ${status}                                                      ║
+║  Test Mode: ${testType.toUpperCase()}                                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+                    """
+                    
+                    try {
+                        sh """
+                            docker run --rm \
+                                -v ${WORKSPACE}/${REPORTS_DIR}:/app/reports \
+                                -w /app \
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                pytest tests/test_api_health_${testType}.py \
+                                    --html=reports/api_health_${testType}_report.html \
+                                    --self-contained-html \
+                                    --json-report \
+                                    --json-report-file=reports/api_health_${testType}_report.json \
+                                    -v --tb=short --color=yes
+                        """
+                        echo "✅ API Health Check tests completed successfully"
+                    } catch (Exception e) {
+                        echo "❌ API Health Check tests failed (this might be intentional for learning)"
+                        if (!params.API_HEALTH_PASS) {
+                            echo "💡 This failure was intentional to demonstrate API health check issues!"
+                        }
+                        throw e
                     }
                 }
             }
         }
         
-        stage('🧪 Scenario 2: Testcontainers Chaos') {
+        stage('🐘 Postgres Database Tests') {
             when {
-                expression { params.RUN_SCENARIO_2 }
+                expression { params.RUN_POSTGRES }
             }
             steps {
                 script {
-                    def testType = params.SCENARIO_2_PASS ? 'pass' : 'fail'
-                    def status = params.SCENARIO_2_PASS ? '✅ PASS' : '❌ FAIL'
+                    def testType = params.POSTGRES_PASS ? 'pass' : 'fail'
+                    def status = params.POSTGRES_PASS ? '✅ PASS' : '❌ FAIL'
                     
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    🧪 SCENARIO 2: TESTCONTAINERS CHAOS                      ║
-╠══════════════════════════════════════════════════════════════════════════════╣
+║                         🐘 POSTGRES DATABASE TESTS                          ║
 ║  Status: ${status}                                                      ║
-║  Test Type: ${testType.toUpperCase()}                                                        ║
-║  Learning: How to handle container-based test failures                      ║
+║  Test Mode: ${testType.toUpperCase()}                                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
                     try {
-                        // Build Docker image for scenario 2
                         sh """
-                            echo "🏗️ Building Docker image for Scenario 2..."
-                            cd Jenkins/jenkins_scenarios/scenario_02_testcontainers
-                            docker build -t chaos-workshop-scenario-2:${BUILD_NUMBER} -f Dockerfile .
-                        """
-                        
-                        // Run tests in Docker container with Docker socket access
-                        sh """
-                            echo "🧪 Running Scenario 2 tests (${testType})..."
                             docker run --rm \
                                 -v /var/run/docker.sock:/var/run/docker.sock \
-                                -v ${WORKSPACE_PATH}/reports:/app/reports \
+                                -v ${WORKSPACE}/${REPORTS_DIR}:/app/reports \
                                 -w /app \
-                                chaos-workshop-scenario-2:${BUILD_NUMBER} \
-                                sh -c "
-                                    pytest tests/test_*_${testType}.py \
-                                        --html=reports/scenario_2_report.html \
-                                        --self-contained-html \
-                                        --json-report \
-                                        --json-report-file=reports/scenario_2_report.json \
-                                        -v
-                                "
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                pytest tests/test_postgres_${testType}.py \
+                                    --html=reports/postgres_${testType}_report.html \
+                                    --self-contained-html \
+                                    --json-report \
+                                    --json-report-file=reports/postgres_${testType}_report.json \
+                                    -v --tb=short --color=yes
                         """
-                        
-                        echo "✅ Scenario 2 completed successfully!"
-                        
+                        echo "✅ Postgres Database tests completed successfully"
                     } catch (Exception e) {
-                        echo "❌ Scenario 2 failed as expected (this might be intentional for learning purposes)"
-                        if (!params.SCENARIO_2_PASS) {
-                            echo "💡 This failure was intentional to demonstrate testcontainer error handling!"
+                        echo "❌ Postgres Database tests failed (this might be intentional for learning)"
+                        if (!params.POSTGRES_PASS) {
+                            echo "💡 This failure was intentional to demonstrate database connectivity issues!"
                         }
                         throw e
                     }
                 }
             }
-            post {
-                always {
-                    script {
-                        // Archive reports
-                        archiveArtifacts artifacts: 'reports/scenario_2_*', allowEmptyArchive: true
-                        
-                        // Publish HTML report
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: 'scenario_2_report.html',
-                            reportName: '🧪 Scenario 2 Test Report',
-                            reportTitles: 'Testcontainers Chaos Report'
-                        ])
-                    }
-                }
-            }
         }
         
-        stage('📊 Scenario 3: HTML Reports Chaos') {
+        stage('📦 Redis Cache Tests') {
             when {
-                expression { params.RUN_SCENARIO_3 }
+                expression { params.RUN_REDIS }
             }
             steps {
                 script {
-                    def testType = params.SCENARIO_3_PASS ? 'pass' : 'fail'
-                    def status = params.SCENARIO_3_PASS ? '✅ PASS' : '❌ FAIL'
+                    def testType = params.REDIS_PASS ? 'pass' : 'fail'
+                    def status = params.REDIS_PASS ? '✅ PASS' : '❌ FAIL'
                     
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    📊 SCENARIO 3: HTML REPORTS CHAOS                        ║
-╠══════════════════════════════════════════════════════════════════════════════╣
+║                           📦 REDIS CACHE TESTS                              ║
 ║  Status: ${status}                                                      ║
-║  Test Type: ${testType.toUpperCase()}                                                        ║
-║  Learning: How to handle test reporting failures and report generation      ║
+║  Test Mode: ${testType.toUpperCase()}                                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
                     try {
-                        // Build Docker image for scenario 3
                         sh """
-                            echo "🏗️ Building Docker image for Scenario 3..."
-                            cd Jenkins/jenkins_scenarios/scenario_03_html_reports
-                            docker build -t chaos-workshop-scenario-3:${BUILD_NUMBER} -f Dockerfile .
-                        """
-                        
-                        // Run tests in Docker container
-                        sh """
-                            echo "🧪 Running Scenario 3 tests (${testType})..."
                             docker run --rm \
-                                -v ${WORKSPACE_PATH}/reports:/app/reports \
+                                -v /var/run/docker.sock:/var/run/docker.sock \
+                                -v ${WORKSPACE}/${REPORTS_DIR}:/app/reports \
                                 -w /app \
-                                chaos-workshop-scenario-3:${BUILD_NUMBER} \
-                                sh -c "
-                                    pytest tests/test_*_${testType}.py \
-                                        --html=reports/scenario_3_report.html \
-                                        --self-contained-html \
-                                        --json-report \
-                                        --json-report-file=reports/scenario_3_report.json \
-                                        -v
-                                "
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                pytest tests/test_redis_${testType}.py \
+                                    --html=reports/redis_${testType}_report.html \
+                                    --self-contained-html \
+                                    --json-report \
+                                    --json-report-file=reports/redis_${testType}_report.json \
+                                    -v --tb=short --color=yes
                         """
-                        
-                        echo "✅ Scenario 3 completed successfully!"
-                        
+                        echo "✅ Redis Cache tests completed successfully"
                     } catch (Exception e) {
-                        echo "❌ Scenario 3 failed as expected (this might be intentional for learning purposes)"
-                        if (!params.SCENARIO_3_PASS) {
-                            echo "💡 This failure was intentional to demonstrate HTML report generation issues!"
+                        echo "❌ Redis Cache tests failed (this might be intentional for learning)"
+                        if (!params.REDIS_PASS) {
+                            echo "💡 This failure was intentional to demonstrate cache connectivity issues!"
                         }
                         throw e
                     }
                 }
             }
-            post {
-                always {
-                    script {
-                        // Archive reports
-                        archiveArtifacts artifacts: 'reports/scenario_3_*', allowEmptyArchive: true
-                        
-                        // Publish HTML report
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: 'scenario_3_report.html',
-                            reportName: '📊 Scenario 3 Test Report',
-                            reportTitles: 'HTML Reports Chaos Report'
-                        ])
-                    }
-                }
-            }
         }
         
-        stage('🔐 Scenario 4: Secrets & Security Chaos') {
+        stage('🔐 Secret Scanning Tests') {
             when {
-                expression { params.RUN_SCENARIO_4 }
+                expression { params.RUN_SECRET_SCAN }
             }
             steps {
                 script {
-                    def testType = params.SCENARIO_4_PASS ? 'pass' : 'fail'
-                    def status = params.SCENARIO_4_PASS ? '✅ PASS' : '❌ FAIL'
+                    def testType = params.SECRET_SCAN_PASS ? 'pass' : 'fail'
+                    def status = params.SECRET_SCAN_PASS ? '✅ PASS' : '❌ FAIL'
                     
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                   🔐 SCENARIO 4: SECRETS & SECURITY CHAOS                   ║
-╠══════════════════════════════════════════════════════════════════════════════╣
+║                          🔐 SECRET SCANNING TESTS                           ║
 ║  Status: ${status}                                                      ║
-║  Test Type: ${testType.toUpperCase()}                                                        ║
-║  Learning: How to handle secrets management and security scan failures      ║
+║  Test Mode: ${testType.toUpperCase()}                                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
                     try {
-                        // Build Docker image for scenario 4
                         sh """
-                            echo "🏗️ Building Docker image for Scenario 4..."
-                            cd Jenkins/jenkins_scenarios/scenario_04_manage_secrets
-                            docker build -t chaos-workshop-scenario-4:${BUILD_NUMBER} -f Dockerfile .
-                        """
-                        
-                        // Run tests in Docker container
-                        sh """
-                            echo "🧪 Running Scenario 4 tests (${testType})..."
                             docker run --rm \
-                                -v ${WORKSPACE_PATH}/reports:/app/reports \
+                                -v ${WORKSPACE}/${REPORTS_DIR}:/app/reports \
                                 -w /app \
-                                -e SECRET_KEY="demo-secret-key-for-workshop" \
-                                -e API_TOKEN="demo-api-token-12345" \
-                                chaos-workshop-scenario-4:${BUILD_NUMBER} \
-                                sh -c "
-                                    pytest tests/test_*_${testType}.py \
-                                        --html=reports/scenario_4_report.html \
-                                        --self-contained-html \
-                                        --json-report \
-                                        --json-report-file=reports/scenario_4_report.json \
-                                        -v
-                                "
+                                -e SECRET_API_KEY="demo-secret-key-12345" \
+                                -e DATABASE_PASSWORD="super-secret-password" \
+                                ${IMAGE_NAME}:${BUILD_TAG} \
+                                pytest tests/test_secret_scan_${testType}.py \
+                                    --html=reports/secret_scan_${testType}_report.html \
+                                    --self-contained-html \
+                                    --json-report \
+                                    --json-report-file=reports/secret_scan_${testType}_report.json \
+                                    -v --tb=short --color=yes
                         """
-                        
-                        echo "✅ Scenario 4 completed successfully!"
-                        
+                        echo "✅ Secret Scanning tests completed successfully"
                     } catch (Exception e) {
-                        echo "❌ Scenario 4 failed as expected (this might be intentional for learning purposes)"
-                        if (!params.SCENARIO_4_PASS) {
-                            echo "💡 This failure was intentional to demonstrate secrets and security scan issues!"
+                        echo "❌ Secret Scanning tests failed (this might be intentional for learning)"
+                        if (!params.SECRET_SCAN_PASS) {
+                            echo "💡 This failure was intentional to demonstrate secret security issues!"
                         }
                         throw e
                     }
                 }
             }
-            post {
-                always {
-                    script {
-                        // Archive reports
-                        archiveArtifacts artifacts: 'reports/scenario_4_*', allowEmptyArchive: true
-                        
-                        // Publish HTML report
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: 'scenario_4_report.html',
-                            reportName: '🔐 Scenario 4 Test Report',
-                            reportTitles: 'Secrets & Security Chaos Report'
-                        ])
-                    }
-                }
-            }
         }
         
-        stage('☁️ Scenario 5: EKS Deployment Chaos') {
-            when {
-                expression { params.RUN_SCENARIO_5 }
-            }
-            steps {
-                script {
-                    def testType = params.SCENARIO_5_PASS ? 'pass' : 'fail'
-                    def status = params.SCENARIO_5_PASS ? '✅ PASS' : '❌ FAIL'
-                    
-                    echo """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    ☁️ SCENARIO 5: EKS DEPLOYMENT CHAOS                       ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  Status: ${status}                                                      ║
-║  Test Type: ${testType.toUpperCase()}                                                        ║
-║  Learning: How to handle Kubernetes deployment failures in CI/CD            ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-                    """
-                    
-                    try {
-                        // Build Docker image for scenario 5
-                        sh """
-                            echo "🏗️ Building Docker image for Scenario 5..."
-                            cd Jenkins/jenkins_scenarios/scenario_05_deploy_eks
-                            docker build -t chaos-workshop-scenario-5:${BUILD_NUMBER} -f Dockerfile .
-                        """
-                        
-                        // Run tests in Docker container
-                        sh """
-                            echo "🧪 Running Scenario 5 tests (${testType})..."
-                            docker run --rm \
-                                -v ${WORKSPACE_PATH}/reports:/app/reports \
-                                -w /app \
-                                -e KUBE_CONFIG_DATA="demo-kube-config-for-workshop" \
-                                -e EKS_CLUSTER_NAME="demo-chaos-workshop-cluster" \
-                                chaos-workshop-scenario-5:${BUILD_NUMBER} \
-                                sh -c "
-                                    pytest tests/test_*_${testType}.py \
-                                        --html=reports/scenario_5_report.html \
-                                        --self-contained-html \
-                                        --json-report \
-                                        --json-report-file=reports/scenario_5_report.json \
-                                        -v
-                                "
-                        """
-                        
-                        echo "✅ Scenario 5 completed successfully!"
-                        
-                    } catch (Exception e) {
-                        echo "❌ Scenario 5 failed as expected (this might be intentional for learning purposes)"
-                        if (!params.SCENARIO_5_PASS) {
-                            echo "💡 This failure was intentional to demonstrate EKS deployment issues!"
-                        }
-                        throw e
-                    }
-                }
-            }
-            post {
-                always {
-                    script {
-                        // Archive reports
-                        archiveArtifacts artifacts: 'reports/scenario_5_*', allowEmptyArchive: true
-                        
-                        // Publish HTML report
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'reports',
-                            reportFiles: 'scenario_5_report.html',
-                            reportName: '☁️ Scenario 5 Test Report',
-                            reportTitles: 'EKS Deployment Chaos Report'
-                        ])
-                    }
-                }
-            }
-        }
-        
-        stage('📋 Workshop Summary & Reports') {
+        stage('📊 Generate Consolidated Report') {
             steps {
                 script {
                     echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                        📋 WORKSHOP SUMMARY REPORT                           ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  🎉 Congratulations! You've completed the CI/CD Chaos Workshop!             ║
-║                                                                              ║
-║  📊 SCENARIO RESULTS:                                                        ║
-║  • Scenario 1 (Docker Build): ${params.RUN_SCENARIO_1 ? (params.SCENARIO_1_PASS ? '✅ PASSED' : '❌ FAILED') : '⏭️ SKIPPED'}                        ║
-║  • Scenario 2 (Testcontainers): ${params.RUN_SCENARIO_2 ? (params.SCENARIO_2_PASS ? '✅ PASSED' : '❌ FAILED') : '⏭️ SKIPPED'}                      ║
-║  • Scenario 3 (HTML Reports): ${params.RUN_SCENARIO_3 ? (params.SCENARIO_3_PASS ? '✅ PASSED' : '❌ FAILED') : '⏭️ SKIPPED'}                        ║
-║  • Scenario 4 (Secrets/Security): ${params.RUN_SCENARIO_4 ? (params.SCENARIO_4_PASS ? '✅ PASSED' : '❌ FAILED') : '⏭️ SKIPPED'}                    ║
-║  • Scenario 5 (EKS Deployment): ${params.RUN_SCENARIO_5 ? (params.SCENARIO_5_PASS ? '✅ PASSED' : '❌ FAILED') : '⏭️ SKIPPED'}                      ║
-║                                                                              ║
-║  📂 REPORTS AVAILABLE:                                                       ║
-║  • HTML Reports: Check the 'HTML Publisher' section in Jenkins              ║
-║  • JSON Reports: Available in archived artifacts                            ║
-║  • All reports are self-contained and ready for sharing                     ║
-║                                                                              ║
-║  🎓 WHAT YOU'VE LEARNED:                                                     ║
-║  • How to build resilient CI/CD pipelines                                   ║
-║  • How to handle Docker build failures                                      ║
-║  • How to work with testcontainers in CI/CD                                ║
-║  • How to generate and manage test reports                                  ║
-║  • How to handle secrets and security scans                                 ║
-║  • How to manage Kubernetes deployments in pipelines                        ║
-║                                                                              ║
-║  🚀 NEXT STEPS:                                                              ║
-║  • Review the generated reports                                             ║
-║  • Experiment with different parameter combinations                         ║
-║  • Apply these patterns to your real-world pipelines                       ║
-║  • Share your knowledge with your team                                      ║
-║                                                                              ║
+║                      📊 GENERATING CONSOLIDATED REPORT                      ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                     """
                     
-                    // Generate a consolidated report index
+                    // Generate consolidated HTML report
                     sh '''
-                        cat > reports/workshop_index.html << 'EOF'
+                        cat > reports/scenario_03_consolidated_report.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🎪 CI/CD Chaos Workshop - Report Index</title>
+    <title>📊 Scenario 03: HTML Reports Chaos - Consolidated Report</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; margin-bottom: 40px; }
-        .scenario { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; }
-        .scenario h3 { color: #3498db; margin-top: 0; }
-        .status { padding: 5px 10px; border-radius: 20px; color: white; font-weight: bold; }
-        .pass { background: #27ae60; }
-        .fail { background: #e74c3c; }
-        .skip { background: #95a5a6; }
-        a { color: #3498db; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .footer { text-align: center; margin-top: 40px; color: #7f8c8d; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 40px; 
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin: 30px 0; 
+            padding: 25px; 
+            border: 2px solid #ecf0f1; 
+            border-radius: 10px; 
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .test-section:hover {
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        .test-section h3 { 
+            color: #3498db; 
+            margin-top: 0; 
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status { 
+            padding: 8px 16px; 
+            border-radius: 25px; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 0.9em;
+            display: inline-block;
+            margin-left: auto;
+        }
+        .pass { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+        .fail { background: linear-gradient(45deg, #e74c3c, #c0392b); }
+        .skip { background: linear-gradient(45deg, #95a5a6, #7f8c8d); }
+        a { 
+            color: #3498db; 
+            text-decoration: none; 
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        a:hover { 
+            text-decoration: underline; 
+            color: #2980b9;
+        }
+        .summary { 
+            background: linear-gradient(45deg, #f39c12, #e67e22); 
+            color: white; 
+            padding: 25px; 
+            border-radius: 10px; 
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .summary h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.8em;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 50px; 
+            color: #7f8c8d; 
+            font-style: italic;
+        }
+        .icon { font-size: 1.2em; }
+        .build-info {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎪 CI/CD Chaos Workshop - Report Index</h1>
-        <p>Welcome to your comprehensive workshop report index. Click on any scenario report to dive deep into the results!</p>
+        <h1>📊 Scenario 03: HTML Reports Chaos</h1>
         
-        <div class="scenario">
-            <h3>🐳 Scenario 1: Docker Build Chaos</h3>
-            <p><span class="status ${params.RUN_SCENARIO_1 ? (params.SCENARIO_1_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') : 'skip">⏭️ SKIPPED'}</span></p>
-            <p>Learn how to handle Docker build failures in CI/CD pipelines.</p>
-            <a href="scenario_1_report.html">📊 View Detailed Report</a>
+        <div class="build-info">
+            <strong>Build #''' + env.BUILD_NUMBER + '''</strong> | Generated on ''' + new Date().toString() + '''
         </div>
         
-        <div class="scenario">
-            <h3>🧪 Scenario 2: Testcontainers Chaos</h3>
-            <p><span class="status ${params.RUN_SCENARIO_2 ? (params.SCENARIO_2_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') : 'skip">⏭️ SKIPPED'}</span></p>
-            <p>Master container-based testing and troubleshooting techniques.</p>
-            <a href="scenario_2_report.html">📊 View Detailed Report</a>
+        <div class="summary">
+            <h2>🎯 Mission Summary</h2>
+            <p>Testing HTML report generation under chaotic conditions across 5 critical enterprise scenarios.</p>
         </div>
-        
-        <div class="scenario">
-            <h3>📊 Scenario 3: HTML Reports Chaos</h3>
-            <p><span class="status ${params.RUN_SCENARIO_3 ? (params.SCENARIO_3_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') : 'skip">⏭️ SKIPPED'}</span></p>
-            <p>Handle test reporting failures and report generation issues.</p>
-            <a href="scenario_3_report.html">📊 View Detailed Report</a>
+EOF
+
+                        # Add test sections based on enabled parameters
+                        if [ "${params.RUN_CONFIG_VALIDATION}" = "true" ]; then
+                            cat >> reports/scenario_03_consolidated_report.html << EOF
+        <div class="test-section">
+            <h3>
+                <span class="icon">⚙️</span> Config Validation Tests
+                <span class="status ${params.CONFIG_VALIDATION_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED'}</span>
+            </h3>
+            <p>Validates application configuration files, environment variables, and system settings.</p>
+            <a href="config_validation_${params.CONFIG_VALIDATION_PASS ? 'pass' : 'fail'}_report.html">📊 View Detailed Report</a>
         </div>
-        
-        <div class="scenario">
-            <h3>🔐 Scenario 4: Secrets & Security Chaos</h3>
-            <p><span class="status ${params.RUN_SCENARIO_4 ? (params.SCENARIO_4_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') : 'skip">⏭️ SKIPPED'}</span></p>
-            <p>Navigate secrets management and security scan challenges.</p>
-            <a href="scenario_4_report.html">📊 View Detailed Report</a>
+EOF
+                        fi
+
+                        if [ "${params.RUN_API_HEALTH}" = "true" ]; then
+                            cat >> reports/scenario_03_consolidated_report.html << EOF
+        <div class="test-section">
+            <h3>
+                <span class="icon">🏥</span> API Health Check Tests
+                <span class="status ${params.API_HEALTH_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED'}</span>
+            </h3>
+            <p>Verifies API endpoints, response times, and service availability.</p>
+            <a href="api_health_${params.API_HEALTH_PASS ? 'pass' : 'fail'}_report.html">📊 View Detailed Report</a>
         </div>
-        
-        <div class="scenario">
-            <h3>☁️ Scenario 5: EKS Deployment Chaos</h3>
-            <p><span class="status ${params.RUN_SCENARIO_5 ? (params.SCENARIO_5_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED') : 'skip">⏭️ SKIPPED'}</span></p>
-            <p>Troubleshoot Kubernetes deployment failures in CI/CD.</p>
-            <a href="scenario_5_report.html">📊 View Detailed Report</a>
+EOF
+                        fi
+
+                        if [ "${params.RUN_POSTGRES}" = "true" ]; then
+                            cat >> reports/scenario_03_consolidated_report.html << EOF
+        <div class="test-section">
+            <h3>
+                <span class="icon">🐘</span> Postgres Database Tests
+                <span class="status ${params.POSTGRES_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED'}</span>
+            </h3>
+            <p>Tests database connectivity, queries, and data integrity using testcontainers.</p>
+            <a href="postgres_${params.POSTGRES_PASS ? 'pass' : 'fail'}_report.html">📊 View Detailed Report</a>
         </div>
+EOF
+                        fi
+
+                        if [ "${params.RUN_REDIS}" = "true" ]; then
+                            cat >> reports/scenario_03_consolidated_report.html << EOF
+        <div class="test-section">
+            <h3>
+                <span class="icon">📦</span> Redis Cache Tests
+                <span class="status ${params.REDIS_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED'}</span>
+            </h3>
+            <p>Validates caching mechanisms, Redis connectivity, and data persistence.</p>
+            <a href="redis_${params.REDIS_PASS ? 'pass' : 'fail'}_report.html">📊 View Detailed Report</a>
+        </div>
+EOF
+                        fi
+
+                        if [ "${params.RUN_SECRET_SCAN}" = "true" ]; then
+                            cat >> reports/scenario_03_consolidated_report.html << EOF
+        <div class="test-section">
+            <h3>
+                <span class="icon">🔐</span> Secret Scanning Tests
+                <span class="status ${params.SECRET_SCAN_PASS ? 'pass">✅ PASSED' : 'fail">❌ FAILED'}</span>
+            </h3>
+            <p>Scans for exposed secrets, credentials, and security vulnerabilities.</p>
+            <a href="secret_scan_${params.SECRET_SCAN_PASS ? 'pass' : 'fail'}_report.html">📊 View Detailed Report</a>
+        </div>
+EOF
+                        fi
+
+                        cat >> reports/scenario_03_consolidated_report.html << 'EOF'
         
         <div class="footer">
-            <p>🎓 CI/CD Chaos Workshop - Build #{BUILD_NUMBER} | Generated on $(date)</p>
-            <p>Keep practicing and building resilient pipelines! 🚀</p>
+            <p>🎪 CI/CD Chaos Workshop - Scenario 03 Complete!</p>
+            <p>Ready to tackle real-world HTML reporting challenges? 🚀</p>
         </div>
     </div>
 </body>
 </html>
 EOF
                     '''
-                }
-            }
-            post {
-                always {
-                    // Archive the workshop index
-                    archiveArtifacts artifacts: 'reports/workshop_index.html', allowEmptyArchive: true
                     
-                    // Publish the workshop index
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'reports',
-                        reportFiles: 'workshop_index.html',
-                        reportName: '🎪 Workshop Report Index',
-                        reportTitles: 'CI/CD Chaos Workshop Summary'
-                    ])
+                    echo "✅ Consolidated report generated successfully"
                 }
             }
         }
@@ -578,52 +504,116 @@ EOF
             script {
                 echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           🧹 CLEANUP & FINALIZATION                         ║
+║                        📊 ARCHIVING REPORTS & CLEANUP                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
                 """
                 
-                // Clean up Docker resources
-                sh '''
-                    echo "🧹 Cleaning up Docker containers and images..."
-                    docker container prune -f || true
-                    docker image prune -f || true
-                    docker system prune -f || true
-                '''
-                
                 // Archive all reports
                 archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
+                
+                // Publish consolidated HTML report
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'reports',
+                    reportFiles: 'scenario_03_consolidated_report.html',
+                    reportName: '📊 Scenario 03 Consolidated Report',
+                    reportTitles: 'HTML Reports Chaos Summary'
+                ])
+                
+                // Publish individual reports
+                if (params.RUN_CONFIG_VALIDATION) {
+                    def testType = params.CONFIG_VALIDATION_PASS ? 'pass' : 'fail'
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: "config_validation_${testType}_report.html",
+                        reportName: "⚙️ Config Validation (${testType.toUpperCase()})",
+                        reportTitles: 'Config Validation Test Report'
+                    ])
+                }
+                
+                if (params.RUN_API_HEALTH) {
+                    def testType = params.API_HEALTH_PASS ? 'pass' : 'fail'
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: "api_health_${testType}_report.html",
+                        reportName: "🏥 API Health (${testType.toUpperCase()})",
+                        reportTitles: 'API Health Check Test Report'
+                    ])
+                }
+                
+                if (params.RUN_POSTGRES) {
+                    def testType = params.POSTGRES_PASS ? 'pass' : 'fail'
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: "postgres_${testType}_report.html",
+                        reportName: "🐘 Postgres (${testType.toUpperCase()})",
+                        reportTitles: 'Postgres Database Test Report'
+                    ])
+                }
+                
+                if (params.RUN_REDIS) {
+                    def testType = params.REDIS_PASS ? 'pass' : 'fail'
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: "redis_${testType}_report.html",
+                        reportName: "📦 Redis (${testType.toUpperCase()})",
+                        reportTitles: 'Redis Cache Test Report'
+                    ])
+                }
+                
+                if (params.RUN_SECRET_SCAN) {
+                    def testType = params.SECRET_SCAN_PASS ? 'pass' : 'fail'
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: "secret_scan_${testType}_report.html",
+                        reportName: "🔐 Secret Scan (${testType.toUpperCase()})",
+                        reportTitles: 'Secret Scanning Test Report'
+                    ])
+                }
+                
+                // Clean up Docker resources
+                sh '''
+                    echo "🧹 Cleaning up Docker resources..."
+                    docker container prune -f || true
+                    docker image rm ${IMAGE_NAME}:${BUILD_TAG} || true
+                    docker system prune -f || true
+                '''
             }
         }
         success {
             echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                            🎉 WORKSHOP COMPLETED! 🎉                        ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  Congratulations! The CI/CD Chaos Workshop has completed successfully.      ║
-║  Check out the published HTML reports for detailed insights.                ║
-║  Ready to tackle real-world pipeline challenges? You've got this! 🚀         ║
+║                     🎉 SCENARIO 03 COMPLETED SUCCESSFULLY! 🎉               ║
+║  All enabled mini-scenarios have completed their test execution.            ║
+║  Check the consolidated report and individual HTML reports for insights.    ║
+║  Your HTML reporting pipeline is now bulletproof! 📊✨                      ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
         }
         failure {
             echo """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           ⚠️ WORKSHOP FAILURE DETECTED ⚠️                    ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  Some scenarios failed - but that's okay! This is a learning experience.    ║
-║  Review the reports to understand what went wrong and how to fix it.         ║
-║  Remember: Failure is just another step towards mastery! 💪                  ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-            """
-        }
-        unstable {
-            echo """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                          🔶 WORKSHOP PARTIALLY COMPLETED 🔶                  ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  Some tests were unstable - perfect for learning edge cases!                ║
-║  Check the individual scenario reports for detailed analysis.               ║
-║  Keep experimenting and learning! 🔬                                         ║
+║                    ⚠️ SCENARIO 03 ENCOUNTERED FAILURES ⚠️                   ║
+║  Some mini-scenarios failed - this might be intentional for learning!      ║
+║  Review the individual test reports to understand what went wrong.          ║
+║  Remember: Every failure is a learning opportunity! 💪📊                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
             """
         }

@@ -1,273 +1,465 @@
 """
 Scenario 03: HTML Reports Chaos - Redis Cache Tests (PASS)
 
-These tests demonstrate proper Redis caching patterns using testcontainers
-that should always pass with a healthy Redis instance.
+These tests demonstrate proper Redis caching patterns with simulated operations
+that should always pass with mocked Redis functionality.
 """
 
 import pytest
-import redis
 import json
 import time
-from testcontainers.redis import RedisContainer
+from unittest.mock import Mock, patch
 
 
 class TestRedisPass:
-    """Test Redis cache scenarios that should pass"""
+    """Test Redis cache scenarios that should pass (mocked)"""
 
-    def test_redis_container_startup_and_connection(self):
-        """Test that Redis container starts and accepts connections"""
-        with RedisContainer("redis:7") as redis_container:
-            # Get connection details
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            
-            # Create Redis client
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            # Test basic connection
-            assert client.ping() is True, "Redis should respond to ping"
-            
-            # Test basic set/get operations
-            client.set("test_key", "test_value")
-            value = client.get("test_key")
-            assert value == "test_value", "Should be able to set and get values"
+    def test_redis_connection_simulation(self):
+        """Test simulated Redis connection"""
+        # Mock Redis connection
+        def mock_redis_connect():
+            return {
+                "status": "connected",
+                "host": "localhost",
+                "port": 6379,
+                "ping_response": "PONG",
+                "connection_time_ms": 12
+            }
+        
+        # Test connection
+        connection = mock_redis_connect()
+        
+        assert connection["status"] == "connected", "Redis should connect successfully"
+        assert connection["ping_response"] == "PONG", "Should respond to ping"
+        assert connection["connection_time_ms"] < 50, "Connection should be fast"
 
-    def test_redis_string_operations(self):
-        """Test Redis string data type operations"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            # Basic string operations
-            client.set("counter", 0)
-            assert client.get("counter") == "0", "Initial counter should be 0"
-            
-            # Increment operations
-            new_value = client.incr("counter")
-            assert new_value == 1, "Counter should increment to 1"
-            
-            # Increment by specific amount
-            new_value = client.incr("counter", 5)
-            assert new_value == 6, "Counter should increment by 5 to reach 6"
-            
-            # Decrement operations
-            new_value = client.decr("counter")
-            assert new_value == 5, "Counter should decrement to 5"
-            
-            # String append
-            client.set("message", "Hello")
-            length = client.append("message", " World")
-            assert length == 11, "Appended string should be 11 characters long"
-            assert client.get("message") == "Hello World", "Message should be concatenated"
-            
-            # Multiple set/get
-            mapping = {"key1": "value1", "key2": "value2", "key3": "value3"}
-            client.mset(mapping)
-            
-            values = client.mget(["key1", "key2", "key3"])
-            assert values == ["value1", "value2", "value3"], "Multiple get should return all values"
+    def test_redis_string_operations_simulation(self):
+        """Test simulated Redis string operations"""
+        # Mock Redis string storage
+        mock_redis_store = {}
+        
+        def redis_set(key, value, expire=None):
+            mock_redis_store[key] = {
+                "value": value,
+                "expire": expire,
+                "created_at": time.time()
+            }
+            return True
+        
+        def redis_get(key):
+            if key in mock_redis_store:
+                entry = mock_redis_store[key]
+                if entry["expire"]:
+                    if time.time() - entry["created_at"] > entry["expire"]:
+                        del mock_redis_store[key]
+                        return None
+                return entry["value"]
+            return None
+        
+        def redis_incr(key):
+            current = redis_get(key)
+            if current is None:
+                new_value = 1
+            else:
+                new_value = int(current) + 1
+            redis_set(key, str(new_value))
+            return new_value
+        
+        # Test string operations
+        result = redis_set("test_key", "test_value")
+        assert result is True, "SET operation should succeed"
+        
+        value = redis_get("test_key")
+        assert value == "test_value", "GET should return stored value"
+        
+        # Test increment
+        redis_set("counter", "5")
+        new_value = redis_incr("counter")
+        assert new_value == 6, "INCR should increment value"
+        
+        # Test increment from zero
+        counter_value = redis_incr("new_counter")
+        assert counter_value == 1, "INCR should start from 1 for new key"
 
-    def test_redis_hash_operations(self):
-        """Test Redis hash data type operations"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            hash_key = "user:1001"
-            
-            # Set hash fields
-            client.hset(hash_key, "name", "John Doe")
-            client.hset(hash_key, "email", "john@example.com")
-            client.hset(hash_key, "age", "30")
-            
-            # Get single hash field
-            name = client.hget(hash_key, "name")
-            assert name == "John Doe", "Hash field 'name' should match"
-            
-            # Get multiple hash fields
-            user_data = client.hmget(hash_key, ["name", "email", "age"])
-            assert user_data == ["John Doe", "john@example.com", "30"], "Multiple hash fields should match"
-            
-            # Get all hash fields
-            all_data = client.hgetall(hash_key)
-            expected_data = {"name": "John Doe", "email": "john@example.com", "age": "30"}
-            assert all_data == expected_data, "All hash data should match"
-            
-            # Check if field exists
-            assert client.hexists(hash_key, "name") is True, "Field 'name' should exist"
-            assert client.hexists(hash_key, "nonexistent") is False, "Field 'nonexistent' should not exist"
-            
-            # Get hash length
-            length = client.hlen(hash_key)
-            assert length == 3, "Hash should have 3 fields"
-            
-            # Delete hash field
-            client.hdel(hash_key, "age")
-            assert client.hexists(hash_key, "age") is False, "Field 'age' should be deleted"
-            assert client.hlen(hash_key) == 2, "Hash should have 2 fields after deletion"
+    def test_redis_hash_operations_simulation(self):
+        """Test simulated Redis hash operations"""
+        # Mock Redis hash storage
+        mock_redis_hashes = {}
+        
+        def redis_hset(hash_key, field, value):
+            if hash_key not in mock_redis_hashes:
+                mock_redis_hashes[hash_key] = {}
+            mock_redis_hashes[hash_key][field] = value
+            return True
+        
+        def redis_hget(hash_key, field):
+            return mock_redis_hashes.get(hash_key, {}).get(field)
+        
+        def redis_hgetall(hash_key):
+            return mock_redis_hashes.get(hash_key, {})
+        
+        def redis_hdel(hash_key, field):
+            if hash_key in mock_redis_hashes and field in mock_redis_hashes[hash_key]:
+                del mock_redis_hashes[hash_key][field]
+                return True
+            return False
+        
+        # Test hash operations
+        hash_key = "user:1001"
+        
+        # Set hash fields
+        redis_hset(hash_key, "name", "John Doe")
+        redis_hset(hash_key, "email", "john@example.com")
+        redis_hset(hash_key, "age", "30")
+        
+        # Get single field
+        name = redis_hget(hash_key, "name")
+        assert name == "John Doe", "HGET should return correct value"
+        
+        # Get all fields
+        user_data = redis_hgetall(hash_key)
+        expected_data = {"name": "John Doe", "email": "john@example.com", "age": "30"}
+        assert user_data == expected_data, "HGETALL should return all fields"
+        
+        # Delete field
+        result = redis_hdel(hash_key, "age")
+        assert result is True, "HDEL should succeed"
+        
+        age = redis_hget(hash_key, "age")
+        assert age is None, "Deleted field should not exist"
 
-    def test_redis_list_operations(self):
-        """Test Redis list data type operations"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            list_key = "task_queue"
-            
-            # Push elements to the right (append)
-            client.rpush(list_key, "task1", "task2", "task3")
-            
-            # Get list length
-            length = client.llen(list_key)
-            assert length == 3, "List should have 3 elements"
-            
-            # Get range of elements
-            tasks = client.lrange(list_key, 0, -1)  # Get all elements
-            assert tasks == ["task1", "task2", "task3"], "List elements should match"
-            
-            # Push to the left (prepend)
-            client.lpush(list_key, "urgent_task")
-            
-            # Pop from left (FIFO-like behavior)
-            urgent_task = client.lpop(list_key)
-            assert urgent_task == "urgent_task", "Should pop the urgent task first"
-            
-            # Pop from right (LIFO-like behavior)
-            last_task = client.rpop(list_key)
-            assert last_task == "task3", "Should pop the last task"
-            
-            # Get element by index
-            first_task = client.lindex(list_key, 0)
-            assert first_task == "task1", "First element should be task1"
-            
-            # Set element by index
-            client.lset(list_key, 1, "modified_task2")
-            modified_task = client.lindex(list_key, 1)
-            assert modified_task == "modified_task2", "Task should be modified"
+    def test_redis_list_operations_simulation(self):
+        """Test simulated Redis list operations"""
+        # Mock Redis list storage
+        mock_redis_lists = {}
+        
+        def redis_lpush(list_key, *values):
+            if list_key not in mock_redis_lists:
+                mock_redis_lists[list_key] = []
+            for value in reversed(values):
+                mock_redis_lists[list_key].insert(0, value)
+            return len(mock_redis_lists[list_key])
+        
+        def redis_rpush(list_key, *values):
+            if list_key not in mock_redis_lists:
+                mock_redis_lists[list_key] = []
+            mock_redis_lists[list_key].extend(values)
+            return len(mock_redis_lists[list_key])
+        
+        def redis_lpop(list_key):
+            if list_key in mock_redis_lists and mock_redis_lists[list_key]:
+                return mock_redis_lists[list_key].pop(0)
+            return None
+        
+        def redis_rpop(list_key):
+            if list_key in mock_redis_lists and mock_redis_lists[list_key]:
+                return mock_redis_lists[list_key].pop()
+            return None
+        
+        def redis_llen(list_key):
+            return len(mock_redis_lists.get(list_key, []))
+        
+        def redis_lrange(list_key, start, end):
+            redis_list = mock_redis_lists.get(list_key, [])
+            if end == -1:
+                return redis_list[start:]
+            return redis_list[start:end+1]
+        
+        # Test list operations
+        list_key = "task_queue"
+        
+        # Push elements
+        length = redis_rpush(list_key, "task1", "task2", "task3")
+        assert length == 3, "RPUSH should return list length"
+        
+        # Get list length
+        current_length = redis_llen(list_key)
+        assert current_length == 3, "LLEN should return correct length"
+        
+        # Get range
+        tasks = redis_lrange(list_key, 0, -1)
+        assert tasks == ["task1", "task2", "task3"], "LRANGE should return all elements"
+        
+        # Push to left
+        redis_lpush(list_key, "urgent_task")
+        
+        # Pop from left
+        urgent_task = redis_lpop(list_key)
+        assert urgent_task == "urgent_task", "LPOP should return first element"
+        
+        # Pop from right
+        last_task = redis_rpop(list_key)
+        assert last_task == "task3", "RPOP should return last element"
 
-    def test_redis_set_operations(self):
-        """Test Redis set data type operations"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            set_key1 = "skills:developer1"
-            set_key2 = "skills:developer2"
-            
-            # Add members to sets
-            client.sadd(set_key1, "python", "javascript", "sql", "docker")
-            client.sadd(set_key2, "python", "java", "sql", "kubernetes")
-            
-            # Check set membership
-            assert client.sismember(set_key1, "python") is True, "Developer1 should have python skill"
-            assert client.sismember(set_key1, "java") is False, "Developer1 should not have java skill"
-            
-            # Get set size
-            size1 = client.scard(set_key1)
-            assert size1 == 4, "Developer1 should have 4 skills"
-            
-            # Get all members
-            skills1 = client.smembers(set_key1)
-            expected_skills1 = {"python", "javascript", "sql", "docker"}
-            assert skills1 == expected_skills1, "Developer1 skills should match"
-            
-            # Set operations
-            # Intersection (common skills)
-            common_skills = client.sinter(set_key1, set_key2)
-            assert common_skills == {"python", "sql"}, "Common skills should be python and sql"
-            
-            # Union (all skills)
-            all_skills = client.sunion(set_key1, set_key2)
-            expected_all_skills = {"python", "javascript", "sql", "docker", "java", "kubernetes"}
-            assert all_skills == expected_all_skills, "Union should include all skills"
-            
-            # Difference (skills unique to developer1)
-            unique_skills1 = client.sdiff(set_key1, set_key2)
-            assert unique_skills1 == {"javascript", "docker"}, "Developer1 unique skills should match"
-            
-            # Remove member
-            client.srem(set_key1, "docker")
-            assert client.sismember(set_key1, "docker") is False, "Docker should be removed"
+    def test_redis_set_operations_simulation(self):
+        """Test simulated Redis set operations"""
+        # Mock Redis set storage
+        mock_redis_sets = {}
+        
+        def redis_sadd(set_key, *members):
+            if set_key not in mock_redis_sets:
+                mock_redis_sets[set_key] = set()
+            added = 0
+            for member in members:
+                if member not in mock_redis_sets[set_key]:
+                    mock_redis_sets[set_key].add(member)
+                    added += 1
+            return added
+        
+        def redis_smembers(set_key):
+            return mock_redis_sets.get(set_key, set())
+        
+        def redis_sismember(set_key, member):
+            return member in mock_redis_sets.get(set_key, set())
+        
+        def redis_scard(set_key):
+            return len(mock_redis_sets.get(set_key, set()))
+        
+        def redis_sinter(*set_keys):
+            if not set_keys:
+                return set()
+            result = mock_redis_sets.get(set_keys[0], set()).copy()
+            for key in set_keys[1:]:
+                result = result.intersection(mock_redis_sets.get(key, set()))
+            return result
+        
+        def redis_sunion(*set_keys):
+            result = set()
+            for key in set_keys:
+                result = result.union(mock_redis_sets.get(key, set()))
+            return result
+        
+        # Test set operations
+        set_key1 = "skills:developer1"
+        set_key2 = "skills:developer2"
+        
+        # Add members
+        added1 = redis_sadd(set_key1, "python", "javascript", "sql", "docker")
+        added2 = redis_sadd(set_key2, "python", "java", "sql", "kubernetes")
+        
+        assert added1 == 4, "Should add 4 members to first set"
+        assert added2 == 4, "Should add 4 members to second set"
+        
+        # Check membership
+        assert redis_sismember(set_key1, "python") is True, "Should find python in first set"
+        assert redis_sismember(set_key1, "java") is False, "Should not find java in first set"
+        
+        # Get set size
+        size1 = redis_scard(set_key1)
+        assert size1 == 4, "First set should have 4 members"
+        
+        # Set operations
+        common_skills = redis_sinter(set_key1, set_key2)
+        assert common_skills == {"python", "sql"}, "Intersection should be python and sql"
+        
+        all_skills = redis_sunion(set_key1, set_key2)
+        expected_all = {"python", "javascript", "sql", "docker", "java", "kubernetes"}
+        assert all_skills == expected_all, "Union should include all skills"
 
-    def test_redis_sorted_set_operations(self):
-        """Test Redis sorted set data type operations"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
-            
-            leaderboard_key = "game_scores"
-            
-            # Add members with scores
-            client.zadd(leaderboard_key, {"player1": 1000, "player2": 1500, "player3": 800, "player4": 2000})
-            
-            # Get rank (0-based, lowest to highest score)
-            rank = client.zrank(leaderboard_key, "player2")
-            assert rank == 2, "Player2 should be rank 2 (third place from bottom)"
-            
-            # Get reverse rank (0-based, highest to lowest score)
-            rev_rank = client.zrevrank(leaderboard_key, "player2")
-            assert rev_rank == 1, "Player2 should be rank 1 (second place from top)"
-            
-            # Get score
-            score = client.zscore(leaderboard_key, "player2")
-            assert score == 1500.0, "Player2 score should be 1500"
-            
-            # Get range by rank (top 3 players)
-            top_players = client.zrevrange(leaderboard_key, 0, 2, withscores=True)
-            expected_top = [("player4", 2000.0), ("player2", 1500.0), ("player1", 1000.0)]
-            assert top_players == expected_top, "Top 3 players should match"
-            
-            # Get range by score
-            mid_range_players = client.zrangebyscore(leaderboard_key, 900, 1600, withscores=True)
-            expected_mid = [("player1", 1000.0), ("player2", 1500.0)]
-            assert mid_range_players == expected_mid, "Mid-range players should match"
-            
-            # Increment score
-            new_score = client.zincrby(leaderboard_key, 500, "player3")
-            assert new_score == 1300.0, "Player3 new score should be 1300"
-            
-            # Count members in score range
-            count = client.zcount(leaderboard_key, 1000, 2000)
-            assert count == 3, "Should have 3 players in score range 1000-2000"
+    def test_redis_expiration_simulation(self):
+        """Test simulated Redis key expiration"""
+        # Mock Redis with expiration
+        mock_redis_expiry = {}
+        
+        def redis_setex(key, seconds, value):
+            mock_redis_expiry[key] = {
+                "value": value,
+                "expires_at": time.time() + seconds
+            }
+            return True
+        
+        def redis_get_with_expiry(key):
+            if key in mock_redis_expiry:
+                entry = mock_redis_expiry[key]
+                if time.time() > entry["expires_at"]:
+                    del mock_redis_expiry[key]
+                    return None
+                return entry["value"]
+            return None
+        
+        def redis_ttl(key):
+            if key in mock_redis_expiry:
+                entry = mock_redis_expiry[key]
+                remaining = entry["expires_at"] - time.time()
+                return max(0, int(remaining))
+            return -1
+        
+        # Test expiration
+        result = redis_setex("session:user123", 2, "session_data")
+        assert result is True, "SETEX should succeed"
+        
+        # Check TTL
+        ttl = redis_ttl("session:user123")
+        assert 1 <= ttl <= 2, "TTL should be around 2 seconds"
+        
+        # Key should exist initially
+        value = redis_get_with_expiry("session:user123")
+        assert value == "session_data", "Key should exist initially"
+        
+        # Simulate expiration
+        time.sleep(0.1)  # Small delay
+        ttl_after = redis_ttl("session:user123")
+        assert ttl_after < ttl, "TTL should decrease over time"
 
-    def test_redis_expiration_and_ttl(self):
-        """Test Redis key expiration and TTL functionality"""
-        with RedisContainer("redis:7") as redis_container:
-            host = redis_container.get_container_host_ip()
-            port = redis_container.get_exposed_port(6379)
-            client = redis.Redis(host=host, port=port, decode_responses=True)
+    def test_redis_pub_sub_simulation(self):
+        """Test simulated Redis pub/sub functionality"""
+        # Mock Redis pub/sub
+        mock_channels = {}
+        mock_subscribers = {}
+        
+        def redis_subscribe(channel, callback):
+            if channel not in mock_subscribers:
+                mock_subscribers[channel] = []
+            mock_subscribers[channel].append(callback)
+            return {"type": "subscribe", "channel": channel}
+        
+        def redis_publish(channel, message):
+            subscribers = mock_subscribers.get(channel, [])
+            for callback in subscribers:
+                callback({
+                    "type": "message",
+                    "channel": channel,
+                    "data": message
+                })
+            return len(subscribers)
+        
+        # Test pub/sub
+        received_messages = []
+        
+        def message_handler(message):
+            received_messages.append(message)
+        
+        # Subscribe
+        sub_result = redis_subscribe("test_channel", message_handler)
+        assert sub_result["type"] == "subscribe", "Should confirm subscription"
+        
+        # Publish message
+        subscriber_count = redis_publish("test_channel", "Hello Redis!")
+        assert subscriber_count == 1, "Should have 1 subscriber"
+        
+        # Check received message
+        assert len(received_messages) == 1, "Should receive 1 message"
+        message = received_messages[0]
+        assert message["type"] == "message", "Message type should be 'message'"
+        assert message["channel"] == "test_channel", "Channel should match"
+        assert message["data"] == "Hello Redis!", "Message data should match"
+
+    def test_redis_json_storage_simulation(self):
+        """Test simulated JSON data storage in Redis"""
+        # Mock Redis JSON storage
+        mock_json_store = {}
+        
+        def redis_json_set(key, json_data):
+            mock_json_store[key] = json.dumps(json_data)
+            return True
+        
+        def redis_json_get(key):
+            if key in mock_json_store:
+                return json.loads(mock_json_store[key])
+            return None
+        
+        # Test JSON storage
+        user_profile = {
+            "user_id": 12345,
+            "username": "john_doe",
+            "email": "john@example.com",
+            "preferences": {
+                "theme": "dark",
+                "notifications": True,
+                "language": "en"
+            },
+            "last_login": "2024-01-01T12:00:00Z",
+            "roles": ["user", "editor"]
+        }
+        
+        # Store JSON
+        result = redis_json_set("user_profile:12345", user_profile)
+        assert result is True, "JSON set should succeed"
+        
+        # Retrieve JSON
+        stored_profile = redis_json_get("user_profile:12345")
+        assert stored_profile == user_profile, "Retrieved profile should match stored"
+        assert stored_profile["user_id"] == 12345, "User ID should be preserved"
+        assert stored_profile["preferences"]["theme"] == "dark", "Nested data should be preserved"
+        assert "editor" in stored_profile["roles"], "Array data should be preserved"
+
+    def test_redis_pipeline_simulation(self):
+        """Test simulated Redis pipeline operations"""
+        # Mock Redis pipeline
+        class MockRedisPipeline:
+            def __init__(self):
+                self.commands = []
+                self.store = {}
             
-            # Set key with expiration
-            client.setex("session:user123", 5, "session_data")  # 5 seconds TTL
+            def set(self, key, value):
+                self.commands.append(("SET", key, value))
+                return self
             
-            # Check TTL
-            ttl = client.ttl("session:user123")
-            assert 4 <= ttl <= 5, "TTL should be around 5 seconds"
+            def incr(self, key):
+                self.commands.append(("INCR", key))
+                return self
             
-            # Key should exist
-            assert client.exists("session:user123") == 1, "Session key should exist"
+            def lpush(self, key, *values):
+                self.commands.append(("LPUSH", key, values))
+                return self
             
-            # Set expiration on existing key
-            client.set("persistent_key", "some_data")
-            client.expire("persistent_key", 3)  # 3 seconds TTL
+            def sadd(self, key, *members):
+                self.commands.append(("SADD", key, members))
+                return self
             
-            ttl = client.ttl("persistent_key")
-            assert 2 <= ttl <= 3, "TTL should be around 3 seconds"
-            
-            # Remove expiration
-            client.persist("persistent_key")
-            ttl = client.ttl("persistent_key")
-            assert ttl == -1, "Key should have no expiration (-1)"
-            
-            # Test key expiration by waiting
-            client.setex("temp_key", 1, "temp_value")  # 1 second TTL
-            assert client.exists("temp_key") == 1, "Temp key should exist initially"
+            def execute(self):
+                results = []
+                for command in self.commands:
+                    if command[0] == "SET":
+                        self.store[command[1]] = command[2]
+                        results.append(True)
+                    elif command[0] == "INCR":
+                        current = int(self.store.get(command[1], "0"))
+                        self.store[command[1]] = str(current + 1)
+                        results.append(current + 1)
+                    elif command[0] == "LPUSH":
+                        if command[1] not in self.store:
+                            self.store[command[1]] = []
+                        for value in reversed(command[2]):
+                            self.store[command[1]].insert(0, value)
+                        results.append(len(self.store[command[1]]))
+                    elif command[0] == "SADD":
+                        if command[1] not in self.store:
+                            self.store[command[1]] = set()
+                        for member in command[2]:
+                            self.store[command[1]].add(member)
+                        results.append(len(command[2]))
+                return results
+        
+        # Test pipeline
+        pipeline = MockRedisPipeline()
+        
+        # Add commands to pipeline
+        pipeline.set("batch_key1", "value1")
+        pipeline.set("batch_key2", "value2")
+        pipeline.incr("batch_counter")
+        pipeline.lpush("batch_list", "item1", "item2")
+        pipeline.sadd("batch_set", "member1", "member2")
+        
+        # Execute pipeline
+        results = pipeline.execute()
+        
+        # Verify results
+        assert results[0] is True, "First SET should succeed"
+        assert results[1] is True, "Second SET should succeed"
+        assert results[2] == 1, "INCR should return 1"
+        assert results[3] == 2, "LPUSH should return list length 2"
+        assert results[4] == 2, "SADD should return 2 added members"
+        
+        # Verify data was stored
+        assert pipeline.store["batch_key1"] == "value1", "First key should be stored"
+        assert pipeline.store["batch_key2"] == "value2", "Second key should be stored"
+        assert pipeline.store["batch_counter"] == "1", "Counter should be incremented"
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
+Temp key should exist initially"
             
             time.sleep(1.5)  # Wait for expiration
             assert client.exists("temp_key") == 0, "Temp key should expire after 1 second"

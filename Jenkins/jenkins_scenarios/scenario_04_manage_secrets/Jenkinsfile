@@ -50,12 +50,11 @@ pipeline {
         }
     }
 
-    post {
+post {
     always {
         script {
             echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
 
-            // Print contents of reports folder
             sh 'echo "Listing reports directory:"'
             sh 'ls -l reports || echo "No reports found."'
 
@@ -63,10 +62,8 @@ pipeline {
             echo "See Jenkins artifacts for HTML and JSON reports."
         }
 
-        // Archive artifacts from correct path
         archiveArtifacts artifacts: 'reports/*.html, reports/*.json', allowEmptyArchive: true
 
-        // Clean up Docker image
         sh 'docker rmi $IMAGE_NAME || true'
     }
 
@@ -78,5 +75,6 @@ pipeline {
         echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
     }
 }
+
 
 }

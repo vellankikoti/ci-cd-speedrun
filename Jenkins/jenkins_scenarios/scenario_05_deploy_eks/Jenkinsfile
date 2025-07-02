@@ -154,7 +154,7 @@ pipeline {
                             sh '''
                                 echo "⚙️ Creating kubeconfig directly..."
                                 
-                                # Create kubeconfig properly - escape the quotes correctly
+                                # Create kubeconfig - fix the shell parsing issue
                                 docker run --rm \\
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
@@ -169,9 +169,29 @@ pipeline {
                                     echo "📋 First few lines:"
                                     head -3 kubeconfig
                                 else
-                                    echo "❌ Kubeconfig creation failed"
-                                    ls -la
-                                    exit 1
+                                    echo "❌ Kubeconfig creation failed - trying alternative method"
+                                    
+                                    # Alternative: separate commands
+                                    docker run --rm \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        amazon/aws-cli:latest \\
+                                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig
+                                    
+                                    docker run --rm \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        amazon/aws-cli:latest \\
+                                        cat /tmp/kubeconfig > kubeconfig
+                                        
+                                    if [ -f kubeconfig ] && [ -s kubeconfig ]; then
+                                        echo "✅ Kubeconfig created with alternative method"
+                                    else
+                                        echo "❌ Both methods failed"
+                                        exit 1
+                                    fi
                                 fi
                                 
                                 echo "✅ Setup completed"

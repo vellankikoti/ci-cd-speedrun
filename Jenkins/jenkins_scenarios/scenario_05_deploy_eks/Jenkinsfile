@@ -1,4 +1,16 @@
-pipeline {
+success {
+                            echo "✅ FAIL test completed successfully"
+                        }
+                        
+                        failure {
+                            echo "❌ FAIL test failed"
+                        }                        success {
+                            echo "✅ PASS test completed successfully"
+                        }
+                        
+                        failure {
+                            echo "❌ PASS test failed"
+                        }pipeline {
     agent any
     
     parameters {
@@ -243,13 +255,11 @@ pipeline {
                             dir(env.SCENARIO_5_PATH) {
                                 sh '''
                                     echo "📋 Collecting PASS test artifacts..."
-                                    # Container exits immediately on success, so just verify reports
-                                    if [ -f reports/eks_pass_report.json ]; then
-                                        echo "✅ PASS test report generated"
-                                        cat reports/eks_pass_report.json | head -20
-                                    else
-                                        echo "⚠️ No PASS test report found"
-                                    fi
+                                    echo "📂 Reports directory contents:"
+                                    ls -la reports/ || echo "No reports directory"
+                                    
+                                    # Check for any generated reports
+                                    find reports/ -name "*.json" -o -name "*.html" | head -10 || echo "No reports found"
                                 '''
                             }
                         }
@@ -305,13 +315,11 @@ pipeline {
                             dir(env.SCENARIO_5_PATH) {
                                 sh '''
                                     echo "📋 Collecting FAIL test artifacts..."
-                                    # Container exits immediately on success, so just verify reports
-                                    if [ -f reports/eks_fail_report.json ]; then
-                                        echo "✅ FAIL test report generated"
-                                        cat reports/eks_fail_report.json | head -20
-                                    else
-                                        echo "⚠️ No FAIL test report found"
-                                    fi
+                                    echo "📂 Reports directory contents:"
+                                    ls -la reports/ || echo "No reports directory"
+                                    
+                                    # Check for any generated reports
+                                    find reports/ -name "*.json" -o -name "*.html" | head -10 || echo "No reports found"
                                 '''
                             }
                         }

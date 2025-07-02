@@ -34,15 +34,20 @@ nav:
   - Setup:
       - Setup Guide: phases/setup.md
   - TestConatiners:
-      - MySQL: databases/mysql.md
-      - MariaDB: databases/mariadb.md
-      - PostgreSQL: databases/postgres.md
-      - MongoDB: databases/mongodb.md
-      - Redis: databases/redis.md
+      - MySQL: testcontainers/mysql.md
+      - MariaDB: testcontainers/mariadb.md
+      - PostgreSQL: testcontainers/postgres.md
+      - MongoDB: testcontainers/mongodb.md
+      - Redis: testcontainers/redis.md
   - Docker:
       - Docker Phase: phases/docker.md
   - Jenkins:
       - Jenkins Phase: phases/jenkins.md
+      - "Scenario 01: Docker Build": jenkins/scenario_01_docker_build.md
+      - "Scenario 02: Testcontainers": jenkins/scenario_02_testcontainers.md
+      - "Scenario 03: HTML Reports": jenkins/scenario_03_html_reports.md
+      - "Scenario 04: Manage Secrets": jenkins/scenario_04_manage_secrets.md
+      - "Scenario 05: Deploy to EKS": jenkins/scenario_05_deploy_eks.md
   - Kubernetes:
       - Kubernetes Phase: phases/k8s.md
   - Certificate: certificate.md

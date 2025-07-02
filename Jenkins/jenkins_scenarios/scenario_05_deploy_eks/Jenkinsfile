@@ -152,31 +152,29 @@ pipeline {
                         
                         dir(env.SCENARIO_5_PATH) {
                             sh '''
-                                echo "⚙️ Creating kubeconfig..."
+                                echo "⚙️ Creating kubeconfig directly..."
                                 
-                                # Create kubeconfig using AWS CLI container - simple approach
+                                # Create kubeconfig and copy it out - fix permission issues
                                 docker run --rm \\
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                     -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                    -v $(pwd):/workspace \\
                                     amazon/aws-cli:latest \\
-                                    eks update-kubeconfig \\
-                                        --region ${AWS_REGION} \\
-                                        --name ${CLUSTER_NAME} \\
-                                        --kubeconfig /workspace/kubeconfig
+                                    /bin/bash -c "aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig && cat /tmp/kubeconfig" > kubeconfig
                                 
-                                # Check if kubeconfig exists
-                                if [ -f kubeconfig ]; then
+                                # Verify kubeconfig was created and has content
+                                if [ -f kubeconfig ] && [ -s kubeconfig ]; then
                                     echo "✅ Kubeconfig created successfully"
                                     ls -la kubeconfig
+                                    echo "📋 First few lines:"
+                                    head -3 kubeconfig
                                 else
-                                    echo "❌ Kubeconfig not found - checking all files"
+                                    echo "❌ Kubeconfig creation failed"
                                     ls -la
                                     exit 1
                                 fi
                                 
-                                echo "✅ AWS and Kubernetes setup completed"
+                                echo "✅ Setup completed"
                             '''
                         }
                     }

@@ -304,15 +304,15 @@ pipeline {
                                 echo "🟢 =================================="
                                 
                                 echo "📋 Step 1: Applying ConfigMap..."
-                                run_kubectl apply -f tests/deploy/configmap.yaml
+                                run_kubectl apply -f /app/tests/deploy/configmap.yaml
                                 echo ""
                                 
                                 echo "📋 Step 2: Applying Service..."
-                                run_kubectl apply -f tests/deploy/service.yaml
+                                run_kubectl apply -f /app/tests/deploy/service.yaml
                                 echo ""
                                 
                                 echo "📋 Step 3: Applying Working Deployment..."
-                                run_kubectl apply -f tests/deploy/deployment-pass.yaml
+                                run_kubectl apply -f /app/tests/deploy/deployment-pass.yaml
                                 echo ""
                                 
                                 echo "⏳ Waiting 30 seconds for deployment..."
@@ -401,16 +401,16 @@ pipeline {
                                 sleep 10
                                 
                                 echo "📋 Step 1: Applying ConfigMap..."
-                                run_kubectl apply -f tests/deploy/configmap.yaml
+                                run_kubectl apply -f /app/tests/deploy/configmap.yaml
                                 echo ""
                                 
                                 echo "📋 Step 2: Applying Service..."
-                                run_kubectl apply -f tests/deploy/service.yaml
+                                run_kubectl apply -f /app/tests/deploy/service.yaml
                                 echo ""
                                 
                                 echo "📋 Step 3: Applying BROKEN Deployment..."
                                 echo "💥 This deployment has intentional failures!"
-                                run_kubectl apply -f tests/deploy/deployment-fail.yaml || echo "Expected to have issues!"
+                                run_kubectl apply -f /app/tests/deploy/deployment-fail.yaml || echo "Expected to have issues!"
                                 echo ""
                                 
                                 echo "⏳ Waiting 60 seconds to observe failures..."

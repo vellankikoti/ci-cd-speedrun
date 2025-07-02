@@ -1,16 +1,4 @@
-success {
-                            echo "✅ FAIL test completed successfully"
-                        }
-                        
-                        failure {
-                            echo "❌ FAIL test failed"
-                        }                        success {
-                            echo "✅ PASS test completed successfully"
-                        }
-                        
-                        failure {
-                            echo "❌ PASS test failed"
-                        }pipeline {
+pipeline {
     agent any
     
     parameters {
@@ -125,7 +113,6 @@ success {
                     echo "🐳 Building Docker image for Scenario 5..."
                     
                     dir(env.SCENARIO_5_PATH) {
-                        // Build the Docker image from the correct directory
                         sh '''
                             echo "📍 Current directory: $(pwd)"
                             echo "📋 Building image: ${SCENARIO_5_IMAGE}"
@@ -397,8 +384,9 @@ EOF
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                     -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                    -e KUBECONFIG=/root/.kube/config \\
-                                    -v $(pwd)/kubeconfig:/root/.kube/config:ro \\
+                                    -e KUBECONFIG=/app/kubeconfig \\
+                                    -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
+                                    --user root \\
                                     ${SCENARIO_5_IMAGE} \\
                                     /bin/bash -c "
                                         kubectl delete deployment chaos-workshop-app --ignore-not-found=true

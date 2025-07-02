@@ -187,170 +187,287 @@ pipeline {
             }
         }
         
-        stage('Run EKS Tests') {
-            when {
-                expression { params.RUN_SCENARIO_5 == true }
-            }
-            
-            parallel {
-                stage('PASS Test') {
-                    when {
-                        expression { params.SCENARIO_5_PASS == true }
-                    }
-                    
-                    steps {
-                        script {
-                            echo "✅ Running PASS test..."
-                            
-                            withCredentials([
-                                usernamePassword(
-                                    credentialsId: 'aws-credentials',
-                                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                                )
-                            ]) {
-                                
-                                dir(env.SCENARIO_5_PATH) {
-                                    sh '''
-                                        echo "🚀 Executing PASS test..."
-                                        
-                                        # Fix permissions and run as root to avoid permission issues
-                                        chmod 644 kubeconfig
-                                        
-                                        docker run --rm \\
-                                            -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                            -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                            -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                            -e KUBECONFIG=/app/kubeconfig \\
-                                            -e PYTHONUNBUFFERED=1 \\
-                                            -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
-                                            -v $(pwd)/reports:/app/reports \\
-                                            --user root \\
-                                            --name scenario-5-pass-${BUILD_NUMBER} \\
-                                            ${SCENARIO_5_IMAGE} \\
-                                            python run_tests.py --pass-only
-                                        
-                                        echo "✅ PASS test completed"
-                                    '''
-                                }
-                            }
-                        }
-                    }
-                    
-                    post {
-                        always {
-                            dir(env.SCENARIO_5_PATH) {
-                                sh '''
-                                    echo "📋 Collecting PASS test artifacts..."
-                                    echo "📂 Reports directory contents:"
-                                    ls -la reports/ || echo "No reports directory"
-                                    
-                                    # Check for any generated reports
-                                    find reports/ -name "*.json" -o -name "*.html" | head -10 || echo "No reports found"
-                                '''
-                            }
-                        }
-                    }
-                }
-                
-                stage('FAIL Test') {
-                    when {
-                        expression { params.SCENARIO_5_FAIL == true }
-                    }
-                    
-                    steps {
-                        script {
-                            echo "💥 Running FAIL test..."
-                            
-                            withCredentials([
-                                usernamePassword(
-                                    credentialsId: 'aws-credentials',
-                                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                                )
-                            ]) {
-                                
-                                dir(env.SCENARIO_5_PATH) {
-                                    sh '''
-                                        echo "💥 Executing FAIL test..."
-                                        
-                                        # Fix permissions and run as root to avoid permission issues
-                                        chmod 644 kubeconfig
-                                        
-                                        docker run --rm \\
-                                            -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                            -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                            -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                            -e KUBECONFIG=/app/kubeconfig \\
-                                            -e PYTHONUNBUFFERED=1 \\
-                                            -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
-                                            -v $(pwd)/reports:/app/reports \\
-                                            --user root \\
-                                            --name scenario-5-fail-${BUILD_NUMBER} \\
-                                            ${SCENARIO_5_IMAGE} \\
-                                            python run_tests.py --fail-only
-                                        
-                                        echo "✅ FAIL test completed"
-                                    '''
-                                }
-                            }
-                        }
-                    }
-                    
-                    post {
-                        always {
-                            dir(env.SCENARIO_5_PATH) {
-                                sh '''
-                                    echo "📋 Collecting FAIL test artifacts..."
-                                    echo "📂 Reports directory contents:"
-                                    ls -la reports/ || echo "No reports directory"
-                                    
-                                    # Check for any generated reports
-                                    find reports/ -name "*.json" -o -name "*.html" | head -10 || echo "No reports found"
-                                '''
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        stage('Generate Reports') {
+        stage('Live Kubernetes Monitoring') {
             when {
                 expression { params.RUN_SCENARIO_5 == true }
             }
             
             steps {
                 script {
-                    echo "📊 Generating reports..."
+                    echo "🔍 Starting Live Kubernetes Monitoring for EKS Chaos Testing"
                     
-                    dir(env.SCENARIO_5_PATH) {
-                        sh '''
-                            echo "📈 Creating final reports..."
-                            
-                            # List generated reports
-                            echo "📂 Generated reports:"
-                            ls -la reports/ || echo "No reports generated"
-                            
-                            # Create summary
-                            cat > reports/scenario-5-summary.json << EOF
-{
-    "scenario": "scenario_05_deploy_eks",
-    "build_number": "${BUILD_NUMBER}",
-    "cluster_name": "${CLUSTER_NAME}",
-    "aws_region": "${AWS_REGION}",
-    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-    "tests_executed": {
-        "pass_test": ${SCENARIO_5_PASS},
-        "fail_test": ${SCENARIO_5_FAIL}
-    },
-    "jenkins_url": "${BUILD_URL}"
-}
-EOF
-                            
-                            echo "📋 Final Summary:"
-                            cat reports/scenario-5-summary.json
-                        '''
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'aws-credentials',
+                            usernameVariable: 'AWS_ACCESS_KEY_ID',
+                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                        )
+                    ]) {
+                        
+                        dir(env.SCENARIO_5_PATH) {
+                            sh '''
+                                chmod 644 kubeconfig
+                                
+                                echo "🌟 =================================="
+                                echo "🌟 EKS CLUSTER LIVE MONITORING"
+                                echo "🌟 =================================="
+                                
+                                # Function to run kubectl commands
+                                run_kubectl() {
+                                    docker run --rm \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        -e KUBECONFIG=/app/kubeconfig \\
+                                        -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
+                                        --user root \\
+                                        ${SCENARIO_5_IMAGE} \\
+                                        kubectl "$@"
+                                }
+                                
+                                echo "📊 CLUSTER OVERVIEW"
+                                echo "===================="
+                                run_kubectl cluster-info
+                                echo ""
+                                
+                                echo "🖥️  CLUSTER NODES"
+                                echo "================="
+                                run_kubectl get nodes -o wide
+                                echo ""
+                                
+                                echo "📦 CURRENT NAMESPACES"
+                                echo "====================="
+                                run_kubectl get namespaces
+                                echo ""
+                                
+                                echo "🚀 EXISTING DEPLOYMENTS"
+                                echo "======================="
+                                run_kubectl get deployments --all-namespaces
+                                echo ""
+                                
+                                echo "🐳 ALL PODS STATUS"
+                                echo "=================="
+                                run_kubectl get pods --all-namespaces -o wide
+                                echo ""
+                                
+                                echo "🌐 ALL SERVICES" 
+                                echo "==============="
+                                run_kubectl get services --all-namespaces
+                                echo ""
+                                
+                                echo "🔧 CONFIGMAPS"
+                                echo "============="
+                                run_kubectl get configmaps --all-namespaces
+                                echo ""
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy & Monitor PASS Test') {
+            when {
+                expression { params.SCENARIO_5_PASS == true }
+            }
+            
+            steps {
+                script {
+                    echo "✅ DEPLOYING SUCCESSFUL APPLICATION"
+                    
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'aws-credentials',
+                            usernameVariable: 'AWS_ACCESS_KEY_ID',
+                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                        )
+                    ]) {
+                        
+                        dir(env.SCENARIO_5_PATH) {
+                            sh '''
+                                # Function to run kubectl commands
+                                run_kubectl() {
+                                    docker run --rm \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        -e KUBECONFIG=/app/kubeconfig \\
+                                        -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
+                                        -v $(pwd)/tests:/app/tests \\
+                                        --user root \\
+                                        ${SCENARIO_5_IMAGE} \\
+                                        kubectl "$@"
+                                }
+                                
+                                echo "🟢 =================================="
+                                echo "🟢 PASS TEST: SUCCESSFUL DEPLOYMENT"
+                                echo "🟢 =================================="
+                                
+                                echo "📋 Step 1: Applying ConfigMap..."
+                                run_kubectl apply -f tests/deploy/configmap.yaml
+                                echo ""
+                                
+                                echo "📋 Step 2: Applying Service..."
+                                run_kubectl apply -f tests/deploy/service.yaml
+                                echo ""
+                                
+                                echo "📋 Step 3: Applying Working Deployment..."
+                                run_kubectl apply -f tests/deploy/deployment-pass.yaml
+                                echo ""
+                                
+                                echo "⏳ Waiting 30 seconds for deployment..."
+                                sleep 30
+                                
+                                echo "📊 MONITORING DEPLOYMENT PROGRESS"
+                                echo "================================="
+                                
+                                echo "🚀 Deployment Status:"
+                                run_kubectl get deployment chaos-workshop-app -o wide
+                                echo ""
+                                
+                                echo "🐳 Pod Status:"
+                                run_kubectl get pods -l app=chaos-workshop-app -o wide
+                                echo ""
+                                
+                                echo "🌐 Service Status:"
+                                run_kubectl get service chaos-workshop-app-service -o wide
+                                echo ""
+                                
+                                echo "📋 Deployment Description:"
+                                run_kubectl describe deployment chaos-workshop-app
+                                echo ""
+                                
+                                echo "📋 Pod Details:"
+                                run_kubectl describe pods -l app=chaos-workshop-app
+                                echo ""
+                                
+                                echo "📜 Recent Events:"
+                                run_kubectl get events --sort-by=.metadata.creationTimestamp | tail -10
+                                echo ""
+                                
+                                echo "✅ PASS TEST DEPLOYMENT COMPLETED!"
+                                echo "✅ Check the logs above to see successful deployment"
+                                echo ""
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy & Monitor FAIL Test') {
+            when {
+                expression { params.SCENARIO_5_FAIL == true }
+            }
+            
+            steps {
+                script {
+                    echo "💥 DEPLOYING BROKEN APPLICATION (CHAOS TEST)"
+                    
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'aws-credentials',
+                            usernameVariable: 'AWS_ACCESS_KEY_ID',
+                            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                        )
+                    ]) {
+                        
+                        dir(env.SCENARIO_5_PATH) {
+                            sh '''
+                                # Function to run kubectl commands
+                                run_kubectl() {
+                                    docker run --rm \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        -e KUBECONFIG=/app/kubeconfig \\
+                                        -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
+                                        -v $(pwd)/tests:/app/tests \\
+                                        --user root \\
+                                        ${SCENARIO_5_IMAGE} \\
+                                        kubectl "$@"
+                                }
+                                
+                                echo "🔴 =================================="
+                                echo "🔴 FAIL TEST: CHAOS DEPLOYMENT"  
+                                echo "🔴 =================================="
+                                
+                                echo "🧹 Cleaning up previous deployment..."
+                                run_kubectl delete deployment chaos-workshop-app --ignore-not-found=true
+                                run_kubectl delete service chaos-workshop-app-service --ignore-not-found=true
+                                run_kubectl delete configmap chaos-workshop-app-config --ignore-not-found=true
+                                echo ""
+                                
+                                sleep 10
+                                
+                                echo "📋 Step 1: Applying ConfigMap..."
+                                run_kubectl apply -f tests/deploy/configmap.yaml
+                                echo ""
+                                
+                                echo "📋 Step 2: Applying Service..."
+                                run_kubectl apply -f tests/deploy/service.yaml
+                                echo ""
+                                
+                                echo "📋 Step 3: Applying BROKEN Deployment..."
+                                echo "💥 This deployment has intentional failures!"
+                                run_kubectl apply -f tests/deploy/deployment-fail.yaml || echo "Expected to have issues!"
+                                echo ""
+                                
+                                echo "⏳ Waiting 60 seconds to observe failures..."
+                                sleep 60
+                                
+                                echo "📊 MONITORING FAILURE SCENARIOS"
+                                echo "==============================="
+                                
+                                echo "🚀 Deployment Status (Should show issues):"
+                                run_kubectl get deployment chaos-workshop-app -o wide
+                                echo ""
+                                
+                                echo "🐳 Pod Status (Should show failures):"
+                                run_kubectl get pods -l app=chaos-workshop-app -o wide
+                                echo ""
+                                
+                                echo "⚠️  Pod Failures Details:"
+                                run_kubectl describe pods -l app=chaos-workshop-app
+                                echo ""
+                                
+                                echo "📜 Recent Error Events:"
+                                run_kubectl get events --field-selector type=Warning --sort-by=.metadata.creationTimestamp | tail -15
+                                echo ""
+                                
+                                echo "🔍 TROUBLESHOOTING COMMANDS"
+                                echo "=========================="
+                                echo "These are the commands attendees should learn:"
+                                echo ""
+                                
+                                echo "📋 Check rollout status:"
+                                run_kubectl rollout status deployment/chaos-workshop-app --timeout=30s || echo "Rollout failed as expected!"
+                                echo ""
+                                
+                                echo "📋 Get pod logs (if any pods exist):"
+                                POD_NAME=$(docker run --rm \\
+                                    -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                    -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                    -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                    -e KUBECONFIG=/app/kubeconfig \\
+                                    -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
+                                    --user root \\
+                                    ${SCENARIO_5_IMAGE} \\
+                                    kubectl get pods -l app=chaos-workshop-app -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "no-pods")
+                                
+                                if [ "$POD_NAME" != "no-pods" ] && [ -n "$POD_NAME" ]; then
+                                    echo "📋 Logs from pod $POD_NAME:"
+                                    run_kubectl logs $POD_NAME || echo "No logs available"
+                                else
+                                    echo "📋 No pods available for log inspection"
+                                fi
+                                echo ""
+                                
+                                echo "💥 CHAOS TEST ANALYSIS COMPLETE!"
+                                echo "💥 Attendees can see real Kubernetes failures above!"
+                                echo ""
+                            '''
+                        }
                     }
                 }
             }
@@ -455,8 +572,7 @@ EOF
         
         cleanup {
             sh '''
-                # Clean up containers and images - ignore errors since containers already exited
-                docker rm -f scenario-5-pass-${BUILD_NUMBER} scenario-5-fail-${BUILD_NUMBER} 2>/dev/null || true
+                # Simple cleanup - just remove the image
                 docker rmi ${SCENARIO_5_IMAGE} 2>/dev/null || true
                 echo "✅ Cleanup completed"
             '''

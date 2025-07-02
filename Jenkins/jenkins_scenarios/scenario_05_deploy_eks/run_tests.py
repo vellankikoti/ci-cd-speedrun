@@ -43,13 +43,16 @@ class EKSTestRunner:
         test_start = datetime.now()
         
         try:
-            # Run pytest with HTML output
+            # Run pytest with HTML output - fix the path issue
             html_report = self.reports_dir / f"pytest_{test_type}_report.html"
             junit_report = self.reports_dir / f"pytest_{test_type}_junit.xml"
             
+            # Use the correct path for test files
+            test_file_path = self.test_dir / test_file
+            
             cmd = [
                 "python", "-m", "pytest",
-                str(test_file),
+                str(test_file_path),
                 "-v",
                 "--tb=short",
                 f"--html={html_report}",
@@ -659,13 +662,13 @@ class EKSTestRunner:
         # Run tests
         if run_pass:
             self.run_test(
-                self.test_dir / "test_deploy_eks_pass.py",
+                "tests/test_deploy_eks_pass.py",
                 "pass"
             )
         
         if run_fail:
             self.run_test(
-                self.test_dir / "test_deploy_eks_fail.py",
+                "tests/test_deploy_eks_fail.py",
                 "fail"
             )
         

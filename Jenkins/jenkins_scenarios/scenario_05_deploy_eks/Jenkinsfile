@@ -242,8 +242,14 @@ pipeline {
                         always {
                             dir(env.SCENARIO_5_PATH) {
                                 sh '''
-                                    docker logs scenario-5-pass-${BUILD_NUMBER} > reports/pass-test-logs.txt 2>&1 || true
-                                    docker rm -f scenario-5-pass-${BUILD_NUMBER} || true
+                                    echo "📋 Collecting PASS test artifacts..."
+                                    # Container exits immediately on success, so just verify reports
+                                    if [ -f reports/eks_pass_report.json ]; then
+                                        echo "✅ PASS test report generated"
+                                        cat reports/eks_pass_report.json | head -20
+                                    else
+                                        echo "⚠️ No PASS test report found"
+                                    fi
                                 '''
                             }
                         }
@@ -298,8 +304,14 @@ pipeline {
                         always {
                             dir(env.SCENARIO_5_PATH) {
                                 sh '''
-                                    docker logs scenario-5-fail-${BUILD_NUMBER} > reports/fail-test-logs.txt 2>&1 || true
-                                    docker rm -f scenario-5-fail-${BUILD_NUMBER} || true
+                                    echo "📋 Collecting FAIL test artifacts..."
+                                    # Container exits immediately on success, so just verify reports
+                                    if [ -f reports/eks_fail_report.json ]; then
+                                        echo "✅ FAIL test report generated"
+                                        cat reports/eks_fail_report.json | head -20
+                                    else
+                                        echo "⚠️ No FAIL test report found"
+                                    fi
                                 '''
                             }
                         }
@@ -447,9 +459,10 @@ EOF
         
         cleanup {
             sh '''
-                # Clean up containers and images
+                # Clean up containers and images - ignore errors since containers already exited
                 docker rm -f scenario-5-pass-${BUILD_NUMBER} scenario-5-fail-${BUILD_NUMBER} 2>/dev/null || true
                 docker rmi ${SCENARIO_5_IMAGE} 2>/dev/null || true
+                echo "✅ Cleanup completed"
             '''
         }
     }

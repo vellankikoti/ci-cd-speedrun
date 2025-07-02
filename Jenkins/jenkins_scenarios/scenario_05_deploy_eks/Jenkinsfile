@@ -303,6 +303,14 @@ pipeline {
                                 echo "🟢 PASS TEST: SUCCESSFUL DEPLOYMENT"
                                 echo "🟢 =================================="
                                 
+                                echo "🔍 Debugging: Checking container file structure..."
+                                docker run --rm \\
+                                    -v $(pwd)/tests:/app/tests \\
+                                    --user root \\
+                                    ${SCENARIO_5_IMAGE} \\
+                                    /bin/bash -c "ls -la /app/ && ls -la /app/tests/ && ls -la /app/tests/deploy/"
+                                echo ""
+                                
                                 echo "📋 Step 1: Applying ConfigMap..."
                                 run_kubectl apply -f /app/tests/deploy/configmap.yaml
                                 echo ""

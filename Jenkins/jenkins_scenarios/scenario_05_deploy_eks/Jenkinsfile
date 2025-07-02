@@ -152,45 +152,31 @@ pipeline {
                         
                         dir(env.SCENARIO_5_PATH) {
                             sh '''
-                                echo "⚙️ Creating kubeconfig using AWS CLI container..."
+                                echo "⚙️ Creating kubeconfig..."
                                 
-                                # Create kubeconfig using the working container method
+                                # Create kubeconfig using AWS CLI container - simple approach
                                 docker run --rm \\
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                     -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                    -v $(pwd):/workspace \\
                                     amazon/aws-cli:latest \\
                                     eks update-kubeconfig \\
                                         --region ${AWS_REGION} \\
                                         --name ${CLUSTER_NAME} \\
-                                        --kubeconfig /tmp/kubeconfig && \\
-                                docker run --rm \\
-                                    -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                    -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                    -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                    -v $(pwd):/output \\
-                                    amazon/aws-cli:latest \\
-                                    sh -c "aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /output/kubeconfig"
+                                        --kubeconfig /workspace/kubeconfig
                                 
-                                # Verify kubeconfig was created
+                                # Check if kubeconfig exists
                                 if [ -f kubeconfig ]; then
                                     echo "✅ Kubeconfig created successfully"
                                     ls -la kubeconfig
                                 else
-                                    echo "❌ Kubeconfig creation failed"
+                                    echo "❌ Kubeconfig not found - checking all files"
+                                    ls -la
                                     exit 1
                                 fi
                                 
-                                echo "🔍 Testing kubectl access with our built image..."
-                                docker run --rm \\
-                                    -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                    -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                    -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                    -v $(pwd)/kubeconfig:/root/.kube/config:ro \\
-                                    ${SCENARIO_5_IMAGE} \\
-                                    /bin/bash -c "kubectl cluster-info --request-timeout=10s || echo 'kubectl access verification complete'"
-                                
-                                echo "✅ Setup completed successfully"
+                                echo "✅ AWS and Kubernetes setup completed"
                             '''
                         }
                     }

@@ -72,7 +72,7 @@ assert result[0] == 0
 Run:
 
 ```bash
-pytest -v tests/test_mysql_container.py
+pytest -v testcontainers/test_mysql_container.py
 ```
 
 ✅ Expected:

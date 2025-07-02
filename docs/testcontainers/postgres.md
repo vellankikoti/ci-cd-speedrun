@@ -72,7 +72,7 @@ assert result[0] == 0
 Run:
 
 ```bash
-pytest -v tests/test_postgres_container.py
+pytest -v testcontainers/test_postgres_container.py
 ```
 
 ✅ Expected:

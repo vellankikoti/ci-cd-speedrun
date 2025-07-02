@@ -74,7 +74,7 @@ assert result is None
 Run:
 
 ```bash
-pytest -v tests/test_mongodb_container.py
+pytest -v testcontainers/test_mongodb_container.py
 ```
 
 ✅ Expected:

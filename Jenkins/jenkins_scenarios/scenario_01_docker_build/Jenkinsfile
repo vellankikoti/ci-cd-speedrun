@@ -7,11 +7,6 @@ pipeline {
             defaultValue: '1',
             description: 'Which app version (1-5) do you want to build and run?'
         )
-        booleanParam(
-            name: 'KEEP_CONTAINER',
-            defaultValue: false,
-            description: 'Keep container running after pipeline ends (for demo)?'
-        )
     }
 
     environment {
@@ -21,6 +16,20 @@ pipeline {
     }
 
     stages {
+
+        stage('Pre-Cleanup') {
+            steps {
+                sh '''
+                    echo "🔪 Pre-cleanup: Killing any leftover app containers..."
+
+                    # Remove any container using port 3000
+                    docker ps -q --filter publish=3000 | xargs -r docker rm -f || true
+
+                    # Remove old container by name
+                    docker ps -a --filter "name=$CONTAINER_NAME" -q | xargs -r docker rm -f || true
+                '''
+            }
+        }
 
         stage('Clone Repo Manually') {
             steps {
@@ -83,15 +92,6 @@ Valid versions are: 1, 2, 3, 4, 5.
             }
         }
 
-        stage('Full Cleanup') {
-            steps {
-                sh """
-                    docker ps -q --filter publish=3000 | xargs -r docker rm -f || true
-                    docker ps -a --filter "name=$CONTAINER_NAME" -q | xargs -r docker rm -f || true
-                """
-            }
-        }
-
         stage('Run App Container') {
             steps {
                 sh """
@@ -126,15 +126,6 @@ Valid versions are: 1, 2, 3, 4, 5.
                         echo "✅ App responded successfully!"
                     fi
                 '''
-            }
-        }
-
-        stage('Final Cleanup') {
-            when {
-                expression { return !params.KEEP_CONTAINER }
-            }
-            steps {
-                sh "docker rm -f $CONTAINER_NAME || true"
             }
         }
     }

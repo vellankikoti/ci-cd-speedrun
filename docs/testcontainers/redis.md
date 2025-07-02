@@ -79,7 +79,7 @@ assert value_after_expiry is None
 Run:
 
 ```bash
-pytest -v tests/test_redis_container.py
+pytest -v testcontainers/test_redis_container.py
 ```
 
 ✅ Expected:

@@ -43,7 +43,7 @@ Instead of manually switching files and building containers, we’ve automated e
 Run:
 
 ```bash
-python workshop_tools/deploy_version.py 3
+python Docker/workshop_tools/deploy_version.py 3
 ```
 
 ✅ This:
@@ -65,7 +65,7 @@ reports/version_3/docker_report.html
 Every deploy automatically runs:
 
 ```bash
-python workshop_tools/generate_docker_report.py 3
+python Docker/workshop_tools/generate_docker_report.py 3
 ```
 
 This analyzes:
@@ -77,7 +77,6 @@ This analyzes:
 
 It creates a report like:
 
-> ![Docker Report Screenshot](https://dummyimage.com/600x300/2c3e50/ffffff&text=Docker+Report+Screenshot)
 
 **Why it matters:** This makes Docker transparent for developers and helps avoid bloat.
 
@@ -194,7 +193,7 @@ Optional chaos ideas:
 To deploy version 5 and see the full chaos experience:
 
 ```bash
-python workshop_tools/deploy_version.py --version 5
+python Docker/workshop_tools/deploy_version.py --version 5
 ```
 
 Then check:
@@ -221,4 +220,4 @@ By the end of Phase 2, you’ll understand:
 
 ---
 
-[⬅️ Previous Phase: TestContainers](./tests.md) | [Next Phase: CI/CD Pipelines ➡️](./jenkins.md)
+[⬅️ Previous Phase: TestContainers](./testcontainers.md) | [Next Phase: CI/CD Pipelines ➡️](./jenkins.md)

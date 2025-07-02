@@ -152,49 +152,38 @@ pipeline {
                         
                         dir(env.SCENARIO_5_PATH) {
                             sh '''
-                                echo "⚙️ Creating kubeconfig directly..."
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_DEFAULT_REGION=${AWS_REGION}
                                 
-                                # Create kubeconfig - fix the shell parsing issue
-                                docker run --rm \\
-                                    -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                    -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                    -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                    amazon/aws-cli:latest \\
-                                    sh -c "aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig && cat /tmp/kubeconfig" > kubeconfig
-                                
-                                # Verify kubeconfig was created and has content
-                                if [ -f kubeconfig ] && [ -s kubeconfig ]; then
-                                    echo "✅ Kubeconfig created successfully"
-                                    ls -la kubeconfig
-                                    echo "📋 First few lines:"
-                                    head -3 kubeconfig
-                                else
-                                    echo "❌ Kubeconfig creation failed - trying alternative method"
-                                    
-                                    # Alternative: separate commands
-                                    docker run --rm \\
-                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                        amazon/aws-cli:latest \\
-                                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig
-                                    
-                                    docker run --rm \\
-                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                        amazon/aws-cli:latest \\
-                                        cat /tmp/kubeconfig > kubeconfig
-                                        
-                                    if [ -f kubeconfig ] && [ -s kubeconfig ]; then
-                                        echo "✅ Kubeconfig created with alternative method"
-                                    else
-                                        echo "❌ Both methods failed"
-                                        exit 1
-                                    fi
+                                echo "🔐 Installing AWS CLI..."
+                                # Use the working method from auth pipeline
+                                if ! command -v aws &> /dev/null; then
+                                    curl -LO "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip"
+                                    unzip -q awscliv2.zip
+                                    ./aws/install
                                 fi
                                 
-                                echo "✅ Setup completed"
+                                echo "🔍 Testing AWS connection..."
+                                aws sts get-caller-identity
+                                
+                                echo "🔍 Checking EKS cluster..."
+                                aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --query 'cluster.status'
+                                
+                                echo "⚙️ Creating kubeconfig..."
+                                aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}" --kubeconfig ./kubeconfig
+                                
+                                if [ -f ./kubeconfig ] && [ -s ./kubeconfig ]; then
+                                    echo "✅ Kubeconfig created successfully"
+                                    ls -la ./kubeconfig
+                                    echo "📋 Kubeconfig preview:"
+                                    head -3 ./kubeconfig
+                                else
+                                    echo "❌ Kubeconfig creation failed"
+                                    exit 1
+                                fi
+                                
+                                echo "✅ Setup completed successfully"
                             '''
                         }
                     }

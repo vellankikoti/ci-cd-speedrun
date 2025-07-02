@@ -215,17 +215,18 @@ pipeline {
                                     sh '''
                                         echo "🚀 Executing PASS test..."
                                         
-                                        # Fix kubeconfig permissions before mounting
+                                        # Fix permissions and run as root to avoid permission issues
                                         chmod 644 kubeconfig
                                         
                                         docker run --rm \\
                                             -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                             -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                             -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                            -e KUBECONFIG=/root/.kube/config \\
+                                            -e KUBECONFIG=/app/kubeconfig \\
                                             -e PYTHONUNBUFFERED=1 \\
-                                            -v $(pwd)/kubeconfig:/root/.kube/config:ro \\
+                                            -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
                                             -v $(pwd)/reports:/app/reports \\
+                                            --user root \\
                                             --name scenario-5-pass-${BUILD_NUMBER} \\
                                             ${SCENARIO_5_IMAGE} \\
                                             python run_tests.py --pass-only
@@ -270,17 +271,18 @@ pipeline {
                                     sh '''
                                         echo "💥 Executing FAIL test..."
                                         
-                                        # Fix kubeconfig permissions before mounting
+                                        # Fix permissions and run as root to avoid permission issues
                                         chmod 644 kubeconfig
                                         
                                         docker run --rm \\
                                             -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                             -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                             -e AWS_DEFAULT_REGION=${AWS_REGION} \\
-                                            -e KUBECONFIG=/root/.kube/config \\
+                                            -e KUBECONFIG=/app/kubeconfig \\
                                             -e PYTHONUNBUFFERED=1 \\
-                                            -v $(pwd)/kubeconfig:/root/.kube/config:ro \\
+                                            -v $(pwd)/kubeconfig:/app/kubeconfig:ro \\
                                             -v $(pwd)/reports:/app/reports \\
+                                            --user root \\
                                             --name scenario-5-fail-${BUILD_NUMBER} \\
                                             ${SCENARIO_5_IMAGE} \\
                                             python run_tests.py --fail-only

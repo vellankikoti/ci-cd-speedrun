@@ -154,7 +154,7 @@ pipeline {
                             sh '''
                                 echo "⚙️ Creating kubeconfig directly..."
                                 
-                                # Create kubeconfig and copy it out - fix permission issues
+                                # Create kubeconfig and copy it out - proper bash syntax
                                 docker run --rm \\
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\

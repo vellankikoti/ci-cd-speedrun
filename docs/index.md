@@ -34,14 +34,14 @@ Covers:
 
 ## 🧪 **Dynamic Database Testing**
 
-**Phase:** Databases + Testcontainers
+**Phase:**  Testcontainers
 
 👉 See:
-- [Database Testing Docs](databases/mysql.md)
-- [Database Testing Docs](databases/mariadb.md)
-- [Database Testing Docs](databases/postgres.md)
-- [Database Testing Docs](databases/mongodb.md)
-- [Database Testing Docs](databases/redis.md)
+- [MySQL Testing Docs](testcontainers/mysql.md)
+- [MariaDB Testing Docs](testcontainers/mariadb.md)
+- [Postgres Testing Docs](testcontainers/postgres.md)
+- [MongoDB Testing Docs](testcontainers/mongodb.md)
+- [Redis Testing Docs](testcontainers/redis.md)
 
 You’ll:
 ✅ Spin up real databases in Docker  
@@ -69,10 +69,15 @@ Key takeaways:
 
 ## 🤖 **Jenkins Pipeline Chaos**
 
-👉 Placeholder for:
+👉 See:
 - [Jenkins Phase](phases/jenkins.md)
+- [Scenario 01: Docker Build](jenkins/scenario_01_docker_build.md)
+- [Scenario 02: Testcontainers](jenkins/scenario_02_testcontainers.md)
+- [Scenario 03: HTML Reports](jenkins/scenario_03_html_reports.md)
+- [Scenario 04: Manage Secrets](jenkins/scenario_04_manage_secrets.md)
+- [Scenario 05: Deploy to EKS](jenkins/scenario_05_deploy_eks.md)
 
-In progress:
+Key takeaways:
 ✅ Building Jenkins pipelines for:
   - Docker builds
   - Testcontainers tests
@@ -87,10 +92,10 @@ In progress:
 
 ## ☸️ **Kubernetes Chaos & Scalability**
 
-👉 Placeholder for:
+👉 See:
 - [Kubernetes Phase](phases/k8s.md)
 
-Coming soon:
+Key takeaways:
 ✅ Deploying our apps to Kubernetes  
 ✅ Chaos experiments with:
   - killing pods
@@ -139,7 +144,7 @@ This workshop prepares you for **the real world.** We deliberately cause chaos s
 → Start with:
 - [Setup Guide](phases/setup.md)
 - Then dive into:
-  - [Databases](databases/mysql.md)
+  - [TestContainers](phases/testcontainers.md)
   - [Docker](phases/docker.md)
 
 …and prepare for chaos you’ll never forget!

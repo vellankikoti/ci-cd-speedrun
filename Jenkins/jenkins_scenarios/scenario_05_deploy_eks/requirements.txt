@@ -1,0 +1,48 @@
+# Testing Framework
+pytest==7.4.3
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+pytest-timeout==2.2.0
+pytest-xdist==3.5.0
+
+# Template Engine for Reports
+Jinja2==3.1.2
+
+# HTTP Requests for endpoint testing
+requests==2.31.0
+
+# YAML Processing
+PyYAML==6.0.1
+
+# JSON Processing (included in standard library, but explicit for clarity)
+# json - built-in
+
+# Date/Time utilities
+python-dateutil==2.8.2
+
+# Path manipulation (pathlib is built-in in Python 3.4+)
+# pathlib - built-in
+
+# Additional utilities
+click==8.1.7
+colorama==0.4.6
+
+# Kubernetes client (optional, for advanced use cases)
+kubernetes==28.1.0
+
+# AWS SDK (optional, for advanced AWS integration)
+boto3==1.34.0
+botocore==1.34.0
+
+# Logging and debugging
+structlog==23.2.0
+
+# Performance and monitoring
+psutil==5.9.6
+
+# Security and credential handling
+cryptography==41.0.8
+
+# Development and debugging tools
+ipdb==0.13.13
+rich==13.7.0

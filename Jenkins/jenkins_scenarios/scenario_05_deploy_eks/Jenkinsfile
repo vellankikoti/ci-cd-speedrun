@@ -1,44 +1,336 @@
+// Jenkinsfile Integration for Scenario 5 - EKS Deployment Testing
+// Add this to your main Jenkinsfile pipeline
+
 pipeline {
     agent any
-
-    environment {
-        AWS_DEFAULT_REGION = "us-east-1"
+    
+    parameters {
+        booleanParam(
+            name: 'RUN_SCENARIO_5',
+            defaultValue: false,
+            description: 'Run Scenario 5: EKS Deployment Testing'
+        )
+        booleanParam(
+            name: 'SCENARIO_5_PASS',
+            defaultValue: true,
+            description: 'Run PASS test (successful deployment)'
+        )
+        booleanParam(
+            name: 'SCENARIO_5_FAIL',
+            defaultValue: true,
+            description: 'Run FAIL test (chaos deployment failures)'
+        )
+        string(
+            name: 'EKS_CLUSTER_NAME',
+            defaultValue: 'chaos-workshop-cluster',
+            description: 'EKS cluster name for testing'
+        )
+        string(
+            name: 'AWS_REGION',
+            defaultValue: 'us-west-2',
+            description: 'AWS region for EKS cluster'
+        )
     }
-
+    
+    environment {
+        // AWS Configuration
+        AWS_DEFAULT_REGION = "${params.AWS_REGION}"
+        AWS_REGION = "${params.AWS_REGION}"
+        
+        // Docker Configuration
+        DOCKER_REGISTRY = "your-registry.com"  // Update with your registry
+        SCENARIO_5_IMAGE = "${DOCKER_REGISTRY}/chaos-workshop-scenario-5:${BUILD_NUMBER}"
+        
+        // Kubernetes Configuration
+        KUBECONFIG_FILE = credentials('eks-kubeconfig')  // Jenkins credential ID
+        AWS_CREDENTIALS = credentials('aws-credentials')  // Jenkins credential ID
+    }
+    
     stages {
-        stage('Prepare kubeconfig') {
-            steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials'
-                ]]) {
-                    echo "🔧 Updating kubeconfig for EKS cluster..."
+        stage('Scenario 5: EKS Deployment Testing') {
+            when {
+                expression { params.RUN_SCENARIO_5 == true }
+            }
+            
+            stages {
+                stage('Build Scenario 5 Docker Image') {
+                    steps {
+                        script {
+                            echo "🐳 Building Docker image for Scenario 5..."
+                            
+                            dir('Jenkins/jenkins_scenarios/scenario_05_deploy_eks') {
+                                // Build Docker image
+                                def dockerImage = docker.build(
+                                    env.SCENARIO_5_IMAGE,
+                                    "--no-cache ."
+                                )
+                                
+                                // Optional: Push to registry
+                                // docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-registry-credentials') {
+                                //     dockerImage.push()
+                                //     dockerImage.push('latest')
+                                // }
+                            }
+                        }
+                    }
+                }
+                
+                stage('Setup EKS Context') {
+                    steps {
+                        script {
+                            echo "⚙️ Setting up EKS cluster context..."
+                            
+                            withCredentials([
+                                file(credentialsId: 'eks-kubeconfig', variable: 'KUBECONFIG_PATH'),
+                                usernamePassword(credentialsId: 'aws-credentials', 
+                                               usernameVariable: 'AWS_ACCESS_KEY_ID', 
+                                               passwordVariable: 'AWS_SECRET_ACCESS_KEY')
+                            ]) {
+                                // Update kubeconfig for EKS cluster
+                                sh """
+                                    aws eks update-kubeconfig \\
+                                        --region ${AWS_REGION} \\
+                                        --name ${params.EKS_CLUSTER_NAME} \\
+                                        --kubeconfig /tmp/kubeconfig
+                                """
+                                
+                                // Verify connectivity
+                                sh """
+                                    export KUBECONFIG=/tmp/kubeconfig
+                                    kubectl cluster-info
+                                    kubectl get nodes
+                                """
+                            }
+                        }
+                    }
+                }
+                
+                stage('Run EKS Deployment Tests') {
+                    steps {
+                        script {
+                            echo "🚀 Running EKS deployment tests..."
+                            
+                            withCredentials([
+                                usernamePassword(credentialsId: 'aws-credentials', 
+                                               usernameVariable: 'AWS_ACCESS_KEY_ID', 
+                                               passwordVariable: 'AWS_SECRET_ACCESS_KEY')
+                            ]) {
+                                
+                                // Determine test parameters
+                                def testArgs = []
+                                if (!params.SCENARIO_5_PASS) {
+                                    testArgs.add("--skip-pass")
+                                }
+                                if (!params.SCENARIO_5_FAIL) {
+                                    testArgs.add("--skip-fail")
+                                }
+                                
+                                def testCommand = testArgs.join(" ")
+                                
+                                // Run tests in Docker container
+                                sh """
+                                    docker run --rm \\
+                                        -v /tmp/kubeconfig:/root/.kube/config:ro \\
+                                        -v \$(pwd)/Jenkins/jenkins_scenarios/scenario_05_deploy_eks/reports:/app/reports \\
+                                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                        -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                        -e KUBECONFIG=/root/.kube/config \\
+                                        --name scenario-5-tests-${BUILD_NUMBER} \\
+                                        ${env.SCENARIO_5_IMAGE} \\
+                                        python run_tests.py ${testCommand}
+                                """
+                            }
+                        }
+                    }
+                    
+                    post {
+                        always {
+                            script {
+                                // Archive test reports
+                                dir('Jenkins/jenkins_scenarios/scenario_05_deploy_eks') {
+                                    // Archive HTML reports
+                                    archiveArtifacts artifacts: 'reports/*.html', 
+                                                   allowEmptyArchive: true,
+                                                   fingerprint: true
+                                    
+                                    // Archive JSON reports
+                                    archiveArtifacts artifacts: 'reports/*.json', 
+                                                   allowEmptyArchive: true,
+                                                   fingerprint: true
+                                    
+                                    // Archive pytest reports
+                                    archiveArtifacts artifacts: 'reports/pytest_*.html', 
+                                                   allowEmptyArchive: true,
+                                                   fingerprint: true
+                                    
+                                    // Publish test results
+                                    publishTestResults testResultsPattern: 'reports/pytest_*_junit.xml',
+                                                      allowEmptyResults: true
+                                    
+                                    // Publish HTML reports
+                                    publishHTML([
+                                        allowMissing: false,
+                                        alwaysLinkToLastBuild: true,
+                                        keepAll: true,
+                                        reportDir: 'reports',
+                                        reportFiles: 'eks_deployment_report.html',
+                                        reportName: 'EKS Deployment Test Report'
+                                    ])
+                                }
+                            }
+                        }
+                        
+                        failure {
+                            script {
+                                echo "❌ Scenario 5 tests failed!"
+                                
+                                // Collect failure diagnostics
+                                sh """
+                                    echo "=== Container Logs ==="
+                                    docker logs scenario-5-tests-${BUILD_NUMBER} || true
+                                    
+                                    echo "=== Kubernetes Cluster State ==="
+                                    export KUBECONFIG=/tmp/kubeconfig
+                                    kubectl get pods --all-namespaces || true
+                                    kubectl get events --sort-by='.lastTimestamp' || true
+                                """
+                            }
+                        }
+                        
+                        success {
+                            echo "✅ Scenario 5 tests completed successfully!"
+                        }
+                        
+                        cleanup {
+                            script {
+                                // Clean up Docker containers and images
+                                sh """
+                                    docker rm -f scenario-5-tests-${BUILD_NUMBER} || true
+                                    docker rmi ${env.SCENARIO_5_IMAGE} || true
+                                """
+                                
+                                // Clean up temporary files
+                                sh "rm -f /tmp/kubeconfig || true"
+                            }
+                        }
+                    }
+                }
+                
+                stage('Generate Consolidated Report') {
+                    when {
+                        expression { params.RUN_SCENARIO_5 == true }
+                    }
+                    
+                    steps {
+                        script {
+                            echo "📊 Generating consolidated scenario report..."
+                            
+                            dir('Jenkins/jenkins_scenarios/scenario_05_deploy_eks') {
+                                // Create a summary report that can be consumed by run_all_scenarios.py
+                                sh """
+                                    python3 -c "
+import json
+import os
+from datetime import datetime
 
-                    sh '''
-                        aws eks update-kubeconfig --name my-cluster --region $AWS_DEFAULT_REGION
-                    '''
+# Load test results
+results_file = 'reports/eks_deployment_report.json'
+if os.path.exists(results_file):
+    with open(results_file, 'r') as f:
+        data = json.load(f)
+    
+    # Create summary for integration with main workshop
+    summary = {
+        'scenario': 'scenario_05_deploy_eks',
+        'status': 'PASSED' if data['summary']['errors'] == 0 else 'FAILED',
+        'total_tests': data['summary']['total'],
+        'passed_tests': data['summary']['passed'],
+        'failed_tests': data['summary']['failed'],
+        'error_tests': data['summary']['errors'],
+        'duration': data.get('total_duration', 0),
+        'start_time': data['start_time'],
+        'end_time': data.get('end_time', datetime.now().isoformat()),
+        'reports': {
+            'html': 'reports/eks_deployment_report.html',
+            'json': 'reports/eks_deployment_report.json'
+        },
+        'jenkins_build': '${BUILD_NUMBER}',
+        'jenkins_url': '${BUILD_URL}'
+    }
+    
+    with open('scenario_05_summary.json', 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print('Scenario 5 Summary:', json.dumps(summary, indent=2))
+else:
+    print('No test results found')
+                                    "
+                                """
+                                
+                                // Archive the summary
+                                archiveArtifacts artifacts: 'scenario_05_summary.json', 
+                                               allowEmptyArchive: true,
+                                               fingerprint: true
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+}
 
-        stage('Validate Deployment YAML') {
-            steps {
-                echo "✅ Validating Kubernetes YAML manifests..."
+// Additional helper functions that can be used in the main pipeline
 
-                sh '''
-                    kubeval k8s/deployment.yaml
-                '''
-            }
-        }
+def getScenario5Status() {
+    /**
+     * Helper function to get Scenario 5 status for integration with run_all_scenarios.py
+     * Returns: Map with scenario status and details
+     */
+    
+    def summaryFile = 'Jenkins/jenkins_scenarios/scenario_05_deploy_eks/scenario_05_summary.json'
+    
+    if (fileExists(summaryFile)) {
+        def summary = readJSON file: summaryFile
+        return [
+            enabled: params.RUN_SCENARIO_5,
+            status: summary.status,
+            details: summary
+        ]
+    } else {
+        return [
+            enabled: params.RUN_SCENARIO_5,
+            status: 'NOT_RUN',
+            details: [:]
+        ]
+    }
+}
 
-        stage('Deploy to EKS') {
-            steps {
-                echo "🚀 Applying Kubernetes manifests..."
-
-                sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl rollout status deployment my-deployment
-                '''
+def cleanupScenario5Resources() {
+    /**
+     * Helper function to clean up EKS resources after all scenarios complete
+     */
+    
+    if (params.RUN_SCENARIO_5) {
+        script {
+            echo "🧹 Cleaning up Scenario 5 EKS resources..."
+            
+            withCredentials([
+                usernamePassword(credentialsId: 'aws-credentials', 
+                               usernameVariable: 'AWS_ACCESS_KEY_ID', 
+                               passwordVariable: 'AWS_SECRET_ACCESS_KEY')
+            ]) {
+                sh """
+                    export KUBECONFIG=/tmp/kubeconfig
+                    
+                    # Clean up any remaining test resources
+                    kubectl delete deployment chaos-workshop-app --ignore-not-found=true
+                    kubectl delete service chaos-workshop-app-service --ignore-not-found=true
+                    kubectl delete configmap chaos-workshop-app-config --ignore-not-found=true
+                    
+                    echo "✅ Scenario 5 cleanup completed"
+                """
             }
         }
     }

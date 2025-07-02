@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chaos-workshop-app-service
+  labels:
+    app: chaos-workshop-app
+    scenario: scenario-05
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: chaos-workshop-app
+---
+# Optional LoadBalancer service for external access testing
+# Uncomment if you want to test external connectivity
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: chaos-workshop-app-loadbalancer
+#   labels:
+#     app: chaos-workshop-app
+#     scenario: scenario-05
+# spec:
+#   type: LoadBalancer
+#   ports:
+#   - port: 80
+#     targetPort: 80
+#     protocol: TCP
+#     name: http
+#   selector:
+#     app: chaos-workshop-app

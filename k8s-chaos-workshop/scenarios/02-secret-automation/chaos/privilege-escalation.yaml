@@ -1,0 +1,117 @@
+# 💀 PRIVILEGE ESCALATION NIGHTMARES
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: privilege-escalation-demo
+
+---
+# 💀 DISASTER 1: Privileged container with host access
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-nightmare
+  namespace: privilege-escalation-demo
+  annotations:
+    chaos-agent: "Full system takeover possible!"
+spec:
+  hostNetwork: true  # 💀 HOST NETWORK ACCESS
+  hostPID: true      # 💀 HOST PROCESS ACCESS
+  hostIPC: true      # 💀 HOST IPC ACCESS
+  containers:
+  - name: hacker-container
+    image: alpine:latest
+    command: ["sleep", "3600"]
+    securityContext:
+      privileged: true  # 💀 FULL PRIVILEGES!
+      runAsUser: 0      # 💀 ROOT USER!
+      allowPrivilegeEscalation: true
+      readOnlyRootFilesystem: false
+      capabilities:
+        add:
+        - SYS_ADMIN     # 💀 SYSTEM ADMINISTRATION
+        - NET_ADMIN     # 💀 NETWORK ADMINISTRATION  
+        - SYS_PTRACE    # 💀 PROCESS TRACING
+        - SYS_MODULE    # 💀 KERNEL MODULE LOADING
+        - DAC_OVERRIDE  # 💀 BYPASS FILE PERMISSIONS
+    volumeMounts:
+    - name: host-root
+      mountPath: /host
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: host-root
+    hostPath:
+      path: /  # 😱 ENTIRE HOST FILESYSTEM!
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock  # 💀 DOCKER CONTROL!
+
+---
+# 💀 DISASTER 2: Container escape via proc mount
+apiVersion: v1
+kind: Pod
+metadata:
+  name: proc-escape
+  namespace: privilege-escalation-demo
+spec:
+  containers:
+  - name: escape-container
+    image: busybox
+    command: ["sleep", "3600"]
+    securityContext:
+      runAsUser: 0
+    volumeMounts:
+    - name: proc
+      mountPath: /host-proc
+    - name: sys
+      mountPath: /host-sys
+  volumes:
+  - name: proc
+    hostPath:
+      path: /proc  # 💀 HOST PROCESS INFO
+  - name: sys
+    hostPath:
+      path: /sys   # 💀 HOST SYSTEM INFO
+
+---
+# 💀 DISASTER 3: Service account with cluster-admin
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: overprivileged-sa
+  namespace: privilege-escalation-demo
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dangerous-binding
+subjects:
+- kind: ServiceAccount
+  name: overprivileged-sa
+  namespace: privilege-escalation-demo
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin  # 💀 FULL CLUSTER ACCESS!
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# 💀 DISASTER 4: Pod with excessive capabilities
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dangerous-caps
+  namespace: privilege-escalation-demo
+spec:
+  serviceAccountName: overprivileged-sa
+  containers:
+  - name: dangerous-container
+    image: alpine:latest
+    command: ["sleep", "3600"]
+    securityContext:
+      capabilities:
+        add:
+        - ALL  # 💀 ALL LINUX CAPABILITIES!
+      runAsUser: 0
+      allowPrivilegeEscalation: true

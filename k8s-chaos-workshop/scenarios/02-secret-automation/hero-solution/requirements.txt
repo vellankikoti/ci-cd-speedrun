@@ -1,0 +1,6 @@
+kubernetes
+pyyaml
+requests
+colorama
+cryptography
+mysql-connector-python

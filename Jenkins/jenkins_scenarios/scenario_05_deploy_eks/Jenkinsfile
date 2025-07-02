@@ -187,7 +187,71 @@ pipeline {
             }
         }
         
-        stage('Live Kubernetes Monitoring') {
+        stage('Validate Kubernetes Files') {
+            when {
+                expression { params.RUN_SCENARIO_5 == true }
+            }
+            
+            steps {
+                script {
+                    echo "🔍 Validating Kubernetes deployment files..."
+                    
+                    dir(env.SCENARIO_5_PATH) {
+                        sh '''
+                            echo "📂 Checking required files exist..."
+                            
+                            # Check if deployment files exist on host
+                            MISSING_FILES=""
+                            
+                            if [ ! -f "tests/deploy/configmap.yaml" ]; then
+                                echo "❌ Missing: tests/deploy/configmap.yaml"
+                                MISSING_FILES="$MISSING_FILES configmap.yaml"
+                            else
+                                echo "✅ Found: tests/deploy/configmap.yaml"
+                            fi
+                            
+                            if [ ! -f "tests/deploy/service.yaml" ]; then
+                                echo "❌ Missing: tests/deploy/service.yaml"
+                                MISSING_FILES="$MISSING_FILES service.yaml"
+                            else
+                                echo "✅ Found: tests/deploy/service.yaml"
+                            fi
+                            
+                            if [ ! -f "tests/deploy/deployment-pass.yaml" ]; then
+                                echo "❌ Missing: tests/deploy/deployment-pass.yaml"
+                                MISSING_FILES="$MISSING_FILES deployment-pass.yaml"
+                            else
+                                echo "✅ Found: tests/deploy/deployment-pass.yaml"
+                            fi
+                            
+                            if [ ! -f "tests/deploy/deployment-fail.yaml" ]; then
+                                echo "❌ Missing: tests/deploy/deployment-fail.yaml"
+                                MISSING_FILES="$MISSING_FILES deployment-fail.yaml"
+                            else
+                                echo "✅ Found: tests/deploy/deployment-fail.yaml"
+                            fi
+                            
+                            if [ -n "$MISSING_FILES" ]; then
+                                echo ""
+                                echo "💥 VALIDATION FAILED!"
+                                echo "💥 Missing required Kubernetes files: $MISSING_FILES"
+                                echo "💥 Please ensure all YAML files exist in tests/deploy/ directory"
+                                echo ""
+                                echo "📂 Current directory structure:"
+                                find tests/ -name "*.yaml" -o -name "*.yml" 2>/dev/null || echo "No YAML files found"
+                                echo ""
+                                echo "🛑 STOPPING PIPELINE - Fix missing files and retry"
+                                exit 1
+                            fi
+                            
+                            echo ""
+                            echo "✅ All required Kubernetes files found!"
+                            echo "✅ Validation passed - proceeding with deployment tests"
+                        '''
+                    }
+                }
+            }
+        }
             when {
                 expression { params.RUN_SCENARIO_5 == true }
             }

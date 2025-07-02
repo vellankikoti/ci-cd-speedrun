@@ -154,13 +154,13 @@ pipeline {
                             sh '''
                                 echo "⚙️ Creating kubeconfig directly..."
                                 
-                                # Create kubeconfig and copy it out - proper bash syntax
+                                # Create kubeconfig properly - escape the quotes correctly
                                 docker run --rm \\
                                     -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                     -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
                                     -e AWS_DEFAULT_REGION=${AWS_REGION} \\
                                     amazon/aws-cli:latest \\
-                                    /bin/bash -c "aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig && cat /tmp/kubeconfig" > kubeconfig
+                                    sh -c "aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME} --kubeconfig /tmp/kubeconfig && cat /tmp/kubeconfig" > kubeconfig
                                 
                                 # Verify kubeconfig was created and has content
                                 if [ -f kubeconfig ] && [ -s kubeconfig ]; then

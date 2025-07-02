@@ -215,6 +215,9 @@ pipeline {
                                     sh '''
                                         echo "🚀 Executing PASS test..."
                                         
+                                        # Fix kubeconfig permissions before mounting
+                                        chmod 644 kubeconfig
+                                        
                                         docker run --rm \\
                                             -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
                                             -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
@@ -266,6 +269,9 @@ pipeline {
                                 dir(env.SCENARIO_5_PATH) {
                                     sh '''
                                         echo "💥 Executing FAIL test..."
+                                        
+                                        # Fix kubeconfig permissions before mounting
+                                        chmod 644 kubeconfig
                                         
                                         docker run --rm \\
                                             -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\

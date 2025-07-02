@@ -1,0 +1,161 @@
+pipeline {
+    agent {
+        docker {
+            image 'amazon/aws-cli:latest'
+            args '-u root:root --entrypoint=""'
+        }
+    }
+    
+    parameters {
+        string(
+            name: 'CLUSTER_NAME',
+            defaultValue: 'eks-cf-stack-eks-cluster',
+            description: 'EKS cluster name to deploy to'
+        )
+        choice(
+            name: 'AWS_REGION',
+            choices: ['us-east-1', 'us-west-2', 'us-east-2', 'eu-west-1'],
+            description: 'AWS region for EKS cluster'
+        )
+        booleanParam(
+            name: 'RUN_SCENARIO_5',
+            defaultValue: true,
+            description: 'Run Scenario 5: EKS Deployment Testing'
+        )
+        booleanParam(
+            name: 'SCENARIO_5_PASS',
+            defaultValue: true,
+            description: 'Run PASS test'
+        )
+        booleanParam(
+            name: 'SCENARIO_5_FAIL',
+            defaultValue: true,
+            description: 'Run FAIL test'
+        )
+    }
+    
+    environment {
+        KUBECONFIG = "${WORKSPACE}/kubeconfig"
+        AWS_PAGER = ""
+        AWS_CLI_AUTO_PROMPT = "off"
+    }
+    
+    stages {
+        stage('Setup Tools') {
+            when {
+                expression { params.RUN_SCENARIO_5 == true }
+            }
+            steps {
+                sh '''
+                    echo "📦 Installing kubectl..."
+                    
+                    # Install kubectl
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
+                    mv kubectl /usr/local/bin/
+                    
+                    # Verify
+                    aws --version
+                    kubectl version --client=true
+                '''
+            }
+        }
+        
+        stage('AWS Authentication & EKS Access') {
+            when {
+                expression { params.RUN_SCENARIO_5 == true }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        export AWS_DEFAULT_REGION=${AWS_REGION}
+                        
+                        echo "🔐 Testing AWS authentication..."
+                        CALLER_IDENTITY=$(aws sts get-caller-identity)
+                        echo "$CALLER_IDENTITY"
+                        
+                        USER_ARN=$(echo "$CALLER_IDENTITY" | grep -o '"Arn": *"[^"]*"' | cut -d'"' -f4)
+                        echo "👤 Your AWS ARN: $USER_ARN"
+                        
+                        echo "🔍 Checking EKS cluster..."
+                        aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --query 'cluster.{Status:status,Version:version,Endpoint:endpoint}'
+                        
+                        echo "⚙️ Creating kubeconfig..."
+                        aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}" --kubeconfig "${KUBECONFIG}"
+                        
+                        echo "🔍 Testing kubectl access..."
+                        export KUBECONFIG=${KUBECONFIG}
+                        
+                        # Try kubectl - if it fails, it's expected (auth issue)
+                        if kubectl cluster-info --request-timeout=10s 2>/dev/null; then
+                            echo "✅ kubectl access successful!"
+                            kubectl get nodes
+                            kubectl auth can-i create deployments
+                        else
+                            echo "⚠️  kubectl access failed - this is expected if your user isn't in aws-auth ConfigMap"
+                            echo "📋 Your ARN needs to be added to the EKS cluster's aws-auth ConfigMap:"
+                            echo "   User ARN: $USER_ARN"
+                            echo "   Add this to aws-auth ConfigMap in kube-system namespace"
+                            echo "✅ AWS authentication works - kubeconfig created successfully"
+                        fi
+                        
+                        echo "✅ AWS setup completed!"
+                    '''
+                }
+            }
+        }
+        
+        stage('Save Configuration') {
+            when {
+                expression { params.RUN_SCENARIO_5 == true }
+            }
+            steps {
+                script {
+                    // Archive kubeconfig
+                    archiveArtifacts artifacts: 'kubeconfig', allowEmptyArchive: false
+                    
+                    // Create summary
+                    sh '''
+                        cat > environment-summary.json << EOF
+{
+    "cluster_name": "${CLUSTER_NAME}",
+    "aws_region": "${AWS_REGION}",
+    "build_number": "${BUILD_NUMBER}",
+    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+                    '''
+                    archiveArtifacts artifacts: 'environment-summary.json', allowEmptyArchive: false
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'rm -f awscliv2.zip 2>/dev/null || true'
+        }
+        success {
+            echo "✅ AWS Authentication and EKS setup completed successfully!"
+        }
+        failure {
+            sh '''
+                echo "❌ Pipeline failed. Diagnostic info:"
+                echo "=== AWS Identity ==="
+                aws sts get-caller-identity 2>/dev/null || echo "No AWS access"
+                echo "=== EKS Clusters ==="
+                aws eks list-clusters --region "${AWS_REGION}" 2>/dev/null || echo "Cannot list clusters"
+                echo "=== Kubeconfig ==="
+                cat "${KUBECONFIG}" 2>/dev/null || echo "No kubeconfig"
+            '''
+        }
+    }
+}

@@ -394,15 +394,26 @@ class TestEKSDeploymentFail:
 def test_deploy_eks_fail():
     """Pytest entry point for EKS deployment fail test"""
     test_instance = TestEKSDeploymentFail()
-    test_instance.test_eks_deployment_fail()
     
-    # Save report data for HTML generation
-    report_file = test_instance.test_dir / "eks_fail_report.json"
-    with open(report_file, 'w') as f:
-        json.dump(test_instance.report_data, f, indent=2)
-    
-    print(f"Report saved to: {report_file}")
-
-
-if __name__ == "__main__":
-    test_deploy_eks_fail()
+    try:
+        test_instance.test_eks_deployment_fail()
+        
+        # Save report data for HTML generation
+        report_file = test_instance.test_dir / "reports" / "eks_fail_report.json"
+        report_file.parent.mkdir(exist_ok=True)
+        with open(report_file, 'w') as f:
+            json.dump(test_instance.report_data, f, indent=2)
+        
+        print(f"Report saved to: {report_file}")
+        
+    except Exception as e:
+        # Save error report
+        test_instance.report_data["status"] = "FAILED" 
+        test_instance.report_data["error"] = str(e)
+        
+        report_file = test_instance.test_dir / "reports" / "eks_fail_report.json"
+        report_file.parent.mkdir(exist_ok=True)
+        with open(report_file, 'w') as f:
+            json.dump(test_instance.report_data, f, indent=2)
+        
+        raise

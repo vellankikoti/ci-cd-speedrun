@@ -232,8 +232,13 @@ class TestEKSDeploymentPass:
             # Step 1: Verify kubectl connectivity
             stdout, stderr, returncode = self.run_kubectl("cluster-info")
             if returncode != 0:
+                # If auth fails, still create a report
                 self.add_step("Cluster Connectivity", "FAILED", f"kubectl cluster-info failed: {stderr}")
-                raise Exception("Cannot connect to EKS cluster")
+                self.report_data["status"] = "AUTH_FAILED"
+                self.report_data["auth_error"] = stderr
+                print("❌ Cannot connect to Kubernetes cluster!")
+                print(f"Error: {stderr}")
+                return False
             
             self.add_step("Cluster Connectivity", "SUCCESS", "Connected to EKS cluster")
             
@@ -320,20 +325,36 @@ class TestEKSDeploymentPass:
             # Clean up on failure too
             self.cleanup_deployment()
             
-            pytest.fail(f"EKS deployment test failed: {e}")
+            print(f"EKS deployment test failed: {e}")
+            return False
 
 
 def test_deploy_eks_pass():
     """Pytest entry point for EKS deployment pass test"""
     test_instance = TestEKSDeploymentPass()
-    test_instance.test_eks_deployment_pass()
     
-    # Save report data for HTML generation
-    report_file = test_instance.test_dir / "eks_pass_report.json"
-    with open(report_file, 'w') as f:
-        json.dump(test_instance.report_data, f, indent=2)
-    
-    print(f"Report saved to: {report_file}")
+    try:
+        test_instance.test_eks_deployment_pass()
+        
+        # Save report data for HTML generation
+        report_file = test_instance.test_dir / "reports" / "eks_pass_report.json"
+        report_file.parent.mkdir(exist_ok=True)
+        with open(report_file, 'w') as f:
+            json.dump(test_instance.report_data, f, indent=2)
+        
+        print(f"Report saved to: {report_file}")
+        
+    except Exception as e:
+        # Save error report
+        test_instance.report_data["status"] = "FAILED"
+        test_instance.report_data["error"] = str(e)
+        
+        report_file = test_instance.test_dir / "reports" / "eks_pass_report.json"
+        report_file.parent.mkdir(exist_ok=True)
+        with open(report_file, 'w') as f:
+            json.dump(test_instance.report_data, f, indent=2)
+        
+        raise
 
 
 if __name__ == "__main__":

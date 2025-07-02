@@ -131,23 +131,83 @@ python3 hero-solution/deploy-vote-app.py
 🚀 Creating bulletproof deployment
 ✅ Deployment created with health checks and resource limits
 🌐 Creating service for external access
-✅ Service created - accessible at port port
+✅ Service created - accessible at port 30001
 ⏳ Waiting for deployment to be ready...
 🎉 Deployment ready! 2/2 pods running
 🎯 ACCESS YOUR VOTE APP:
-   💻 Local: http://localhost:port
-   🌐 Minikube: http://$(minikube ip):port
-   ☁️  EKS: http://<any-node-ip>:port
+   💻 Local: http://localhost:30001
+   🌐 Minikube: http://$(minikube ip):30001
+   ☁️  EKS: http://<any-node-ip>:30001
 🎉 CHAOS AGENT DEFEATED!
 ```
 
-### **Step 3: Interact with Your Vote App** (5 minutes)
-1. **Open the URL** shown in your terminal
-2. **Vote** for your favorite programming language
-3. **See real-time results** update in the chart
-4. **Try voting multiple times** - each vote counts!
+### **Step 5: Access Your Vote Application** (5 minutes)
 
-### **Step 4: Monitor Your Deployment** (5 minutes)
+The script will provide **environment-specific access instructions** based on auto-detection:
+
+#### **🐳 Docker Desktop Environment:**
+```
+💻 Primary: http://localhost:31000
+🔄 If blocked: Use port forwarding below
+```
+
+#### **🎯 Minikube Environment:**
+```
+🌐 Minikube: http://<minikube-ip>:31000 (auto-detected)
+🚀 Auto-open: minikube service vote-app-service -n vote-app
+💡 Manual IP: minikube ip
+```
+
+#### **☁️ Cloud Environment (EKS/GKE/AKS):**
+```
+🌍 Get node IP: kubectl get nodes -o wide
+🔗 Access: http://<any-external-ip>:31000
+```
+
+#### **🌐 Universal Access (Always Works):**
+```bash
+# This works on ANY Kubernetes environment - no conflicts!
+kubectl port-forward svc/vote-app-service -n vote-app 31500:80
+
+# Then access: http://localhost:31500
+# Note: Uses port 31500 to avoid Jenkins (8080) and MkDocs (8000) conflicts
+```
+
+### **🔧 Automatic Port Forwarding Option**
+The script will ask:
+```
+🚀 Start port forwarding automatically? (y/n):
+```
+
+If you choose **yes**:
+- ✅ Port forwarding starts in background
+- ✅ No manual setup needed
+- ✅ Automatic conflict-free port selection
+- ✅ Clean URL provided: `http://localhost:31500+`
+
+### **Step 6: Interact with Your Vote App** (5 minutes)
+
+Once you access the vote app through any of the above methods:
+
+1. **🗳️ Cast Your Vote**:
+   - Select your favorite programming language
+   - Click "Vote" button
+   - See your vote recorded instantly
+
+2. **📊 Watch Real-time Results**:
+   - View the live chart updating
+   - See vote percentages change
+   - Notice the interactive features
+
+3. **🔄 Test Multiple Votes**:
+   - Try different browsers
+   - Vote multiple times (each counts!)
+   - Refresh page and see persistence
+
+4. **🎮 Challenge Others**:
+   - Share your URL with neighbors
+   - See collaborative voting
+   - Watch real-time updates from multiple users
 ```bash
 # Run the monitoring system
 python3 hero-solution/monitor-deployment.py
@@ -224,7 +284,7 @@ vote-app:
 vote-app-service:
   type: NodePort
   port: 80 → 8080
-  nodePort: 30001
+  nodePort: 31000  # Updated to avoid Jenkins (8080) conflicts
 ```
 
 ### **Python Automation Features**
@@ -233,6 +293,8 @@ vote-app-service:
 - 📊 **Status Monitoring**: Real-time deployment progress
 - 🎯 **Best Practices**: Resource limits, health checks, labels
 - 🌐 **Universal Access**: Works on all Kubernetes distributions
+- 🚫 **Port Conflict Resolution**: Auto-detects and avoids conflicts
+- 🔍 **Environment Detection**: Smart access instructions per environment
 
 ---
 
@@ -309,9 +371,15 @@ python3 hero-solution/monitor-deployment.py
 
 #### **Can't Access Vote App?**
 ```bash
-# Universal solution - port forwarding works everywhere
-kubectl port-forward svc/vote-app-service -n vote-app 8080:80
-# Then access: http://localhost:8080
+# Universal solution - port forwarding works everywhere, no conflicts
+kubectl port-forward svc/vote-app-service -n vote-app 31500:80
+# Then access: http://localhost:31500
+
+# For Minikube specifically:
+minikube service vote-app-service -n vote-app --url
+
+# For Docker Desktop, also try:
+curl http://127.0.0.1:31000
 ```
 
 #### **Python Script Fails?**
@@ -401,11 +469,20 @@ Want to go deeper? Try these enhancements:
 
 ```python
 # Add these features to deploy-vote-app.py:
-# 1. Image validation before deployment
-# 2. Custom polling questions via command line
-# 3. Multiple environment support (dev/staging/prod)
-# 4. Slack notifications on deployment success
-# 5. Prometheus metrics collection
+# 1. Custom polling questions via command line arguments
+# 2. Multiple environment support (dev/staging/prod namespaces)  
+# 3. Image validation before deployment
+# 4. Slack/Teams notifications on deployment success
+# 5. Prometheus metrics collection endpoints
+# 6. Custom port selection via environment variables
+```
+
+### **Port Customization Challenge**:
+```python
+# In deploy-vote-app.py, make ports configurable:
+import os
+self.node_port = int(os.getenv("VOTE_NODE_PORT", "31000"))
+self.port_forward_port = int(os.getenv("VOTE_PF_PORT", "31500"))
 ```
 
 ---

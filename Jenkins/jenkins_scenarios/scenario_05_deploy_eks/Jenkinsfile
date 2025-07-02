@@ -152,38 +152,41 @@ pipeline {
                         
                         dir(env.SCENARIO_5_PATH) {
                             sh '''
+                                # Set AWS credentials
                                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 export AWS_DEFAULT_REGION=${AWS_REGION}
                                 
-                                echo "🔐 Installing AWS CLI..."
-                                # Use the working method from auth pipeline
-                                if ! command -v aws &> /dev/null; then
-                                    curl -LO "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip"
-                                    unzip -q awscliv2.zip
-                                    ./aws/install
-                                fi
+                                echo "🔍 Verifying AWS CLI..."
+                                aws --version
                                 
-                                echo "🔍 Testing AWS connection..."
+                                echo "🔐 Testing AWS authentication..."
                                 aws sts get-caller-identity
                                 
                                 echo "🔍 Checking EKS cluster..."
                                 aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --query 'cluster.status'
                                 
                                 echo "⚙️ Creating kubeconfig..."
-                                aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}" --kubeconfig ./kubeconfig
+                                aws eks update-kubeconfig \\
+                                    --region "${AWS_REGION}" \\
+                                    --name "${CLUSTER_NAME}" \\
+                                    --kubeconfig ./kubeconfig
                                 
+                                # Verify kubeconfig
                                 if [ -f ./kubeconfig ] && [ -s ./kubeconfig ]; then
                                     echo "✅ Kubeconfig created successfully"
                                     ls -la ./kubeconfig
-                                    echo "📋 Kubeconfig preview:"
-                                    head -3 ./kubeconfig
+                                    wc -l ./kubeconfig
+                                    echo "📋 Kubeconfig content:"
+                                    head -5 ./kubeconfig
                                 else
                                     echo "❌ Kubeconfig creation failed"
+                                    echo "Current directory contents:"
+                                    ls -la
                                     exit 1
                                 fi
                                 
-                                echo "✅ Setup completed successfully"
+                                echo "✅ AWS and Kubernetes setup completed successfully"
                             '''
                         }
                     }

@@ -166,10 +166,16 @@ pipeline {
                                         --name ${CLUSTER_NAME} \\
                                         --kubeconfig /workspace/kubeconfig
                                 
-                                if [ -f kubeconfig ]; then
+                                # Check if kubeconfig was created successfully
+                                if [ -f ./kubeconfig ]; then
                                     echo "✅ Kubeconfig created successfully"
+                                    ls -la ./kubeconfig
+                                    echo "📋 Kubeconfig content preview:"
+                                    head -5 ./kubeconfig
                                 else
                                     echo "❌ Failed to create kubeconfig"
+                                    echo "📂 Current directory contents:"
+                                    ls -la
                                     exit 1
                                 fi
                                 

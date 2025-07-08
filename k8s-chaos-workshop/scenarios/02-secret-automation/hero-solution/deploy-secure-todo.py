@@ -423,7 +423,7 @@ def show_access_info():
     print(f"\n{Fore.GREEN}🎉 WORKING TODO APP DEPLOYED!{Style.RESET_ALL}")
     print(f"\n{Fore.CYAN}📱 ACCESS YOUR SECURE TODO APP:{Style.RESET_ALL}")
     print(f"   🌐 Primary: http://localhost:31001")
-    print(f"   🔧 Port-forward: kubectl port-forward svc/secure-todo-service -n secure-todo 8080:80")
+    print(f"   🔧 Port-forward: kubectl port-forward svc/secure-todo-service -n secure-todo 31501:80")
     print(f"       Then access: http://localhost:8080")
     
     print(f"\n{Fore.YELLOW}✨ WHAT YOU HAVE:{Style.RESET_ALL}")

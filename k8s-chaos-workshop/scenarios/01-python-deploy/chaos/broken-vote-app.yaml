@@ -1,0 +1,51 @@
+# 🧨 CHAOS AGENT'S BROKEN DEPLOYMENT
+# This file has multiple issues that will cause manual deployment to fail!
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-app
+  # ❌ Missing namespace! This will cause confusion
+  labels:
+    app: vote-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote-app
+  template:
+    metadata:
+      labels:
+        app: vote-app
+    spec:
+      containers:
+      - name: vote-app
+        image: quay.io/sjbylo/flask-vote-app:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: vote-config-missing  # ❌ Wrong ConfigMap name!
+              key: db_type
+        # ❌ Missing resource limits - chaos in production!
+        # ❌ Missing health checks - how do we know if it's working?
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-service
+  # ❌ Missing namespace again!
+  labels:
+    app: vote-app
+spec:
+  selector:
+    app: vote-app-wrong  # ❌ Wrong selector - service won't find pods!
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 99999  # ❌ Invalid nodePort range!
+    protocol: TCP
+  type: NodePort

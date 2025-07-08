@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+
+    environment {
+        TESTCONTAINERS_RYUK_DISABLED = 'true'
+        TEST_SCENARIO_DIR = 'Jenkins/jenkins_scenarios/scenario_02_testcontainers'
+        DOCKER_IMAGE_NAME = 'ci-cd-chaos-python:latest'
+    }
+
+    parameters {
+        choice(
+            name: 'TEST_MODE',
+            choices: ['fail', 'pass'],
+            description: 'Run failing tests or fixed tests?'
+        )
+    }
+
+    stages {
+        stage('Checkout Repo') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: 'phase-3-jenkins']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "🛠️ Building Docker image: ${DOCKER_IMAGE_NAME}"
+                sh """
+                    docker build \
+                        -t ${DOCKER_IMAGE_NAME} \
+                        -f ${TEST_SCENARIO_DIR}/Dockerfile \
+                        ${TEST_SCENARIO_DIR}
+                """
+            }
+        }
+
+        stage('Pre-Cleanup') {
+            steps {
+                echo "🔪 Pre-cleanup: Killing leftover Testcontainers containers..."
+                sh '''
+                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
+                '''
+            }
+        }
+
+        stage('Run Tests Inside Docker') {
+            steps {
+                script {
+                    def testFiles = []
+
+                    if (params.TEST_MODE == 'fail') {
+                        testFiles = [
+                            "${TEST_SCENARIO_DIR}/tests/test_postgres_fail.py",
+                            "${TEST_SCENARIO_DIR}/tests/test_redis_fail.py"
+                        ]
+                        echo "Chaos Agent is laughing… we’re running failing tests!"
+                    } else {
+                        testFiles = [
+                            "${TEST_SCENARIO_DIR}/tests/test_postgres_pass.py",
+                            "${TEST_SCENARIO_DIR}/tests/test_redis_pass.py"
+                        ]
+                        echo "Deploying TestContainers — Chaos Agent’s defeat is imminent!"
+                    }
+
+                    docker.image("${DOCKER_IMAGE_NAME}").inside('-u root -v /var/run/docker.sock:/var/run/docker.sock') {
+                        // Install Python requirements (in case any changed)
+                        sh '''
+                            echo "🔧 Installing Python requirements..."
+                            pip install --no-cache-dir -r requirements.txt
+                        '''
+
+                        testFiles.each { testFile ->
+                            sh """
+                                echo "=== Running test: ${testFile} ==="
+                                pytest ${testFile}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "✨ Chaos Agent defeated… or plotting his next move!"
+        }
+    }
+}

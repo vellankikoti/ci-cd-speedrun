@@ -1,0 +1,31 @@
+# Scenario 03: HTML Reports Chaos - Python Dependencies (Simplified)
+
+# Core testing framework
+pytest>=7.4.0
+pytest-html>=3.2.0
+pytest-json-report>=1.5.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+
+# HTTP and API testing
+requests>=2.31.0
+responses>=0.23.3
+
+# Database testing (simplified - no testcontainers to avoid Docker issues)
+psycopg2-binary>=2.9.7
+
+# Redis testing
+redis>=4.6.0
+
+# Configuration and data handling
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+jsonschema>=4.19.0
+
+# Security and secrets testing
+cryptography>=41.0.4
+
+# Utilities
+click>=8.1.7
+rich>=13.5.2
+faker>=19.6.2

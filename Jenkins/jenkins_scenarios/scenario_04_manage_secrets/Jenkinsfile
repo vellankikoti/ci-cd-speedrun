@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+
+    parameters {
+        booleanParam(name: 'RUN_SCENARIO_4', defaultValue: true, description: 'Run Scenario 4: Manage Secrets')
+        booleanParam(name: 'SCENARIO_4_PASS', defaultValue: true, description: 'Run PASS (clean) or FAIL (leaky) test')
+    }
+
+    environment {
+        REPORTS_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets/reports"
+        SCENARIO_DIR = "Jenkins/jenkins_scenarios/scenario_04_manage_secrets"
+        IMAGE_NAME = "scenario4-secrets"
+    }
+
+    stages {
+        stage('Build Docker Image') {
+            when { expression { params.RUN_SCENARIO_4 } }
+            steps {
+                echo "\uD83D\uDEE0 Building Docker image for Scenario 4..."
+                dir("${env.SCENARIO_DIR}") {
+                    sh 'docker build --pull --no-cache -t $IMAGE_NAME .'
+                }
+            }
+        }
+
+        stage('Run Secret Scan') {
+            when { expression { params.RUN_SCENARIO_4 } }
+            steps {
+                echo "\uD83D\uDD0E Running Secret Scan in Docker..."
+                dir("${env.SCENARIO_DIR}") {
+                    sh '''
+                        set -e
+                        mkdir -p reports
+                        echo "\n\uD83D\uDCC2 Reports directory: $(pwd)/reports\n"
+                        docker run --rm \
+                            -e SCENARIO_4_PASS=${SCENARIO_4_PASS} \
+                            -v $(pwd)/reports:/reports \
+                            $IMAGE_NAME
+                    '''
+                }
+            }
+        }
+
+        stage('Archive Reports') {
+            when { expression { params.RUN_SCENARIO_4 } }
+            steps {
+                echo "\uD83D\uDCC1 Archiving reports..."
+                archiveArtifacts artifacts: 'reports/*.html,reports/*.json,reports/*.csv', allowEmptyArchive: true
+            }
+        }
+    }
+
+    post {
+    always {
+        script {
+            echo "=== Scenario 4: Manage Secrets - Pipeline Complete ==="
+
+            // Show contents of the reports folder
+            sh 'echo "Listing reports directory:"'
+            sh 'ls -l reports || echo "No reports found."'
+
+            echo "Reports directory: reports"
+            echo "See Jenkins artifacts for HTML, JSON, and CSV reports."
+        }
+
+        // FIXED archiveArtifacts path
+        archiveArtifacts artifacts: 'reports/*.html,reports/*.json,reports/*.csv', allowEmptyArchive: true
+
+        // Clean up Docker image
+        sh 'docker rmi $IMAGE_NAME || true'
+    }
+
+    failure {
+        echo "❌ Scenario 4 failed! Check the HTML/JSON reports for details."
+    }
+
+    success {
+        echo "✅ Scenario 4 passed! No secrets found (if PASS mode)."
+    }
+}
+
+}

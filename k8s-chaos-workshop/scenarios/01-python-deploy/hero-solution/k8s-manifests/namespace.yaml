@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vote-app
+  labels:
+    created-by: python-hero
+    purpose: chaos-demo
+    workshop: k8s-chaos-workshop

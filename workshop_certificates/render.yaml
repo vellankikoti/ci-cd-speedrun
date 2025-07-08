@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: workshop-certificates
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: workshop-db
+          property: connectionString
+      - key: UPLOAD_FOLDER
+        value: uploads
+      - key: FLASK_ENV
+        value: production
+
+databases:
+  - name: workshop-db
+    databaseName: workshop_certificates
+    user: workshop_user
+    plan: starter 

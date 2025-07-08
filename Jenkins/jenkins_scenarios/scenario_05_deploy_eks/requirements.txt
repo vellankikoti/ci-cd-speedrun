@@ -1,0 +1,42 @@
+# Testing Framework
+pytest
+pytest-html
+pytest-json-report
+pytest-timeout
+pytest-xdist
+
+# Template Engine for Reports
+Jinja2
+
+# HTTP Requests for endpoint testing
+requests
+
+# YAML Processing
+PyYAML
+
+# Date/Time utilities
+python-dateutil
+
+# Additional utilities
+click
+colorama
+
+# Kubernetes client (optional, for advanced use cases)
+kubernetes
+
+# AWS SDK (optional, for advanced AWS integration)
+boto3
+botocore
+
+# Logging and debugging
+structlog
+
+# Performance and monitoring
+psutil
+
+# Security and credential handling
+cryptography
+
+# Development and debugging tools
+ipdb
+rich

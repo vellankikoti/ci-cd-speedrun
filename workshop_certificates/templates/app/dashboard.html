@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CI/CD Chaos Workshop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Points and Progress Summary -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🎯 Your Progress</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="points-display mb-3">
+                    <div class="h2 mb-0">{{ total_points }}</div>
+                    <div class="text-white-50">Total Points</div>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ progress_percentage }}%"
+                         aria-valuenow="{{ progress_percentage }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{ "%.1f"|format(progress_percentage) }}%
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="h4 text-primary">{{ completed_count }}</div>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-muted">{{ total_scenarios }}</div>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+                
+                {% if is_eligible %}
+                <div class="alert alert-success mt-3">
+                    <strong>🎉 Congratulations!</strong><br>
+                    You're eligible for a certificate!
+                </div>
+                {% else %}
+                <div class="alert alert-info mt-3">
+                    <strong>📋 Requirements:</strong><br>
+                    Need 100+ points and 8+ scenarios
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">⚡ Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('app.upload') }}" class="btn btn-primary w-100">
+                            📸 Upload Screenshot
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('app.progress') }}" class="btn btn-secondary w-100">
+                            📊 View Progress
+                        </a>
+                    </div>
+                    {% if is_eligible %}
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('app.certificate') }}" class="btn btn-success w-100">
+                            🏆 Get Certificate
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('docs_index') }}" class="btn btn-outline-primary w-100">
+                            📚 Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workshop Phases -->
+{% for phase, scenarios in phases.items() %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            {% if phase == 'Setup' %}🔧
+            {% elif phase == 'TestContainers' %}🧪
+            {% elif phase == 'Docker' %}🐳
+            {% elif phase == 'Jenkins' %}⚙️
+            {% elif phase == 'Kubernetes' %}☸️
+            {% else %}📋
+            {% endif %}
+            {{ phase }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for scenario in scenarios %}
+            {% set user_progress = user_progress|selectattr("scenario_id", "equalto", scenario.id)|first %}
+            {% set is_completed = user_progress and user_progress.completed %}
+            {% set is_in_progress = user_progress and not user_progress.completed %}
+            
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card scenario-card h-100 {% if is_completed %}completed{% elif is_in_progress %}in-progress{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">{{ scenario.name }}</h6>
+                            <span class="badge">{{ scenario.points }} pts</span>
+                        </div>
+                        
+                        {% if scenario.description %}
+                        <p class="card-text small text-muted">{{ scenario.description[:100] }}{% if scenario.description|length > 100 %}...{% endif %}</p>
+                        {% endif %}
+                        
+                        <div class="mt-auto">
+                            {% if is_completed %}
+                            <div class="text-success">
+                                <i class="fas fa-check-circle"></i> Completed
+                                {% if user_progress.points_earned %}
+                                <span class="badge bg-success ms-2">{{ user_progress.points_earned }} pts</span>
+                                {% endif %}
+                            </div>
+                            {% elif is_in_progress %}
+                            <div class="text-warning">
+                                <i class="fas fa-clock"></i> In Progress
+                            </div>
+                            {% else %}
+                            <div class="text-muted">
+                                <i class="fas fa-circle"></i> Not Started
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">📈 Recent Activity</h5>
+    </div>
+    <div class="card-body">
+        {% set recent_progress = user_progress|sort(attribute='completed_at', reverse=true)|slice(0, 5) %}
+        {% if recent_progress %}
+        <div class="list-group list-group-flush">
+            {% for progress in recent_progress %}
+            {% if progress.completed %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ progress.scenario.name }}</strong>
+                    <br>
+                    <small class="text-muted">Completed {{ progress.completed_at.strftime('%B %d, %Y') }}</small>
+                </div>
+                <span class="badge bg-success">{{ progress.points_earned }} points</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-3">No activity yet. Start completing scenarios to see your progress!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+{% endblock %} 

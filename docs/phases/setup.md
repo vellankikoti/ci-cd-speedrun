@@ -661,8 +661,8 @@ with DockerContainer('redis:alpine') as redis:
     <div class="next-steps">
       <h3>🚀 Next Steps:</h3>
       <ol>
-        <li>✅ Read the <a href="../index.md">Workshop Overview</a></li>
-        <li>✅ Start with <a href="../phases/testcontainers.md">Phase 1: Test Mayhem</a></li>
+        <li>✅ Read the <a href="../index">Workshop Overview</a></li>
+        <li>✅ Start with <a href="../phases/testcontainers">Phase 1: Test Mayhem</a></li>
         <li>✅ Prepare to defeat chaos! 🔥</li>
       </ol>
     </div>
@@ -717,7 +717,7 @@ with DockerContainer('redis:alpine') as redis:
   <div class="help-section">
     <h3>Still Stuck?</h3>
     <ol>
-      <li>Check the <a href="../troubleshooting.md">Troubleshooting Guide</a></li>
+      <li>Check the <a href="../troubleshooting">Troubleshooting Guide</a></li>
       <li>Ask in the workshop Discord/Slack</li>
       <li>Open an issue on GitHub</li>
     </ol>

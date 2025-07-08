@@ -247,32 +247,32 @@ docker logs &lt;container_id&gt;</code></pre>
 
 ---
 
-## 🔗 Related Testing
+### 🔗 Related Testing
 
 <div class="related-section">
   <h2>Explore Other Database Testing</h2>
   <p>Master testing across different database technologies</p>
 
   <div class="related-grid">
-    <a href="postgres.md" class="related-card">
+    <a href="/testcontainers/postgres" class="related-card">
       <h3>🐘 PostgreSQL Testing</h3>
       <p>Test against PostgreSQL databases with advanced features</p>
       <span class="related-link">Learn PostgreSQL →</span>
     </a>
     
-    <a href="mariadb.md" class="related-card">
+    <a href="mariadb" class="related-card">
       <h3>🗄️ MariaDB Testing</h3>
       <p>Test MariaDB compatibility and character sets</p>
       <span class="related-link">Learn MariaDB →</span>
     </a>
     
-    <a href="mongodb.md" class="related-card">
+    <a href="mongodb" class="related-card">
       <h3>🍃 MongoDB Testing</h3>
       <p>Test document operations and large datasets</p>
       <span class="related-link">Learn MongoDB →</span>
     </a>
     
-    <a href="redis.md" class="related-card">
+    <a href="redis" class="related-card">
       <h3>🔴 Redis Testing</h3>
       <p>Test caching operations and memory pressure</p>
       <span class="related-link">Learn Redis →</span>

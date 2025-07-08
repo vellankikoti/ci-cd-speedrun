@@ -49,11 +49,12 @@ nav:
   - 🛠️ Setup:
       - Setup Guide: phases/setup.md
   - 🧪 TestContainers:
-      - MySQL: testcontainers/mysql.md
-      - MariaDB: testcontainers/mariadb.md
-      - PostgreSQL: testcontainers/postgres.md
-      - MongoDB: testcontainers/mongodb.md
-      - Redis: testcontainers/redis.md
+      - TestContainers Phase: phases/testcontainers.md
+      - "Scenario 01: MySQL": testcontainers/mysql.md
+      - "Scenario 02: MariaDB": testcontainers/mariadb.md
+      - "Scenario 03: PostgreSQL": testcontainers/postgres.md
+      - "Scenario 04: MongoDB": testcontainers/mongodb.md
+      - "Scenario 05: Redis": testcontainers/redis.md
   - 🐳 Docker:
       - Docker Phase: phases/docker.md
   - 🤖 Jenkins:

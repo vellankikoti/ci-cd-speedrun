@@ -94,4 +94,7 @@ if __name__ == '__main__':
     app = create_app()
     # Use environment variable for debug mode
     debug_mode = os.getenv('FLASK_ENV') == 'development'
-    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000))) 
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+
+# For gunicorn deployment
+app = create_app() 

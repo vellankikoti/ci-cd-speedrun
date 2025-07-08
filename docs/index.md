@@ -1,283 +1,82 @@
 # 🐙 CI/CD Chaos Workshop
 
-<div class="workshop-hero">
-  <div class="hero-content">
-    <h1>Master CI/CD Chaos with Python, Kubernetes & Docker</h1>
-    <p class="hero-subtitle">Build bulletproof pipelines that survive real-world chaos</p>
-    <div class="hero-buttons">
-      <a href="phases/setup.md" class="workshop-button">🚀 Start Your Journey</a>
-      <a href="#workshop-overview" class="workshop-button secondary">📖 Learn More</a>
-    </div>
-  </div>
+<div align="center" style="margin-bottom: 2rem;">
+  <img src="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" width="120" alt="Docker Logo" style="margin-bottom: 1rem;">
+  <h1 style="font-size:2.5rem; font-weight:bold; margin-bottom:0.5rem;">Welcome to the Ultimate CI/CD Chaos Experience</h1>
+  <p style="font-size:1.3rem; color:#326CE5;">Break things. Fix things. Become unstoppable.</p>
+  <a href="#start-here" class="workshop-button" style="font-size:1.2rem; padding:0.8rem 2rem; margin:1rem 0; background:linear-gradient(90deg,#326CE5,#00ADD8); color:white; border-radius:8px; text-decoration:none;">🚀 Start Your Journey</a>
 </div>
 
 ---
 
-## 🎯 Workshop Overview
+## 🌟 Why This Workshop is Different
 
-Welcome to the **CI/CD Chaos Workshop** — where we don't just build software, we break it, fix it, and make it better than ever. You'll learn to build pipelines that survive real-world chaos!
-
-<div class="workshop-highlights">
-  <div class="highlight-card">
-    <h3>🐍 Python Automation</h3>
-    <p>Write powerful automation scripts that glue your entire CI/CD pipeline together</p>
-  </div>
-  <div class="highlight-card">
-    <h3>🐳 Docker Mastery</h3>
-    <p>Build lean, secure containers that deploy anywhere, anytime</p>
-  </div>
-  <div class="highlight-card">
-    <h3>☸️ Kubernetes Deployment</h3>
-    <p>Deploy with confidence using auto-scaling and chaos-resistant architectures</p>
-  </div>
-  <div class="highlight-card">
-    <h3>🧪 Testcontainers</h3>
-    <p>Test against real databases and services in isolated containers</p>
-  </div>
-</div>
+!!! info "Real-World Chaos, Real-World Skills"
+    - **No boring theory.** You’ll break real pipelines, fix real failures, and build confidence for production.
+    - **Hands-on everything:** Python, Docker, Kubernetes, Jenkins, Testcontainers.
+    - **Earn a certificate** that proves you can handle chaos.
 
 ---
 
-## 🗺️ Your Journey Through Chaos
+## 🗺️ Your Adventure Map
 
-<div class="journey-map">
-  <div class="phase-card" onclick="window.location.href='phases/setup.md'">
-    <div class="phase-number">1</div>
-    <h3>🛠️ Setup & Prerequisites</h3>
+<div align="center" style="display:flex; flex-wrap:wrap; gap:2rem; justify-content:center;">
+  <div style="min-width:220px; max-width:260px; background:#f8fafc; border-radius:16px; box-shadow:0 4px 16px #326ce51a; padding:1.5rem; margin:1rem;">
+    <h2>🛠️ Setup</h2>
     <p>Get your environment ready for chaos</p>
-    <ul>
-      <li>Python 3.10+ setup</li>
-      <li>Docker Desktop configuration</li>
-      <li>Kubernetes cluster (Minikube/Kind)</li>
-      <li>Virtual environment setup</li>
-    </ul>
-    <div class="phase-action">
-      <a href="phases/setup.md" class="phase-button">Start Setup →</a>
-    </div>
+    <a href="phases/setup" class="phase-button" style="color:#326CE5;">Start Setup →</a>
   </div>
-
-  <div class="phase-card" onclick="window.location.href='phases/testcontainers.md'">
-    <div class="phase-number">2</div>
-    <h3>🧪 Testcontainers Mastery</h3>
-    <p>Build bulletproof database tests</p>
-    <ul>
-      <li>PostgreSQL, MySQL, Redis testing</li>
-      <li>Chaos scenarios with containers</li>
-      <li>HTML test reports</li>
-      <li>Real-world failure simulation</li>
-    </ul>
-    <div class="phase-action">
-      <a href="phases/testcontainers.md" class="phase-button">Learn Testing →</a>
-    </div>
+  <div style="min-width:220px; max-width:260px; background:#f8fafc; border-radius:16px; box-shadow:0 4px 16px #326ce51a; padding:1.5rem; margin:1rem;">
+    <h2>🧪 Testcontainers</h2>
+    <p>Test real databases in containers</p>
+    <a href="phases/testcontainers" class="phase-button" style="color:#326CE5;">Begin Testing →</a>
   </div>
-
-  <div class="phase-card" onclick="window.location.href='phases/docker.md'">
-    <div class="phase-number">3</div>
-    <h3>🐳 Docker Optimization</h3>
-    <p>Create lean, secure container images</p>
-    <ul>
-      <li>Multi-stage builds</li>
-      <li>Image size optimization</li>
-      <li>Security scanning</li>
-      <li>Version management</li>
-    </ul>
-    <div class="phase-action">
-      <a href="phases/docker.md" class="phase-button">Optimize Images →</a>
-    </div>
+  <div style="min-width:220px; max-width:260px; background:#f8fafc; border-radius:16px; box-shadow:0 4px 16px #326ce51a; padding:1.5rem; margin:1rem;">
+    <h2>🐳 Docker</h2>
+    <p>Build, optimize, and secure containers</p>
+    <a href="phases/docker" class="phase-button" style="color:#326CE5;">Docker Mastery →</a>
   </div>
-
-  <div class="phase-card" onclick="window.location.href='phases/jenkins.md'">
-    <div class="phase-number">4</div>
-    <h3>🤖 Jenkins Pipeline Chaos</h3>
-    <p>Build resilient CI/CD pipelines</p>
-    <ul>
-      <li>Docker build automation</li>
-      <li>Testcontainers integration</li>
-      <li>HTML report generation</li>
-      <li>Secret management</li>
-    </ul>
-    <div class="phase-action">
-      <a href="phases/jenkins.md" class="phase-button">Build Pipelines →</a>
-    </div>
+  <div style="min-width:220px; max-width:260px; background:#f8fafc; border-radius:16px; box-shadow:0 4px 16px #326ce51a; padding:1.5rem; margin:1rem;">
+    <h2>🤖 Jenkins</h2>
+    <p>Automate and break your pipelines</p>
+    <a href="phases/jenkins" class="phase-button" style="color:#326CE5;">Build Pipelines →</a>
   </div>
-
-  <div class="phase-card" onclick="window.location.href='phases/k8s.md'">
-    <div class="phase-number">5</div>
-    <h3>☸️ Kubernetes Deployment</h3>
-    <p>Deploy with auto-scaling and chaos resistance</p>
-    <ul>
-      <li>Auto-scaling with HPA</li>
-      <li>Health checks and probes</li>
-      <li>Chaos engineering experiments</li>
-      <li>Blue-green deployments</li>
-    </ul>
-    <div class="phase-action">
-      <a href="phases/k8s.md" class="phase-button">Deploy to K8s →</a>
-    </div>
+  <div style="min-width:220px; max-width:260px; background:#f8fafc; border-radius:16px; box-shadow:0 4px 16px #326ce51a; padding:1.5rem; margin:1rem;">
+    <h2>☸️ Kubernetes</h2>
+    <p>Deploy with chaos and resilience</p>
+    <a href="phases/k8s" class="phase-button" style="color:#326CE5;">Deploy to K8s →</a>
   </div>
 </div>
 
 ---
 
-## 🧪 Database Testing Scenarios
+# 🏆 Earn Your Certificate of Chaos
 
-<div class="scenario-grid">
-  <div class="scenario-card">
-    <h4>🐘 PostgreSQL Testing</h4>
-    <p>Test against real PostgreSQL databases with connection failure scenarios</p>
-    <a href="testcontainers/postgres.md" class="scenario-link">Learn PostgreSQL →</a>
-  </div>
-  
-  <div class="scenario-card">
-    <h4>🐬 MySQL Testing</h4>
-    <p>Master MySQL integration testing with chaos simulation</p>
-    <a href="testcontainers/mysql.md" class="scenario-link">Learn MySQL →</a>
-  </div>
-  
-  <div class="scenario-card">
-    <h4>🗄️ MariaDB Testing</h4>
-    <p>Test MariaDB compatibility and character set handling</p>
-    <a href="testcontainers/mariadb.md" class="scenario-link">Learn MariaDB →</a>
-  </div>
-  
-  <div class="scenario-card">
-    <h4>🍃 MongoDB Testing</h4>
-    <p>Test document operations and large dataset handling</p>
-    <a href="testcontainers/mongodb.md" class="scenario-link">Learn MongoDB →</a>
-  </div>
-  
-  <div class="scenario-card">
-    <h4>🔴 Redis Testing</h4>
-    <p>Test caching operations and memory pressure scenarios</p>
-    <a href="testcontainers/redis.md" class="scenario-link">Learn Redis →</a>
-  </div>
-</div>
+- Complete all phases and scenarios
+- Solve real-world failures
+- Show off your skills with a custom PDF certificate
+
+[Learn About Certificates →](certificate.md)
+
+<!-- Fixed navigation links -->
+<a href="phases/setup" class="phase-button" style="color:#326CE5;">Start Setup →</a>
+<a href="phases/testcontainers" class="phase-button" style="color:#326CE5;">Begin Testing →</a>
+<a href="phases/docker" class="phase-button" style="color:#326CE5;">Docker Mastery →</a>
+<a href="phases/jenkins" class="phase-button" style="color:#326CE5;">Build Pipelines →</a>
+<a href="phases/k8s" class="phase-button" style="color:#326CE5;">Deploy to K8s →</a>
 
 ---
 
-## 🤖 Jenkins Pipeline Scenarios
+## 💡 What You'll Master
 
-<div class="pipeline-grid">
-  <div class="pipeline-card">
-    <h4>🐳 Docker Build Chaos</h4>
-    <p>Build Docker images with simulated failures and optimizations</p>
-    <a href="jenkins/scenario_01_docker_build.md" class="pipeline-link">Docker Builds →</a>
-  </div>
-  
-  <div class="pipeline-card">
-    <h4>🧪 Testcontainers Integration</h4>
-    <p>Run database tests in Jenkins with chaos scenarios</p>
-    <a href="jenkins/scenario_02_testcontainers.md" class="pipeline-link">Test Integration →</a>
-  </div>
-  
-  <div class="pipeline-card">
-    <h4>📊 HTML Report Generation</h4>
-    <p>Generate beautiful HTML reports for stakeholders</p>
-    <a href="jenkins/scenario_03_html_reports.md" class="pipeline-link">Report Generation →</a>
-  </div>
-  
-  <div class="pipeline-card">
-    <h4>🔐 Secret Management</h4>
-    <p>Secure secret handling with Gitleaks integration</p>
-    <a href="jenkins/scenario_04_manage_secrets.md" class="pipeline-link">Secret Security →</a>
-  </div>
-  
-  <div class="pipeline-card">
-    <h4>☸️ EKS Deployment</h4>
-    <p>Deploy to AWS EKS with monitoring and rollback</p>
-    <a href="jenkins/scenario_05_deploy_eks.md" class="pipeline-link">EKS Deployment →</a>
-  </div>
-</div>
+- **Python Automation:** Glue your pipeline together
+- **Docker:** Build, scan, and optimize images
+- **Kubernetes:** Deploy with confidence
+- **Jenkins:** Automate, test, and break your CI/CD
+- **Testcontainers:** Test against real services
 
 ---
 
-## 🎓 Certificate of Chaos
-
-<div class="certificate-section">
-  <div class="certificate-content">
-    <h3>🏆 Become a Certified Chaos Slayer</h3>
-    <p>Complete all phases and receive your personalized certificate of achievement</p>
-    <ul>
-      <li>✅ Custom PDF Certificate</li>
-      <li>✅ Live demos for your portfolio</li>
-      <li>✅ Confidence in Python DevOps</li>
-      <li>✅ Docker and Kubernetes mastery</li>
-      <li>✅ Chaos engineering expertise</li>
-    </ul>
-    <a href="certificate.md" class="certificate-button">Learn About Certificates →</a>
-  </div>
-</div>
-
----
-
-## 🧭 Why This Workshop Exists
-
-<div class="why-workshop">
-  <div class="problem-section">
-    <h3>❌ The Problem</h3>
-    <p>Most workshops teach:</p>
-    <blockquote>"Here's how to build a perfect pipeline."</blockquote>
-    <p>But real life looks like this:</p>
-    <ul>
-      <li>🚨 Servers crash unexpectedly</li>
-      <li>💾 Databases fail under load</li>
-      <li>🐳 Docker images bloat over time</li>
-      <li>🌐 Networks hang and timeout</li>
-      <li>🧪 Tests mysteriously fail in CI</li>
-    </ul>
-  </div>
-  
-  <div class="solution-section">
-    <h3>✅ Our Solution</h3>
-    <p>This workshop prepares you for <strong>the real world</strong> by:</p>
-    <ul>
-      <li>🎯 Deliberately causing chaos</li>
-      <li>🛠️ Teaching you how to handle it</li>
-      <li>💪 Making you look like a hero</li>
-      <li>🚀 Building confidence through experience</li>
-    </ul>
-  </div>
-</div>
-
----
-
-## 🚀 Ready to Start?
-
-<div class="cta-section">
-  <h2>Let's Create Some Chaos! 🔥</h2>
-  <p>Choose your starting point:</p>
-  
-  <div class="cta-buttons">
-    <a href="phases/setup.md" class="cta-button primary">
-      <span class="button-icon">🚀</span>
-      <span class="button-text">
-        <strong>Start Setup</strong>
-        <small>Get your environment ready</small>
-      </span>
-    </a>
-    
-    <a href="phases/testcontainers.md" class="cta-button secondary">
-      <span class="button-icon">🧪</span>
-      <span class="button-text">
-        <strong>Begin Testing</strong>
-        <small>Learn Testcontainers first</small>
-      </span>
-    </a>
-    
-    <a href="phases/docker.md" class="cta-button secondary">
-      <span class="button-icon">🐳</span>
-      <span class="button-text">
-        <strong>Docker Mastery</strong>
-        <small>Optimize your containers</small>
-      </span>
-    </a>
-  </div>
-  
-  <p class="cta-note">💡 <strong>Pro Tip:</strong> Follow the phases in order for the best learning experience!</p>
-</div>
-
----
-
-<div class="footer-note">
-  <p><strong>Remember:</strong> Chaos Agent 🕶️ is watching. Are you ready to defeat them?</p>
+<div align="center" style="margin-top:2rem; color:#888;">
+  <strong>Remember:</strong> Chaos Agent 🕶️ is watching. Are you ready to defeat them?
 </div>

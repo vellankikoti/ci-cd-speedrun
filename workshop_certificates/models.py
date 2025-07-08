@@ -17,7 +17,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     progress = db.relationship('Progress', backref='user', lazy=True)
-    screenshots = db.relationship('Screenshot', backref='user', lazy=True)
+    screenshots = db.relationship('Screenshot', backref='user', lazy=True, foreign_keys='Screenshot.user_id')
     certificates = db.relationship('Certificate', backref='user', lazy=True)
     
     def set_password(self, password):
@@ -87,6 +87,9 @@ class Screenshot(db.Model):
     verified = db.Column(db.Boolean, default=False)
     verified_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     verified_at = db.Column(db.DateTime)
+    
+    # Relationships
+    verifier = db.relationship('User', foreign_keys=[verified_by], backref='verified_screenshots')
 
 class Certificate(db.Model):
     """Generated certificates"""

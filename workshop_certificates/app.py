@@ -20,7 +20,13 @@ MKDOCS_SITE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../si
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///workshop.db')
+    
+    # Handle database URL (Render provides DATABASE_URL, but we need to handle it properly)
+    database_url = os.getenv('DATABASE_URL', 'sqlite:///workshop.db')
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB upload limit
 
@@ -80,13 +86,25 @@ def create_app():
 
     # Create database tables
     with app.app_context():
-        db.create_all()
-        
-        # Create default configuration if it doesn't exist
-        if not Config.query.first():
-            default_config = Config()
-            db.session.add(default_config)
-            db.session.commit()
+        try:
+            db.create_all()
+            print("✅ Database tables created successfully")
+            
+            # Create default configuration if it doesn't exist
+            try:
+                if not Config.query.first():
+                    default_config = Config()
+                    db.session.add(default_config)
+                    db.session.commit()
+                    print("✅ Default configuration created")
+            except Exception as e:
+                # If there's an error, just continue - the database might not be ready yet
+                print(f"Warning: Could not create default config: {e}")
+                pass
+        except Exception as e:
+            print(f"Warning: Could not create database tables: {e}")
+            # Continue anyway - the app should still work
+            pass
 
     return app
 

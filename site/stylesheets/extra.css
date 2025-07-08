@@ -1,0 +1,229 @@
+/* Kubernetes/Docker Theme Customizations */
+
+:root {
+  --md-primary-fg-color: #326ce5; /* Kubernetes Blue */
+  --md-primary-fg-color--light: #4c8bf5;
+  --md-primary-fg-color--dark: #1e4db7;
+  --md-accent-fg-color: #00d4aa; /* Docker Green */
+  --md-accent-fg-color--transparent: rgba(0, 212, 170, 0.1);
+}
+
+/* Header styling */
+.md-header {
+  background: linear-gradient(135deg, #326ce5 0%, #4c8bf5 100%);
+  box-shadow: 0 2px 8px rgba(50, 108, 229, 0.3);
+}
+
+/* Navigation styling */
+.md-nav__title {
+  color: #326ce5 !important;
+}
+
+.md-nav__link:hover {
+  color: #4c8bf5 !important;
+}
+
+/* Sidebar styling */
+.md-sidebar__scrollwrap {
+  border-right: 1px solid #e0e7ff;
+}
+
+/* Code blocks with Kubernetes/Docker theme */
+.md-typeset code {
+  background-color: #f8faff;
+  color: #326ce5;
+  border: 1px solid #e0e7ff;
+}
+
+/* Inline code styling */
+.md-typeset :not(pre) > code {
+  background-color: #f0f4ff;
+  color: #326ce5;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Button styling */
+.md-button {
+  background-color: #326ce5;
+  border-color: #326ce5;
+  color: white;
+}
+
+.md-button:hover {
+  background-color: #4c8bf5;
+  border-color: #4c8bf5;
+}
+
+/* Link styling */
+.md-content a {
+  color: #326ce5;
+}
+
+.md-content a:hover {
+  color: #4c8bf5;
+  text-decoration: underline;
+}
+
+/* Admonition styling */
+.md-typeset .admonition {
+  border-left: 4px solid #326ce5;
+  background-color: #f8faff;
+}
+
+.md-typeset .admonition-title {
+  background-color: #326ce5;
+  color: white;
+}
+
+/* Table styling */
+.md-typeset table {
+  border: 1px solid #e0e7ff;
+}
+
+.md-typeset th {
+  background-color: #f8faff;
+  color: #326ce5;
+  border-bottom: 2px solid #326ce5;
+}
+
+/* Footer styling */
+.md-footer {
+  background-color: #f8faff;
+  border-top: 1px solid #e0e7ff;
+}
+
+/* Search styling */
+.md-search__input {
+  background-color: #f8faff;
+  border: 1px solid #e0e7ff;
+}
+
+.md-search__input::placeholder {
+  color: #326ce5;
+}
+
+/* Tabs styling */
+.md-tabs {
+  background-color: #326ce5;
+}
+
+.md-tabs__link {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.md-tabs__link:hover {
+  color: white;
+}
+
+.md-tabs__link--active {
+  color: white;
+  border-bottom: 2px solid white;
+}
+
+/* Progress bar styling */
+.md-progress {
+  background-color: #326ce5;
+}
+
+/* Custom Kubernetes/Docker accent colors for special elements */
+.kubernetes-accent {
+  color: #326ce5;
+}
+
+.docker-accent {
+  color: #00d4aa;
+}
+
+/* Enhanced code block styling */
+.md-typeset pre {
+  background-color: #f8faff;
+  border: 1px solid #e0e7ff;
+  border-radius: 6px;
+}
+
+/* Custom styling for workshop elements */
+.workshop-phase {
+  border-left: 4px solid #326ce5;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  background-color: #f8faff;
+  border-radius: 0 6px 6px 0;
+}
+
+.chaos-agent {
+  color: #326ce5;
+  font-weight: bold;
+}
+
+.victory-moment {
+  color: #00d4aa;
+  font-weight: bold;
+}
+
+/* Enhanced button styling for workshop actions */
+.workshop-button {
+  background: linear-gradient(135deg, #326ce5 0%, #4c8bf5 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.workshop-button:hover {
+  background: linear-gradient(135deg, #4c8bf5 0%, #326ce5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(50, 108, 229, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+/* Custom badge styling */
+.badge-kubernetes {
+  background-color: #326ce5;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.badge-docker {
+  background-color: #00d4aa;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+/* Enhanced navigation styling */
+.md-nav__link[data-md-state="blur"] {
+  color: #326ce5;
+}
+
+.md-nav__link[data-md-state="indeterminate"] {
+  color: #4c8bf5;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8faff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #326ce5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4c8bf5;
+} 

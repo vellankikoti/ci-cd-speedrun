@@ -55,6 +55,64 @@ Jenkins/jenkins_scenarios/scenario_02_testcontainers/
 
 ---
 
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Database Connection Failures
+
+```python
+def test_postgres_connection_failure():
+    """Simulate PostgreSQL connection failures in CI/CD"""
+    with PostgresContainer("postgres:15") as postgres:
+        # Simulate network partition
+        postgres.get_docker_client().pause(postgres.get_container_id())
+        
+        # Verify our app handles the failure gracefully
+        with pytest.raises(ConnectionError):
+            create_connection(postgres.get_connection_url())
+```
+
+### ✅ Scenario 2: Slow Database Queries
+
+```python
+def test_redis_slow_operations():
+    """Simulate slow Redis operations in CI/CD"""
+    with RedisContainer("redis:7-alpine") as redis:
+        client = redis.get_client()
+        
+        # Simulate slow operation
+        import time
+        start_time = time.time()
+        
+        # Perform operation
+        client.set("test", "value")
+        client.get("test")
+        
+        # Verify it completes within reasonable time
+        assert time.time() - start_time < 5.0
+```
+
+### ✅ Scenario 3: Resource Constraints
+
+```python
+def test_memory_constrained_database():
+    """Test database behavior under memory constraints"""
+    with PostgresContainer("postgres:15") as postgres:
+        # Set memory limit
+        postgres.with_memory_limit("50m")
+        
+        conn = create_connection(postgres.get_connection_url())
+        
+        # Try to insert large dataset
+        try:
+            for i in range(1000):
+                conn.execute(text(f"INSERT INTO test_table VALUES ({i}, 'data');"))
+        except Exception as e:
+            # Handle memory constraint gracefully
+            assert "memory" in str(e).lower() or "resource" in str(e).lower()
+```
+
+---
+
 ## ✅ Troubleshooting
 
 - **Tests fail to start:**
@@ -86,4 +144,25 @@ Jenkins/jenkins_scenarios/scenario_02_testcontainers/
 
 ---
 
-**This scenario helps you master integration testing with real services in Jenkins using Testcontainers!** 
+## 📊 Monitoring & Reporting
+
+### ✅ Test Metrics
+
+- Test execution time
+- Container startup time
+- Database connection success rate
+- Test pass/fail ratio
+
+### ✅ Chaos Metrics
+
+- Number of simulated failures
+- Recovery time from database failures
+- System resilience under stress
+
+---
+
+**Next:** [Scenario 01: Docker Build](scenario_01_docker_build.md) | [Scenario 03: HTML Reports](scenario_03_html_reports.md) | [Scenario 04: Manage Secrets](scenario_04_manage_secrets.md) | [Scenario 05: Deploy to EKS](scenario_05_deploy_eks.md)
+
+---
+
+**This scenario helps you master integration testing with real services in Jenkins using Testcontainers!** 🔥 

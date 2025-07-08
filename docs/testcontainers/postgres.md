@@ -2,7 +2,7 @@
 
 **Why PostgreSQL?**
 
-✅ It’s robust, widely used in production, and perfect for chaos testing in CI/CD pipelines.
+✅ It's robust, widely used in production, and perfect for chaos testing in CI/CD pipelines.
 
 ---
 
@@ -15,7 +15,7 @@ Runs a basic query to confirm the DB is alive.
 ```python
 result = conn.execute(text("SELECT version();")).fetchone()
 assert "PostgreSQL" in result[0]
-````
+```
 
 ---
 
@@ -57,7 +57,7 @@ with pytest.raises(Exception):
 
 ### ✅ Test Case 5 — Truncate Table
 
-Clears the table and ensures it’s empty.
+Clears the table and ensures it's empty.
 
 ```python
 conn.execute(text("TRUNCATE users;"))
@@ -98,3 +98,67 @@ pytest -v testcontainers/test_postgres_container.py
   ```
 
 ---
+
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Connection Failures
+
+```python
+def test_postgres_connection_failure():
+    """Test that our app handles PostgreSQL connection failures gracefully"""
+    with PostgresContainer("postgres:15") as postgres:
+        # Simulate connection failure
+        postgres.get_docker_client().stop(postgres.get_container_id())
+        
+        # Verify our app handles the failure
+        with pytest.raises(ConnectionError):
+            create_connection(postgres.get_connection_url())
+```
+
+### ✅ Scenario 2: Transaction Rollbacks
+
+```python
+def test_postgres_transaction_rollback():
+    """Test that our app handles PostgreSQL transaction rollbacks"""
+    with PostgresContainer("postgres:15") as postgres:
+        conn = create_connection(postgres.get_connection_url())
+        
+        # Start transaction
+        trans = conn.begin()
+        
+        try:
+            conn.execute(text("INSERT INTO users (name) VALUES ('Test');"))
+            # Simulate error
+            conn.execute(text("INSERT INTO users (id) VALUES (NULL);"))
+            trans.commit()
+        except Exception:
+            trans.rollback()
+            
+        # Verify rollback worked
+        result = conn.execute(text("SELECT COUNT(*) FROM users;")).fetchone()
+        assert result[0] == 0
+```
+
+---
+
+## 📊 Monitoring & Reporting
+
+### ✅ Generate HTML Report
+
+```bash
+pytest testcontainers/test_postgres_container.py --html=reports/postgres-test-report.html --self-contained-html
+```
+
+### ✅ View Container Logs
+
+```bash
+# Get container ID
+docker ps | grep postgres
+
+# View logs
+docker logs <container_id>
+```
+
+---
+
+**Next:** [MySQL Testing](mysql.md) | [MariaDB Testing](mariadb.md) | [MongoDB Testing](mongodb.md) | [Redis Testing](redis.md)

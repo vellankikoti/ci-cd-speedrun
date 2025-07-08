@@ -1,25 +1,31 @@
 site_name: CI/CD Chaos Workshop
+site_description: "Setting Up Reliable CI/CD Pipelines with Python, K8s & Testcontainers"
 site_url: https://your-site-url.com
-repo_url: https://github.com/vellankikoti/testcontainers-python-guide
+repo_url: https://github.com/vellankikoti/ci-cd-chaos-workshop
 repo_name: GitHub
+edit_uri: edit/main/docs/
 theme:
   name: material
   palette:
     - scheme: default
-      primary: indigo
+      primary: blue
       accent: cyan
       toggle:
         icon: material/lightbulb
         name: Switch to dark mode
     - scheme: slate
       primary: cyan
-      accent: indigo
+      accent: blue
       toggle:
         icon: material/lightbulb-outline
         name: Switch to light mode
   font:
     text: Roboto
     code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
   features:
     - navigation.instant
     - navigation.expand
@@ -29,25 +35,52 @@ theme:
     - content.code.copy
     - content.tabs.link
     - toc.integrate
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - header.autohide
+    - navigation.footer
+    - navigation.tracking
+    - navigation.prune
+    - navigation.sections
+  logo: assets/logo.svg
 nav:
   - Home: index.md
-  - Setup:
+  - 🛠️ Setup:
       - Setup Guide: phases/setup.md
-  - TestConatiners:
+  - 🧪 TestContainers:
       - MySQL: testcontainers/mysql.md
       - MariaDB: testcontainers/mariadb.md
       - PostgreSQL: testcontainers/postgres.md
       - MongoDB: testcontainers/mongodb.md
       - Redis: testcontainers/redis.md
-  - Docker:
+  - 🐳 Docker:
       - Docker Phase: phases/docker.md
-  - Jenkins:
+  - 🤖 Jenkins:
       - Jenkins Phase: phases/jenkins.md
       - "Scenario 01: Docker Build": jenkins/scenario_01_docker_build.md
       - "Scenario 02: Testcontainers": jenkins/scenario_02_testcontainers.md
       - "Scenario 03: HTML Reports": jenkins/scenario_03_html_reports.md
       - "Scenario 04: Manage Secrets": jenkins/scenario_04_manage_secrets.md
       - "Scenario 05: Deploy to EKS": jenkins/scenario_05_deploy_eks.md
-  - Kubernetes:
+  - ☸️ Kubernetes:
       - Kubernetes Phase: phases/k8s.md
-  - Certificate: certificate.md
+  - 🎓 Certificate: certificate.md
+
+# Additional configuration for workshop experience
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vellankikoti/ci-cd-chaos-workshop
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/your-handle
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/your-profile
+
+# Plugins for enhanced workshop experience
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - minify:
+      minify_html: true

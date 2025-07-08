@@ -13,3 +13,14 @@ pytest-html
 rich
 pyfiglet
 plotly
+Flask>=2.2
+Flask-Login
+Flask-WTF
+Flask-SQLAlchemy
+psycopg2-binary
+python-dotenv
+Jinja2
+Werkzeug
+WeasyPrint
+Flask-Admin
+Flask-Migrate

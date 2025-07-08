@@ -1,4 +1,3 @@
-
 # 🧪 Phase 1 – TestContainers
 
 Welcome to **Phase 1** of the CI/CD Chaos Workshop — the place where we build truly reliable tests using TestContainers!
@@ -25,15 +24,15 @@ TestContainers lets us:
 - Guarantee identical test environments everywhere
 
 **Chaos Agent:**  
-> “Let’s run tests against production. What’s the worst that could happen?”
+> "Let's run tests against production. What's the worst that could happen?"
 
-We’ll prove why that’s a bad idea.
+We'll prove why that's a bad idea.
 
 ---
 
-# 🚀 Database Testing Scenarios
+## 🚀 Database Testing Scenarios
 
-Below are **production-grade testing scenarios** you’ll implement.
+Below are **production-grade testing scenarios** you'll implement.
 
 Each follows the same pattern:
 
@@ -52,11 +51,11 @@ These scenarios are your first defense against chaos.
 
 PostgreSQL is a common backend for modern apps. Reliable tests ensure migrations and queries work safely.
 
-> **Chaos Event:** “My dev machine has PostgreSQL 14. Production has PostgreSQL 15!”
+> **Chaos Event:** "My dev machine has PostgreSQL 14. Production has PostgreSQL 15!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Spin up a PostgreSQL container  
 ✅ Connect with SQLAlchemy  
@@ -106,11 +105,11 @@ def test_postgres_container():
 
 MySQL powers tons of legacy apps and new workloads.
 
-> **Chaos Event:** “MySQL crashes tests because dev machine has wrong credentials.”
+> **Chaos Event:** "MySQL crashes tests because dev machine has wrong credentials."
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Spin up MySQL container  
 ✅ Run pytest database tests
@@ -159,11 +158,11 @@ def test_mysql_container():
 
 MariaDB is popular for cost-effective apps and easy MySQL migrations.
 
-> **Chaos Event:** “Code works on MySQL, fails on MariaDB!”
+> **Chaos Event:** "Code works on MySQL, fails on MariaDB!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Launch MariaDB container  
 ✅ Run pytest integration tests
@@ -199,9 +198,9 @@ def test_mariadb_container():
 
 ### ✅ What Could Go Wrong?
 
-- SQL syntax differences  
-- Authentication plugin issues  
-- Performance differences on joins
+- SQL syntax differences between MySQL and MariaDB  
+- Character set encoding issues  
+- Performance differences in complex queries
 
 ---
 
@@ -209,22 +208,23 @@ def test_mariadb_container():
 
 ### ✅ Why It Matters
 
-NoSQL apps often rely on MongoDB for flexibility.
+MongoDB is perfect for document-based data and modern web apps.
 
-> **Chaos Event:** “My Mongo queries fail only in production!”
+> **Chaos Event:** "MongoDB connection fails because dev machine has different auth setup!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
-✅ Start a MongoDB container  
-✅ Run Python tests with pymongo
+✅ Launch MongoDB container  
+✅ Test document operations  
+✅ Verify indexing and queries
 
 ---
 
 ### ✅ How to Fix It
 
-✅ Keep versions in sync across environments.
+✅ Use containerized MongoDB for consistent testing.
 
 ---
 
@@ -233,27 +233,32 @@ NoSQL apps often rely on MongoDB for flexibility.
 ```python
 from testcontainers.mongodb import MongoDbContainer
 
-def test_mongo_container():
-    with MongoDbContainer("mongo:6") as mongo:
-        conn_str = mongo.get_connection_url()
-        assert "mongodb://" in conn_str
+def test_mongodb_container():
+    with MongoDbContainer("mongo:6.0") as mongo:
+        client = mongo.get_connection_client()
+        db = client.test_db
+        collection = db.test_collection
+        
+        # Insert and query documents
+        result = collection.insert_one({"name": "test"})
+        assert result.inserted_id is not None
 ```
 
 ---
 
 ### ✅ Best Practices
 
-✅ Use test-specific databases  
-✅ Always close client connections  
-✅ Keep Mongo versions consistent
+✅ Use transactions for data consistency  
+✅ Clean up collections between tests  
+✅ Test both read and write operations
 
 ---
 
 ### ✅ What Could Go Wrong?
 
-- Timeouts on large documents  
-- Indexes missing in tests  
-- Version differences between dev and prod
+- Authentication issues  
+- Network connectivity problems  
+- Version compatibility issues
 
 ---
 
@@ -261,22 +266,23 @@ def test_mongo_container():
 
 ### ✅ Why It Matters
 
-Redis powers caching, queues, and sessions for modern apps.
+Redis is essential for caching, sessions, and real-time data.
 
-> **Chaos Event:** “Local Redis had persistence ON. Production has it OFF.”
+> **Chaos Event:** "Redis connection fails in CI but works locally!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Launch Redis container  
-✅ Test pub/sub, caching logic
+✅ Test caching operations  
+✅ Verify pub/sub functionality
 
 ---
 
 ### ✅ How to Fix It
 
-✅ Always replicate production configuration.
+✅ Use containerized Redis for consistent testing.
 
 ---
 
@@ -286,43 +292,147 @@ Redis powers caching, queues, and sessions for modern apps.
 from testcontainers.redis import RedisContainer
 
 def test_redis_container():
-    with RedisContainer("redis:7") as redis:
-        port = redis.get_exposed_port(6379)
-        assert port.isdigit()
+    with RedisContainer("redis:7-alpine") as redis:
+        client = redis.get_client()
+        
+        # Test basic operations
+        client.set("key", "value")
+        assert client.get("key") == b"value"
 ```
 
 ---
 
 ### ✅ Best Practices
 
-✅ Test both ephemeral and persistent modes  
-✅ Use short-lived keys for test data  
-✅ Always clean up Redis state
+✅ Flush database between tests  
+✅ Test both string and hash operations  
+✅ Verify connection pooling
 
 ---
 
 ### ✅ What Could Go Wrong?
 
-- Port conflicts  
-- Missing Redis commands in older versions  
-- Data leakage between tests
+- Memory issues with large datasets  
+- Connection pool exhaustion  
+- Network timeouts
 
 ---
 
-## ✅ Scaling Beyond Databases
+## 🎯 Running Your Tests
 
-TestContainers can handle:
+### ✅ Quick Start
 
-- RabbitMQ
-- ElasticSearch
-- Kafka
-- LocalStack for AWS services
-- Multi-container test environments
+```bash
+# Install dependencies
+pip install testcontainers pytest
 
-We’ll expand this section with **hundreds of advanced scenarios** as our workshop evolves.
+# Run all database tests
+pytest testcontainers/ -v
 
-Chaos Agent won’t stand a chance.
+# Run specific database tests
+pytest testcontainers/test_mysql_container.py -v
+pytest testcontainers/test_postgres_container.py -v
+```
+
+### ✅ Expected Output
+
+```
+testcontainers/test_mysql_container.py::test_mysql_version PASSED
+testcontainers/test_mysql_container.py::test_mysql_insert_query PASSED
+testcontainers/test_mysql_container.py::test_mysql_multiple_rows PASSED
+testcontainers/test_mysql_container.py::test_mysql_primary_key PASSED
+testcontainers/test_mysql_container.py::test_mysql_truncate PASSED
+```
 
 ---
 
-[⬅️ Previous Phase: Setup](./setup.md) | [Next Phase: Docker Mastery ➡️](./docker.md)
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Container Crashes
+
+```python
+def test_container_crash_recovery():
+    """Test that our app handles container crashes gracefully"""
+    with PostgresContainer("postgres:15") as postgres:
+        # Start container
+        conn = create_connection(postgres.get_connection_url())
+        
+        # Simulate container crash
+        postgres.get_docker_client().stop(postgres.get_container_id())
+        
+        # Verify our app handles the crash
+        with pytest.raises(ConnectionError):
+            conn.execute("SELECT 1")
+```
+
+### ✅ Scenario 2: Network Delays
+
+```python
+def test_network_delay_handling():
+    """Test that our app handles network delays"""
+    with RedisContainer("redis:7-alpine") as redis:
+        # Simulate network delay
+        import time
+        start_time = time.time()
+        
+        client = redis.get_client()
+        client.set("test", "value")
+        
+        # Verify operation completes within reasonable time
+        assert time.time() - start_time < 5.0
+```
+
+### ✅ Scenario 3: Resource Limits
+
+```python
+def test_memory_limit_handling():
+    """Test that our app handles memory constraints"""
+    with MongoDbContainer("mongo:6.0") as mongo:
+        # Set memory limit
+        mongo.with_memory_limit("100m")
+        
+        # Try to insert large dataset
+        client = mongo.get_connection_client()
+        db = client.test_db
+        collection = db.test_collection
+        
+        # This should work or fail gracefully
+        try:
+            collection.insert_many([{"data": "x" * 1000} for _ in range(1000)])
+        except Exception as e:
+            # Handle memory constraint gracefully
+            assert "memory" in str(e).lower() or "resource" in str(e).lower()
+```
+
+---
+
+## 📊 Monitoring & Reporting
+
+### ✅ HTML Reports
+
+```bash
+# Generate HTML test reports
+pytest testcontainers/ --html=reports/testcontainers-report.html --self-contained-html
+```
+
+### ✅ Coverage Reports
+
+```bash
+# Install coverage
+pip install pytest-cov
+
+# Run with coverage
+pytest testcontainers/ --cov=testcontainers --cov-report=html
+```
+
+---
+
+## 🎯 Next Steps
+
+✅ **Phase 1 Complete:** You now have bulletproof database tests!  
+✅ **Ready for Phase 2:** [Docker Mastery](docker.md)  
+✅ **Chaos Agent Status:** Defeated in database testing! 🕶️
+
+---
+
+**Remember:** TestContainers make your tests as reliable as production. When chaos strikes, your tests will be your first line of defense! 🔥

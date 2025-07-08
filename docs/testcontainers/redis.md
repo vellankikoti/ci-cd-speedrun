@@ -2,74 +2,77 @@
 
 **Why Redis?**
 
-✅ Redis is a blazing-fast in-memory key-value store, ideal for testing ephemeral data and chaos scenarios in CI/CD pipelines.
+✅ Essential for caching, sessions, and real-time data. Perfect for chaos testing in CI/CD pipelines.
 
 ---
 
 ## ✅ Test Cases Implemented
 
-### ✅ Test Case 1 — PING Command
+### ✅ Test Case 1 — Check Redis Version
 
-Checks basic connectivity to Redis.
-
-```python
-assert client.ping() is True
-````
-
----
-
-### ✅ Test Case 2 — Set and Get a Key
-
-Stores a value and retrieves it.
+Verifies the container is running and accessible.
 
 ```python
-client.set("key", "value")
-val = client.get("key")
-assert val == b"value"
+client = redis.get_client()
+info = client.info("server")
+assert "redis_version" in info
 ```
 
 ---
 
-### ✅ Test Case 3 — Increment a Key
+### ✅ Test Case 2 — Set and Get
 
-Demonstrates atomic increment operations.
+Tests basic key-value operations.
 
 ```python
-client.set("counter", 5)
+client = redis.get_client()
+client.set("name", "Alice")
+value = client.get("name")
+assert value == b"Alice"
+```
+
+---
+
+### ✅ Test Case 3 — Multiple Operations
+
+Tests multiple Redis operations.
+
+```python
+client = redis.get_client()
+client.set("counter", 0)
 client.incr("counter")
-result = client.get("counter")
-assert int(result) == 6
+client.incr("counter")
+value = client.get("counter")
+assert value == b"2"
 ```
 
 ---
 
-### ✅ Test Case 4 — Delete a Key
+### ✅ Test Case 4 — Hash Operations
 
-Deletes a key and ensures it’s gone.
+Tests Redis hash data structure.
 
 ```python
-client.set("temp", "data")
-client.delete("temp")
-val = client.get("temp")
-assert val is None
+client = redis.get_client()
+client.hset("user:1", "name", "Bob")
+client.hset("user:1", "age", "25")
+name = client.hget("user:1", "name")
+age = client.hget("user:1", "age")
+assert name == b"Bob"
+assert age == b"25"
 ```
 
 ---
 
-### ✅ Test Case 5 — Key Expiration (TTL)
+### ✅ Test Case 5 — Clean Up
 
-Sets a key with an expiration time and confirms it disappears.
+Removes all keys and verifies cleanup.
 
 ```python
-client.setex("session", 2, "active")
-value = client.get("session")
-assert value == b"active"
-
-import time
-time.sleep(3)
-
-value_after_expiry = client.get("session")
-assert value_after_expiry is None
+client = redis.get_client()
+client.flushdb()
+keys = client.keys("*")
+assert len(keys) == 0
 ```
 
 ---
@@ -98,7 +101,7 @@ pytest -v testcontainers/test_redis_container.py
   docker ps
   ```
 
-* Inspect Redis logs:
+* View Redis logs:
 
   ```bash
   docker logs <container_id>
@@ -106,7 +109,66 @@ pytest -v testcontainers/test_redis_container.py
 
 ---
 
-**Redis is perfect for lightning-fast chaos tests in your CI/CD pipelines.**
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Connection Failures
+
+```python
+def test_redis_connection_failure():
+    """Test that our app handles Redis connection failures gracefully"""
+    with RedisContainer("redis:7-alpine") as redis:
+        # Simulate connection failure
+        redis.get_docker_client().stop(redis.get_container_id())
+        
+        # Verify our app handles the failure
+        with pytest.raises(Exception):
+            redis.get_client()
+```
+
+### ✅ Scenario 2: Memory Pressure
+
+```python
+def test_redis_memory_pressure():
+    """Test that our app handles Redis memory constraints"""
+    with RedisContainer("redis:7-alpine") as redis:
+        client = redis.get_client()
+        
+        # Set memory limit
+        client.config_set("maxmemory", "10mb")
+        client.config_set("maxmemory-policy", "allkeys-lru")
+        
+        # Try to insert large dataset
+        try:
+            for i in range(1000):
+                client.set(f"key{i}", "x" * 1000)
+        except Exception as e:
+            # Handle memory constraint gracefully
+            assert "memory" in str(e).lower() or "OOM" in str(e)
+```
+
+---
+
+## 📊 Monitoring & Reporting
+
+### ✅ Generate HTML Report
+
+```bash
+pytest testcontainers/test_redis_container.py --html=reports/redis-test-report.html --self-contained-html
+```
+
+### ✅ View Container Logs
+
+```bash
+# Get container ID
+docker ps | grep redis
+
+# View logs
+docker logs <container_id>
+```
+
+---
+
+**Next:** [MySQL Testing](mysql.md) | [PostgreSQL Testing](postgres.md) | [MariaDB Testing](mariadb.md) | [MongoDB Testing](mongodb.md)
 
 ```
 

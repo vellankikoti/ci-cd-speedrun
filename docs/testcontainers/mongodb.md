@@ -2,7 +2,7 @@
 
 **Why MongoDB?**
 
-✅ MongoDB is a leading NoSQL database. It’s widely used in modern applications and a great candidate for chaos testing in containerized pipelines.
+✅ Perfect for document-based data, flexible schema, and modern web applications. Great for chaos testing in CI/CD pipelines.
 
 ---
 
@@ -10,61 +10,71 @@
 
 ### ✅ Test Case 1 — Check MongoDB Version
 
-Verifies the container is running the expected version.
+Verifies the container is running and accessible.
 
 ```python
-version = client.server_info()["version"]
-assert version.startswith("7.")
-````
+client = mongo.get_connection_client()
+db = client.admin
+result = db.command("serverStatus")
+assert "version" in result
+```
 
 ---
 
-### ✅ Test Case 2 — Insert and Find Document
+### ✅ Test Case 2 — Insert and Query Document
 
-Inserts a single document and retrieves it.
+Tests basic document insertion and retrieval.
 
 ```python
-db.users.insert_one({"name": "Alice"})
-result = db.users.find_one({"name": "Alice"})
-assert result["name"] == "Alice"
+db = client.test_db
+collection = db.users
+result = collection.insert_one({"name": "Alice", "age": 30})
+assert result.inserted_id is not None
+
+doc = collection.find_one({"name": "Alice"})
+assert doc["age"] == 30
 ```
 
 ---
 
 ### ✅ Test Case 3 — Insert Multiple Documents
 
-Inserts multiple documents and counts them.
+Inserts multiple documents and confirms count.
 
 ```python
-db.users.insert_many([{"name": "Bob"}, {"name": "Charlie"}])
-count = db.users.count_documents({})
-assert count == 2
+collection = db.users
+docs = [{"name": "Bob"}, {"name": "Charlie"}]
+result = collection.insert_many(docs)
+assert len(result.inserted_ids) == 2
+
+count = collection.count_documents({})
+assert count == 3
 ```
 
 ---
 
-### ✅ Test Case 4 — Update a Document
+### ✅ Test Case 4 — Update Document
 
-Updates a document’s field.
+Tests document update functionality.
 
 ```python
-db.users.insert_one({"name": "David"})
-db.users.update_one({"name": "David"}, {"$set": {"name": "Daniel"}})
-result = db.users.find_one({"name": "Daniel"})
-assert result is not None
+collection = db.users
+collection.update_one({"name": "Alice"}, {"$set": {"age": 31}})
+doc = collection.find_one({"name": "Alice"})
+assert doc["age"] == 31
 ```
 
 ---
 
-### ✅ Test Case 5 — Delete a Document
+### ✅ Test Case 5 — Delete Documents
 
-Deletes a document and confirms it’s gone.
+Removes documents and verifies deletion.
 
 ```python
-db.users.insert_one({"name": "Eve"})
-db.users.delete_one({"name": "Eve"})
-result = db.users.find_one({"name": "Eve"})
-assert result is None
+collection = db.users
+collection.delete_many({})
+count = collection.count_documents({})
+assert count == 0
 ```
 
 ---
@@ -87,16 +97,78 @@ pytest -v testcontainers/test_mongodb_container.py
 
 ## ✅ Useful Commands
 
-* List running containers:
+* Check running containers:
 
   ```bash
   docker ps
   ```
 
-* Inspect MongoDB logs:
+* View MongoDB logs:
 
   ```bash
   docker logs <container_id>
   ```
 
 ---
+
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Connection Failures
+
+```python
+def test_mongodb_connection_failure():
+    """Test that our app handles MongoDB connection failures gracefully"""
+    with MongoDbContainer("mongo:6.0") as mongo:
+        # Simulate connection failure
+        mongo.get_docker_client().stop(mongo.get_container_id())
+        
+        # Verify our app handles the failure
+        with pytest.raises(Exception):
+            mongo.get_connection_client()
+```
+
+### ✅ Scenario 2: Large Document Handling
+
+```python
+def test_mongodb_large_document():
+    """Test that our app handles large documents in MongoDB"""
+    with MongoDbContainer("mongo:6.0") as mongo:
+        client = mongo.get_connection_client()
+        db = client.test_db
+        collection = db.large_docs
+        
+        # Create large document
+        large_doc = {"data": "x" * 10000, "id": 1}
+        
+        # Insert and verify
+        result = collection.insert_one(large_doc)
+        assert result.inserted_id is not None
+        
+        # Retrieve and verify
+        doc = collection.find_one({"id": 1})
+        assert len(doc["data"]) == 10000
+```
+
+---
+
+## 📊 Monitoring & Reporting
+
+### ✅ Generate HTML Report
+
+```bash
+pytest testcontainers/test_mongodb_container.py --html=reports/mongodb-test-report.html --self-contained-html
+```
+
+### ✅ View Container Logs
+
+```bash
+# Get container ID
+docker ps | grep mongo
+
+# View logs
+docker logs <container_id>
+```
+
+---
+
+**Next:** [MySQL Testing](mysql.md) | [PostgreSQL Testing](postgres.md) | [MariaDB Testing](mariadb.md) | [Redis Testing](redis.md)

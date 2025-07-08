@@ -200,7 +200,7 @@ Tasks:
 - Testcontainers Python
 - Docker
 - Jenkins
-- Kubernetes (Minikube or EKS)
+- Kubernetes (Minikube, Docker Desktop or EKS)
 - Helm (optional)
 - MkDocs + Material
 

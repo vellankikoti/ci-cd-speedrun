@@ -61,6 +61,62 @@ Jenkins/jenkins_scenarios/scenario_03_html_reports/
 
 ---
 
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Report Generation Failures
+
+```python
+def test_report_generation_failure():
+    """Simulate HTML report generation failures"""
+    try:
+        # Simulate disk space issues
+        if os.path.exists("/tmp/disk_full"):
+            raise OSError("No space left on device")
+            
+        # Generate report
+        generate_html_report(test_results)
+        
+    except Exception as e:
+        # Fallback to simple text report
+        generate_text_report(test_results)
+        assert "text" in str(e).lower() or "space" in str(e).lower()
+```
+
+### ✅ Scenario 2: Slow Report Generation
+
+```python
+def test_slow_report_generation():
+    """Test report generation under load"""
+    import time
+    start_time = time.time()
+    
+    # Generate large report
+    large_dataset = [{"test": f"test_{i}", "result": "pass"} for i in range(10000)]
+    generate_html_report(large_dataset)
+    
+    # Verify it completes within reasonable time
+    assert time.time() - start_time < 30.0
+```
+
+### ✅ Scenario 3: Corrupted Report Data
+
+```python
+def test_corrupted_report_data():
+    """Test handling of corrupted test data"""
+    corrupted_data = [
+        {"test": "valid_test", "result": "pass"},
+        {"test": "corrupted_test", "result": None},  # Corrupted
+        {"test": "another_test", "result": "fail"}
+    ]
+    
+    # Should handle corrupted data gracefully
+    report = generate_html_report(corrupted_data)
+    assert "corrupted_test" in report
+    assert "error" in report.lower()
+```
+
+---
+
 ## ✅ Troubleshooting
 
 - **Reports not found:**
@@ -91,4 +147,25 @@ Jenkins/jenkins_scenarios/scenario_03_html_reports/
 
 ---
 
-**This scenario helps you master enterprise-grade reporting in Jenkins, making your CI/CD results clear and actionable!** 
+## 📊 Monitoring & Reporting
+
+### ✅ Report Metrics
+
+- Report generation time
+- Report file size
+- Number of tests reported
+- Report accessibility score
+
+### ✅ Chaos Metrics
+
+- Report generation failure rate
+- Recovery time from report failures
+- Data corruption detection rate
+
+---
+
+**Next:** [Scenario 01: Docker Build](scenario_01_docker_build.md) | [Scenario 02: Testcontainers](scenario_02_testcontainers.md) | [Scenario 04: Manage Secrets](scenario_04_manage_secrets.md) | [Scenario 05: Deploy to EKS](scenario_05_deploy_eks.md)
+
+---
+
+**This scenario helps you master enterprise-grade reporting in Jenkins, making your CI/CD results clear and actionable!** 🔥 

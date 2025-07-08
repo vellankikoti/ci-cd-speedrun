@@ -51,6 +51,47 @@ Jenkins/jenkins_scenarios/scenario_01_docker_build/
 
 ---
 
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: Docker Build Failures
+
+```groovy
+// Simulate Docker build failures
+stage('Build Docker Image') {
+    steps {
+        script {
+            // Randomly fail builds to test resilience
+            if (Math.random() < 0.1) {
+                error "Simulated Docker build failure"
+            }
+            
+            sh "docker build -t chaos-app:${APP_VERSION} ."
+        }
+    }
+}
+```
+
+### ✅ Scenario 2: Container Startup Delays
+
+```groovy
+// Simulate slow container startup
+stage('Run Container') {
+    steps {
+        script {
+            sh "docker run -d -p 3000:3000 --name chaos-app chaos-app:${APP_VERSION}"
+            
+            // Add artificial delay
+            sleep 10
+            
+            // Test if app responds
+            sh "curl -f http://localhost:3000/health || exit 1"
+        }
+    }
+}
+```
+
+---
+
 ## ✅ Troubleshooting
 
 - **Docker build fails:**
@@ -81,4 +122,25 @@ Jenkins/jenkins_scenarios/scenario_01_docker_build/
 
 ---
 
-**This scenario helps you master Docker builds in Jenkins and prepares you for more advanced CI/CD chaos!** 
+## 📊 Monitoring & Reporting
+
+### ✅ Pipeline Metrics
+
+- Build success rate
+- Average build time
+- Docker image size trends
+- Container startup time
+
+### ✅ Chaos Metrics
+
+- Number of simulated failures
+- Recovery time from failures
+- System resilience score
+
+---
+
+**Next:** [Scenario 02: Testcontainers](scenario_02_testcontainers.md) | [Scenario 03: HTML Reports](scenario_03_html_reports.md) | [Scenario 04: Manage Secrets](scenario_04_manage_secrets.md) | [Scenario 05: Deploy to EKS](scenario_05_deploy_eks.md)
+
+---
+
+**This scenario helps you master Docker builds in Jenkins and prepares you for more advanced CI/CD chaos!** 🔥 

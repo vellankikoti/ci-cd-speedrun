@@ -15,7 +15,7 @@ Verifies the container is running and accessible.
 ```python
 result = conn.execute(text("SELECT VERSION();")).fetchone()
 assert "MariaDB" in result[0]
-````
+```
 
 ---
 
@@ -98,3 +98,56 @@ pytest -v testcontainers/test_mariadb_container.py
   ```
 
 ---
+
+## 🧪 Chaos Testing Scenarios
+
+### ✅ Scenario 1: MySQL vs MariaDB Compatibility
+
+```python
+def test_mariadb_mysql_compatibility():
+    """Test that our app works with both MySQL and MariaDB"""
+    with MariaDbContainer("mariadb:10.6") as mariadb:
+        conn = create_connection(mariadb.get_connection_url())
+        
+        # Test MariaDB-specific features
+        result = conn.execute(text("SELECT @@version_comment;")).fetchone()
+        assert "MariaDB" in result[0]
+```
+
+### ✅ Scenario 2: Character Set Issues
+
+```python
+def test_mariadb_character_set():
+    """Test that our app handles MariaDB character set differences"""
+    with MariaDbContainer("mariadb:10.6") as mariadb:
+        conn = create_connection(mariadb.get_connection_url())
+        
+        # Test UTF-8 support
+        conn.execute(text("INSERT INTO users (name) VALUES ('José');"))
+        result = conn.execute(text("SELECT name FROM users WHERE name = 'José';")).fetchone()
+        assert result[0] == "José"
+```
+
+---
+
+## 📊 Monitoring & Reporting
+
+### ✅ Generate HTML Report
+
+```bash
+pytest testcontainers/test_mariadb_container.py --html=reports/mariadb-test-report.html --self-contained-html
+```
+
+### ✅ View Container Logs
+
+```bash
+# Get container ID
+docker ps | grep mariadb
+
+# View logs
+docker logs <container_id>
+```
+
+---
+
+**Next:** [MySQL Testing](mysql.md) | [PostgreSQL Testing](postgres.md) | [MongoDB Testing](mongodb.md) | [Redis Testing](redis.md)

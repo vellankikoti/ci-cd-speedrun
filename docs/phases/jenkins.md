@@ -1,4 +1,3 @@
-
 # 🔧 Phase 3 – Pipeline Showdown (Jenkins)
 
 Welcome to **Phase 3** of the CI/CD Chaos Workshop!
@@ -11,18 +10,22 @@ This is where we turn chaos into control by building a **production-grade Jenkin
 ✅ Deploys safely to AWS EKS  
 ✅ Handles secrets securely
 
-> **Mission:** “Chaos Agent sabotaged our pipelines. Let’s rebuild stronger!”
+> **Mission:** "Chaos Agent sabotaged our pipelines. Let's rebuild stronger!"
 
 ---
 
 ## 🐳 Running Jenkins with Docker
 
-We’ll run Jenkins inside Docker.
+We'll run Jenkins inside Docker.
 
 Start Jenkins:
 
 ```bash
-docker run -d   -p 8080:8080   -v jenkins_home:/var/jenkins_home   -v /var/run/docker.sock:/var/run/docker.sock   jenkins/jenkins:lts
+docker run -d \
+  -p 8080:8080 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  jenkins/jenkins:lts
 ```
 
 ✅ **Best Practices:**
@@ -32,17 +35,17 @@ docker run -d   -p 8080:8080   -v jenkins_home:/var/jenkins_home   -v /var/run/d
 
 ---
 
-# 🚀 Scenario 1 – Building Docker Images in Jenkins
+## 🚀 Scenario 1 – Building Docker Images in Jenkins
 
 ### ✅ Why It Matters
 
 Building Docker images in Jenkins ensures **consistent environments** and reliable builds for all deployments.
 
-> **Chaos Event:** “Docker build fails with ‘Cannot connect to the Docker daemon!’”
+> **Chaos Event:** "Docker build fails with 'Cannot connect to the Docker daemon!'"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Build Python Docker images  
 ✅ Learn multi-stage Docker builds  
@@ -76,7 +79,7 @@ stage('Build Docker Image') {
 
 ✅ Keep images minimal  
 ✅ Always tag images with unique versions  
-✅ Don’t run Docker builds on Jenkins master node
+✅ Don't run Docker builds on Jenkins master node
 
 ---
 
@@ -88,17 +91,17 @@ stage('Build Docker Image') {
 
 ---
 
-# 🚀 Scenario 2 – Running Testcontainers Tests
+## 🚀 Scenario 2 – Running Testcontainers Tests
 
 ### ✅ Why It Matters
 
 Testcontainers enables **true integration testing** by spinning up real databases and services in containers.
 
-> **Chaos Event:** “Testcontainers can’t connect to Docker. Tests fail.”
+> **Chaos Event:** "Testcontainers can't connect to Docker. Tests fail."
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Run pytest Testcontainers tests  
 ✅ Learn how to ensure Docker connectivity for tests
@@ -140,17 +143,17 @@ stage('Run Testcontainers Tests') {
 
 ---
 
-# 🚀 Scenario 3 – Archiving HTML Reports
+## 🚀 Scenario 3 – Archiving HTML Reports
 
 ### ✅ Why It Matters
 
 HTML reports help teams **visually inspect results** and keep a paper trail for compliance or troubleshooting.
 
-> **Chaos Event:** “Reports not found. Pipeline fails.”
+> **Chaos Event:** "Reports not found. Pipeline fails."
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
 ✅ Archive Docker analysis HTML reports from Phase 2  
 ✅ Display reports in Jenkins UI
@@ -191,42 +194,41 @@ stage('Publish Reports') {
 
 ---
 
-# 🚀 Scenario 4 – Managing Secrets for AWS
+## 🚀 Scenario 4 – Managing Secrets for AWS
 
 ### ✅ Why It Matters
 
 CI/CD pipelines **must handle secrets safely** to avoid catastrophic data leaks.
 
-> **Chaos Event:** “Secrets printed in Jenkins logs!”
+> **Chaos Event:** "Secrets printed in Jenkins logs!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
-✅ Store AWS credentials in Jenkins  
-✅ Inject credentials without printing them in logs
+✅ Use Jenkins credentials for AWS access  
+✅ Scan for secrets in code  
+✅ Generate security reports
 
 ---
 
 ### ✅ How to Fix It
 
-✅ Use Jenkins credentials binding  
-✅ Mask secrets in console output
+✅ Store secrets in Jenkins credentials  
+✅ Use secret scanning tools  
+✅ Never log sensitive data
 
 ---
 
 ### ✅ Pipeline Snippet
 
 ```groovy
-withCredentials([
-    [
-        $class: 'AmazonWebServicesCredentialsBinding',
-        credentialsId: 'aws-credentials'
-    ]
-]) {
-    sh '''
-        aws sts get-caller-identity
-    '''
+stage('Deploy to AWS') {
+    steps {
+        withCredentials([string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID')]) {
+            sh 'aws eks update-kubeconfig --name my-cluster'
+        }
+    }
 }
 ```
 
@@ -234,42 +236,43 @@ withCredentials([
 
 ### ✅ Best Practices
 
-✅ Never echo secrets  
-✅ Rotate credentials regularly  
-✅ Use IAM roles if running Jenkins on EC2
+✅ Use Jenkins credentials store  
+✅ Rotate secrets regularly  
+✅ Scan for hardcoded secrets
 
 ---
 
 ### ✅ What Could Go Wrong?
 
-- Accidental logging of secrets  
-- Expired credentials  
-- Misconfigured credentials IDs
+- Secrets in logs  
+- Hardcoded credentials  
+- Expired AWS tokens
 
 ---
 
-# 🚀 Scenario 5 – Deploying to AWS EKS
+## 🚀 Scenario 5 – Deploying to AWS EKS
 
 ### ✅ Why It Matters
 
-Kubernetes deployments are critical in modern CI/CD. Jenkins must **handle YAML validation, rollouts, and error handling.**
+Kubernetes deployments need **proper validation** and **rollback capabilities**.
 
-> **Chaos Event:** “Bad YAML causes deployment failures in EKS.”
+> **Chaos Event:** "Deployment stuck in pending. Pods won't start!"
 
 ---
 
-### ✅ What We’ll Do
+### ✅ What We'll Do
 
-✅ Deploy app to AWS EKS  
-✅ Run dry-run and YAML validation  
-✅ Monitor deployment rollout status
+✅ Deploy Python apps to EKS  
+✅ Monitor rollout status  
+✅ Handle deployment failures
 
 ---
 
 ### ✅ How to Fix It
 
-✅ Validate YAML before applying  
-✅ Roll back deployments if pods fail
+✅ Validate YAML manifests  
+✅ Check resource limits  
+✅ Monitor pod events
 
 ---
 
@@ -278,20 +281,8 @@ Kubernetes deployments are critical in modern CI/CD. Jenkins must **handle YAML 
 ```groovy
 stage('Deploy to EKS') {
     steps {
-        withCredentials([
-            [
-                $class: 'AmazonWebServicesCredentialsBinding',
-                credentialsId: 'aws-credentials'
-            ]
-        ]) {
-            sh '''
-                aws eks update-kubeconfig --name my-cluster
-                kubectl apply -f k8s/deployment.yaml --dry-run=client
-                kubeval k8s/deployment.yaml
-                kubectl apply -f k8s/deployment.yaml
-                kubectl rollout status deployment my-deployment
-            '''
-        }
+        sh 'kubectl apply -f k8s/'
+        sh 'kubectl rollout status deployment/chaos-app'
     }
 }
 ```
@@ -300,76 +291,64 @@ stage('Deploy to EKS') {
 
 ### ✅ Best Practices
 
-✅ Always dry-run deployments  
-✅ Use tools like `kubeval`  
-✅ Monitor rollout status carefully
+✅ Always validate manifests  
+✅ Use health checks  
+✅ Have rollback procedures
 
 ---
 
 ### ✅ What Could Go Wrong?
 
-- Incorrect kubeconfig  
-- YAML syntax errors  
-- Pods stuck in CrashLoopBackOff
+- Invalid YAML syntax  
+- Resource constraints  
+- Network connectivity issues
 
 ---
 
-## 🎬 Complete Jenkinsfile Example
+## 🧪 Chaos Testing Scenarios
 
-Here’s a **complete working Jenkinsfile** for our workshop:
+### ✅ Scenario 1: Pipeline Failures
 
 ```groovy
-pipeline {
-    agent any
-
-    parameters {
-        string(name: 'APP_VERSION', defaultValue: '3', description: 'Which version to deploy?')
+// Simulate pipeline failures
+stage('Chaos Test') {
+    steps {
+        script {
+            // Randomly fail builds
+            if (Math.random() < 0.2) {
+                error "Simulated pipeline failure"
+            }
+        }
     }
+}
+```
 
-    environment {
-        DOCKER_IMAGE = "ci-cd-chaos-app:v${params.APP_VERSION}"
+### ✅ Scenario 2: Slow Builds
+
+```groovy
+// Simulate slow builds
+stage('Slow Build') {
+    steps {
+        script {
+            // Add artificial delay
+            sleep 30
+            
+            // Continue with build
+            sh 'docker build -t chaos-app .'
+        }
     }
+}
+```
 
-    stages {
-        stage('Hello Chaos') {
-            steps {
-                echo "Building pipeline for version ${params.APP_VERSION}"
-            }
-        }
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    dockerImage = docker.build("${DOCKER_IMAGE}")
-                }
-            }
-        }
-        stage('Run Testcontainers Tests') {
-            steps {
-                sh 'pytest tests/'
-            }
-        }
-        stage('Publish Reports') {
-            steps {
-                archiveArtifacts artifacts: 'reports/**', fingerprint: true
-            }
-        }
-        stage('Deploy to EKS') {
-            steps {
-                withCredentials([
-                    [
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-credentials'
-                    ]
-                ]) {
-                    sh '''
-                        aws eks update-kubeconfig --name my-cluster
-                        kubectl apply -f k8s/deployment.yaml --dry-run=client
-                        kubeval k8s/deployment.yaml
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl rollout status deployment my-deployment
-                    '''
-                }
-            }
+### ✅ Scenario 3: Resource Exhaustion
+
+```groovy
+// Simulate resource issues
+stage('Resource Test') {
+    steps {
+        script {
+            // Try to use excessive resources
+            sh 'docker run --memory=10g chaos-app'
         }
     }
 }
@@ -377,29 +356,29 @@ pipeline {
 
 ---
 
-## ✅ What You’ll Learn
+## 📊 Monitoring & Reporting
 
-By the end of Phase 3, you’ll:
+### ✅ Pipeline Metrics
 
-✅ Build Docker images safely in Jenkins  
-✅ Run Python Testcontainers tests in CI  
-✅ Securely manage AWS secrets  
-✅ Deploy confidently to AWS EKS  
-✅ Know how to troubleshoot pipeline chaos
+- Build success rate
+- Average build time
+- Test execution time
+- Deployment success rate
 
----
+### ✅ Chaos Metrics
 
-## ✅ Ready for Advanced Scenarios
-
-Up next, we’ll tackle:
-
-- Kubernetes-specific scenarios (Probes, ConfigMaps, Rollbacks)  
-- Advanced GitOps pipelines with Argo CD  
-- Progressive delivery with Argo Rollouts  
-- Monitoring pipeline health with Prometheus & Grafana
-
-Stay tuned for **Phase 4: Kubernetes Warzone!**
+- Number of simulated failures
+- Recovery time from failures
+- System resilience score
 
 ---
 
-[⬅️ Previous Phase: Docker Mastery](./docker.md) | [Next Phase: Kubernetes Warzone ➡️](./k8s.md)
+## 🎯 Next Steps
+
+✅ **Phase 3 Complete:** You now have Jenkins pipeline mastery!  
+✅ **Ready for Phase 4:** [Kubernetes Chaos & Scalability](k8s.md)  
+✅ **Chaos Agent Status:** Defeated in pipeline automation! 🕶️
+
+---
+
+**Remember:** Jenkins pipelines are your automation backbone. When chaos strikes, your pipeline will be your shield! 🔥

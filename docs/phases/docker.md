@@ -1,4 +1,3 @@
-
 # 🐳 Phase 2 – Docker Mastery
 
 Welcome to **Phase 2** of the CI/CD Chaos Workshop — the stage where we dive deep into Docker, learn how to build Python apps properly, and create chaos-worthy Docker images for production!
@@ -19,9 +18,9 @@ This phase demonstrates:
 
 ---
 
-## 🚀 What We’re Building
+## 🚀 What We're Building
 
-We’re developing a FastAPI Python app:
+We're developing a FastAPI Python app:
 
 - 5 different versions
 - Each with new features, animations, or visuals
@@ -31,14 +30,14 @@ We’re developing a FastAPI Python app:
     - layer count
     - base image details
 
-> **Chaos Agent says:** “Let’s bloat those images!”  
+> **Chaos Agent says:** "Let's bloat those images!"  
 > Our mission: keep images lean and secure.
 
 ---
 
 ## ✨ How to Deploy Versions
 
-Instead of manually switching files and building containers, we’ve automated everything!
+Instead of manually switching files and building containers, we've automated everything!
 
 Run:
 
@@ -77,14 +76,13 @@ This analyzes:
 
 It creates a report like:
 
-
 **Why it matters:** This makes Docker transparent for developers and helps avoid bloat.
 
 ---
 
 ## 🐍 Demo Scenarios
 
-During the workshop, we’ll:
+During the workshop, we'll:
 
 ✅ Deploy version 1 → tiny image  
 ✅ Deploy version 2 → adds emojis → image grows  
@@ -92,7 +90,7 @@ During the workshop, we’ll:
 ✅ Deploy version 4 → adds background workers → image grows  
 ✅ Deploy version 5 → chaos animations → biggest image
 
-We’ll learn how to:
+We'll learn how to:
 
 - Avoid large images
 - Use `.dockerignore` effectively
@@ -100,10 +98,10 @@ We’ll learn how to:
 - Prefer multi-stage builds
 - Separate dev vs prod images
 
-**Chaos Agent’s trap:**  
-> “Add one more pip install… what’s the harm?”
+**Chaos Agent's trap:**  
+> "Add one more pip install… what's the harm?"
 
-We’ll prove why that’s dangerous.
+We'll prove why that's dangerous.
 
 ---
 
@@ -169,9 +167,9 @@ docker history ci-cd-chaos-app:v3
 ✅ Highlight how multi-stage prevents secrets from leaking into final images.
 
 **Chaos Agent:**  
-> “Let’s leave secrets in the image. No one will find them…”
+> "Let's leave secrets in the image. No one will find them…"
 
-We’ll prove how scanning tools and image inspection can expose secrets.
+We'll prove how scanning tools and image inspection can expose secrets.
 
 ---
 
@@ -198,26 +196,68 @@ python Docker/workshop_tools/deploy_version.py --version 5
 
 Then check:
 
-- App running at [http://localhost:3000](http://localhost:3000)
-- Docker report under:
+```bash
+# View the running app
+curl http://localhost:3000
 
-```
-reports/version_5/docker_report.html
+# Check the Docker report
+open reports/version_5/docker_report.html
 ```
 
 ---
 
-## 🏆 Why This Matters
+## 🧪 Chaos Testing Scenarios
 
-By the end of Phase 2, you’ll understand:
+### ✅ Scenario 1: Docker Build Failures
 
-✅ Why Docker image size matters  
-✅ How to keep production images secure  
-✅ Why multi-stage builds are your friend  
-✅ How to visualize Docker data for stakeholders
+```bash
+# Simulate Docker build failures
+docker build --no-cache -t chaos-app:broken .
+# Expected: Build fails due to missing dependencies
+```
 
-…and you’ll have fun chaos demos to prove it!
+### ✅ Scenario 2: Image Size Explosion
+
+```bash
+# Compare image sizes
+docker images chaos-app --format "table {{.Tag}}\t{{.Size}}"
+# Expected: Version 5 should be significantly larger than Version 1
+```
+
+### ✅ Scenario 3: Security Vulnerabilities
+
+```bash
+# Scan for vulnerabilities
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image chaos-app:v1
+# Expected: Find potential security issues
+```
 
 ---
 
-[⬅️ Previous Phase: TestContainers](./testcontainers.md) | [Next Phase: CI/CD Pipelines ➡️](./jenkins.md)
+## 📊 Monitoring & Reporting
+
+### ✅ Docker Metrics
+
+- Image build time
+- Image size trends
+- Layer count analysis
+- Security vulnerability count
+
+### ✅ Chaos Metrics
+
+- Build failure rate
+- Image size explosion rate
+- Security issue detection rate
+
+---
+
+## 🎯 Next Steps
+
+✅ **Phase 2 Complete:** You now have Docker mastery!  
+✅ **Ready for Phase 3:** [Jenkins Pipeline Chaos](jenkins.md)  
+✅ **Chaos Agent Status:** Defeated in Docker optimization! 🕶️
+
+---
+
+**Remember:** Docker is your first line of defense against deployment chaos. Keep images lean, secure, and fast! 🔥

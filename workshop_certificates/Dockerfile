@@ -40,9 +40,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Create a startup script
-RUN echo '#!/bin/bash\ncd /app\nexec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 "app:create_app()"' > /app/start.sh && \
-    chmod +x /app/start.sh
-
-# Start the application
-CMD ["/app/start.sh"] 
+# Start the application directly with gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "app:app"] 

@@ -41,7 +41,7 @@ USER appuser
 EXPOSE 8000
 
 # Create a startup script
-RUN echo '#!/bin/bash\ncd /app\nexec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 app:app' > /app/start.sh && \
+RUN echo '#!/bin/bash\ncd /app\nexec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 "app:create_app()"' > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Start the application

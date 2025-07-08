@@ -3,8 +3,8 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
-from .models import db, User, Scenario, Progress, Screenshot, Certificate, Config
-from .certificate_generator import generate_certificate_pdf
+from models import db, User, Scenario, Progress, Screenshot, Certificate, Config
+from certificate_generator import generate_certificate_pdf
 
 app = Blueprint('app', __name__)
 

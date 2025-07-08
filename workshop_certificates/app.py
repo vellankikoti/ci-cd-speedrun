@@ -30,15 +30,15 @@ def create_app():
     admin.init_app(app)
 
     # Import models after db initialization
-    from .models import User, Scenario, Progress, Screenshot, Certificate, Config
+    from models import User, Scenario, Progress, Screenshot, Certificate, Config
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
     # Register blueprints
-    from .auth import auth
-    from .views import app as app_blueprint
+    from auth import auth
+    from views import app as app_blueprint
     
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(app_blueprint, url_prefix='/app')
@@ -94,7 +94,4 @@ if __name__ == '__main__':
     app = create_app()
     # Use environment variable for debug mode
     debug_mode = os.getenv('FLASK_ENV') == 'development'
-    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
-
-# For gunicorn deployment
-app = create_app() 
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000))) 

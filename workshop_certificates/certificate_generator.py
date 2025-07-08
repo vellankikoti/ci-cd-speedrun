@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from weasyprint import HTML, CSS
-from .models import db, Config, User
+from models import db, Config, User
 
 def generate_certificate_pdf(certificate):
     """Generate a classic university-grade certificate PDF"""

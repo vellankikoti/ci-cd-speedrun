@@ -1,6 +1,6 @@
 import os
 from flask import Flask, send_from_directory, redirect, url_for
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_admin import Admin
 from flask_migrate import Migrate
 from dotenv import load_dotenv
@@ -41,14 +41,18 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(app_blueprint, url_prefix='/app')
 
-    # Serve MkDocs static site for documentation at root, fallback to /app
+    # Serve MkDocs static site for documentation at root, fallback to a public welcome page
     @app.route('/')
     def docs_index():
         index_path = os.path.join(MKDOCS_SITE_DIR, 'index.html')
         if os.path.exists(index_path):
             return send_from_directory(MKDOCS_SITE_DIR, 'index.html')
+        # Show a public welcome page with login/dashboard link
+        if current_user.is_authenticated:
+            link = '<a href="/app/dashboard">Go to Dashboard</a>'
         else:
-            return redirect(url_for('app.dashboard'))  # assuming 'dashboard' is a view in your /app blueprint
+            link = '<a href="/auth/login">Login</a>'
+        return f"""<h1>Welcome to the CI/CD Chaos Workshop App!</h1><p>{link}</p>"""
 
     @app.route('/docs/<path:filename>')
     def docs_files(filename):

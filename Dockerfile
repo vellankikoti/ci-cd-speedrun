@@ -1,16 +1,14 @@
+# Multi-stage build for production deployment
 # Stage 1: Build stage
 FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Set work directory
-WORKDIR /app
-
-# Install system dependencies required for WeasyPrint and other packages
+# Install system dependencies for building
 RUN apt-get update && apt-get install -y \
     build-essential \
     libcairo2-dev \
@@ -21,35 +19,86 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 # Install mkdocs and plugins in builder
 RUN pip install --no-cache-dir mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
 
 # Copy docs and mkdocs.yml, build the documentation
-COPY ../docs ./docs
-COPY ../mkdocs.yml .
+COPY mkdocs.yml .
+COPY docs/ ./docs/
 RUN mkdocs build
 
-# Copy requirements first for better caching
-COPY workshop_certificates/requirements.txt ./
+# Stage 2: Production stage
+FROM python:3.11-slim AS production
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Set environment variables for production
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=app.py
+ENV FLASK_ENV=production
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy the application code
-COPY workshop_certificates /app
-# In the production stage, copy the built site
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi8 \
+    shared-mime-info \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
+
+# Set work directory
+WORKDIR /app
+
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy built docs site from builder
 COPY --from=builder /app/site /app/site
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Copy application code
+COPY workshop_certificates/ /app/
 
-# Create a non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create necessary directories with proper permissions
+RUN mkdir -p uploads certificates logs && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
 USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=5)" || exit 1
 
 # Expose port
 EXPOSE 8000
 
-# Start the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
-    
+# Start the application with gunicorn
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "sync", \
+     "--worker-connections", "1000", \
+     "--timeout", "120", \
+     "--keep-alive", "2", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "100", \
+     "--preload", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info", \
+     "app:app"] 

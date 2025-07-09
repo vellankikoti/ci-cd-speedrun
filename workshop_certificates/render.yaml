@@ -3,8 +3,8 @@ services:
     name: workshop-certificates
     env: python
     plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
+    buildCommand: ./build.sh
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --preload app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -18,6 +18,10 @@ services:
         value: uploads
       - key: FLASK_ENV
         value: production
+      - key: MAX_CONTENT_LENGTH
+        value: 16777216
+    healthCheckPath: /health
+    autoDeploy: true
 
 databases:
   - name: workshop-db

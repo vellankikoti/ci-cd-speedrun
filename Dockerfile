@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN pip install --no-cache-dir mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
 
 # Copy docs and mkdocs.yml, build the documentation
-COPY mkdocs.yml .
+COPY mkdocs-prod.yml ./mkdocs.yml
 COPY docs/ ./docs/
 RUN mkdocs build
 

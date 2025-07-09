@@ -29,6 +29,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY workshop_certificates /app
+# Copy the MkDocs site directory
+COPY site /app/site
 
 # Create uploads directory
 RUN mkdir -p uploads

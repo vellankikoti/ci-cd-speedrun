@@ -21,6 +21,14 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install mkdocs and plugins in builder
+RUN pip install --no-cache-dir mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
+
+# Copy docs and mkdocs.yml, build the documentation
+COPY ../docs ./docs
+COPY ../mkdocs.yml .
+RUN mkdocs build
+
 # Copy requirements first for better caching
 COPY workshop_certificates/requirements.txt ./
 
@@ -29,8 +37,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY workshop_certificates /app
-# Copy the MkDocs site directory
-COPY site /app/site
+# In the production stage, copy the built site
+COPY --from=builder /app/site /app/site
 
 # Create uploads directory
 RUN mkdir -p uploads

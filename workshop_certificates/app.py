@@ -41,18 +41,10 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(app_blueprint, url_prefix='/app')
 
-    # Serve MkDocs static site for documentation at root, fallback to a public welcome page
+    # Make login page the homepage
     @app.route('/')
-    def docs_index():
-        index_path = os.path.join(MKDOCS_SITE_DIR, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(MKDOCS_SITE_DIR, 'index.html')
-        # Show a public welcome page with login/dashboard link
-        if current_user.is_authenticated:
-            link = '<a href="/app/dashboard">Go to Dashboard</a>'
-        else:
-            link = '<a href="/auth/login">Login</a>'
-        return f"""<h1>Welcome to the CI/CD Chaos Workshop App!</h1><p>{link}</p>"""
+    def home():
+        return redirect(url_for('auth.login'))
 
     @app.route('/docs/<path:filename>')
     def docs_files(filename):
@@ -60,7 +52,7 @@ def create_app():
 
     @app.route('/docs')
     def docs_redirect():
-        return redirect(url_for('docs_index'))
+        return redirect(url_for('home'))
 
     # Create database tables and default config
     with app.app_context():

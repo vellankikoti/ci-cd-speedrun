@@ -68,8 +68,8 @@ WORKDIR /app
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy built docs site from builder
-COPY --from=builder /app/site /app/site
+# Copy built docs to the app directory
+COPY --from=builder /site /app/site
 
 # Copy application code
 COPY workshop_certificates/ /app/

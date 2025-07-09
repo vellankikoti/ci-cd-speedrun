@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     shared-mime-info \
     libpq-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment

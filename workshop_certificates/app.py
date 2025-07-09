@@ -18,7 +18,7 @@ login_manager = LoginManager()
 migrate = Migrate()
 admin = Admin(name='Workshop Admin', template_mode='bootstrap4')
 
-MKDOCS_SITE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../site'))
+MKDOCS_SITE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'site'))
 
 # Global variable to track start time for uptime calculation
 START_TIME = time.time()

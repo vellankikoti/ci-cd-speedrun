@@ -1,98 +1,158 @@
 #!/bin/bash
 
-# Workshop Certificates Deployment Script
-# This script helps prepare and deploy the Flask app to Render
+# Production Deployment Script for Workshop Certificates App
+# Usage: ./deploy.sh [environment]
 
 set -e
 
-echo "🚀 Workshop Certificates Deployment Script"
-echo "=========================================="
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Check if we're in the right directory
-if [ ! -f "app.py" ]; then
-    echo "❌ Error: app.py not found. Please run this script from the workshop_certificates directory."
+# Default environment
+ENVIRONMENT=${1:-production}
+
+echo -e "${BLUE}🚀 Starting deployment for environment: ${ENVIRONMENT}${NC}"
+
+# Function to check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Check prerequisites
+echo -e "${YELLOW}📋 Checking prerequisites...${NC}"
+
+if ! command_exists docker; then
+    echo -e "${RED}❌ Docker is not installed. Please install Docker first.${NC}"
     exit 1
 fi
 
-# Check if required files exist
-echo "📋 Checking required files..."
-required_files=("requirements.txt" "Dockerfile" "render.yaml" ".dockerignore")
-for file in "${required_files[@]}"; do
-    if [ -f "$file" ]; then
-        echo "✅ $file found"
+if ! command_exists docker-compose; then
+    echo -e "${RED}❌ Docker Compose is not installed. Please install Docker Compose first.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Prerequisites check passed${NC}"
+
+# Create environment file if it doesn't exist
+if [ ! -f .env ]; then
+    echo -e "${YELLOW}📝 Creating .env file...${NC}"
+    cat > .env << EOF
+# Database Configuration
+POSTGRES_PASSWORD=your_secure_password_here
+DATABASE_URL=postgresql://workshop_user:your_secure_password_here@db:5432/workshop_certificates
+
+# Flask Configuration
+SECRET_KEY=your_super_secret_key_here_change_this_in_production
+FLASK_ENV=production
+UPLOAD_FOLDER=uploads
+MAX_CONTENT_LENGTH=16777216
+
+# Application Configuration
+PORT=8000
+HOST=0.0.0.0
+EOF
+    echo -e "${GREEN}✅ .env file created. Please update the passwords and secret key!${NC}"
+fi
+
+# Create SSL directory and self-signed certificate for development
+if [ ! -d ssl ]; then
+    echo -e "${YELLOW}🔐 Creating SSL directory and self-signed certificate...${NC}"
+    mkdir -p ssl
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout ssl/key.pem -out ssl/cert.pem \
+        -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+    echo -e "${GREEN}✅ SSL certificate created${NC}"
+fi
+
+# Create necessary directories
+echo -e "${YELLOW}📁 Creating necessary directories...${NC}"
+mkdir -p uploads certificates logs
+echo -e "${GREEN}✅ Directories created${NC}"
+
+# Build and start services
+echo -e "${YELLOW}🔨 Building and starting services...${NC}"
+
+if [ "$ENVIRONMENT" = "production" ]; then
+    # Production deployment with nginx
+    docker-compose --profile production up -d --build
+else
+    # Development deployment without nginx
+    docker-compose up -d --build
+fi
+
+echo -e "${GREEN}✅ Services started${NC}"
+
+# Wait for services to be healthy
+echo -e "${YELLOW}⏳ Waiting for services to be healthy...${NC}"
+sleep 10
+
+# Check service health
+echo -e "${YELLOW}🏥 Checking service health...${NC}"
+
+# Check database
+if docker-compose exec -T db pg_isready -U workshop_user -d workshop_certificates > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Database is healthy${NC}"
+else
+    echo -e "${RED}❌ Database health check failed${NC}"
+    exit 1
+fi
+
+# Check Redis
+if docker-compose exec -T redis redis-cli ping > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Redis is healthy${NC}"
+else
+    echo -e "${RED}❌ Redis health check failed${NC}"
+    exit 1
+fi
+
+# Check application
+if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Application is healthy${NC}"
+else
+    echo -e "${RED}❌ Application health check failed${NC}"
+    echo -e "${YELLOW}⏳ Waiting a bit more for application to start...${NC}"
+    sleep 20
+    if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Application is now healthy${NC}"
     else
-        echo "❌ $file missing"
+        echo -e "${RED}❌ Application health check still failed${NC}"
+        echo -e "${YELLOW}📋 Checking application logs...${NC}"
+        docker-compose logs app
         exit 1
     fi
-done
-
-# Check Python dependencies
-echo "🐍 Checking Python dependencies..."
-if command -v python3 &> /dev/null; then
-    echo "✅ Python 3 found"
-else
-    echo "❌ Python 3 not found"
-    exit 1
 fi
 
-# Test WeasyPrint installation
-echo "📄 Testing WeasyPrint..."
-python3 -c "from weasyprint import HTML; print('✅ WeasyPrint OK')" 2>/dev/null || {
-    echo "❌ WeasyPrint not available. Install system dependencies first:"
-    echo "   sudo apt-get install libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev"
-    exit 1
-}
+# Show service status
+echo -e "${YELLOW}📊 Service status:${NC}"
+docker-compose ps
 
-# Check if git is available
-if command -v git &> /dev/null; then
-    echo "✅ Git found"
-    echo "📝 Current git status:"
-    git status --porcelain || echo "   No changes to commit"
-else
-    echo "⚠️  Git not found - make sure to commit your changes manually"
+# Show application info
+echo -e "${BLUE}🌐 Application URLs:${NC}"
+echo -e "${GREEN}   HTTP:  http://localhost${NC}"
+if [ "$ENVIRONMENT" = "production" ]; then
+    echo -e "${GREEN}   HTTPS: https://localhost${NC}"
 fi
+echo -e "${GREEN}   Health: http://localhost:8000/health${NC}"
+echo -e "${GREEN}   Admin:  http://localhost:8000/admin${NC}"
 
-# Create uploads directory if it doesn't exist
-if [ ! -d "uploads" ]; then
-    echo "📁 Creating uploads directory..."
-    mkdir -p uploads
-    echo "✅ uploads directory created"
-fi
+# Show logs
+echo -e "${BLUE}📋 Recent application logs:${NC}"
+docker-compose logs --tail=20 app
 
-# Test local Flask app
-echo "🧪 Testing Flask app..."
-export FLASK_ENV=development
-export SECRET_KEY=test-secret-key
-export DATABASE_URL=sqlite:///test.db
-export UPLOAD_FOLDER=uploads
+echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
+echo -e "${YELLOW}💡 Don't forget to:${NC}"
+echo -e "${YELLOW}   1. Update passwords in .env file${NC}"
+echo -e "${YELLOW}   2. Set up proper SSL certificates for production${NC}"
+echo -e "${YELLOW}   3. Configure your domain name${NC}"
+echo -e "${YELLOW}   4. Set up monitoring and backups${NC}"
 
-python3 -c "
-from app import create_app
-app = create_app()
-print('✅ Flask app created successfully')
-" 2>/dev/null || {
-    echo "❌ Flask app test failed"
-    exit 1
-}
-
-echo ""
-echo "🎉 All checks passed! Your app is ready for deployment."
-echo ""
-echo "📋 Next steps:"
-echo "1. Commit your changes to Git:"
-echo "   git add ."
-echo "   git commit -m 'Prepare for Render deployment'"
-echo "   git push origin main"
-echo ""
-echo "2. Deploy to Render:"
-echo "   - Go to https://dashboard.render.com/"
-echo "   - Click 'New +' → 'Blueprint'"
-echo "   - Connect your GitHub repository"
-echo "   - Click 'Apply' to deploy"
-echo ""
-echo "3. Or deploy manually:"
-echo "   - Create PostgreSQL database on Render"
-echo "   - Create Web Service pointing to this directory"
-echo "   - Set environment variables (see DEPLOYMENT.md)"
-echo ""
-echo "📚 For detailed instructions, see DEPLOYMENT.md" 
+# Useful commands
+echo -e "${BLUE}🔧 Useful commands:${NC}"
+echo -e "${GREEN}   View logs:     docker-compose logs -f app${NC}"
+echo -e "${GREEN}   Stop services: docker-compose down${NC}"
+echo -e "${GREEN}   Restart app:   docker-compose restart app${NC}"
+echo -e "${GREEN}   Update app:    docker-compose up -d --build app${NC}" 

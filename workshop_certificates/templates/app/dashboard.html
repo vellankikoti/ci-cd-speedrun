@@ -3,9 +3,121 @@
 {% block title %}Dashboard - CI/CD Chaos Workshop{% endblock %}
 
 {% block content %}
-<h2>Dashboard</h2>
-<p>Welcome, {{ current_user.full_name or current_user.username }}!</p>
-<!-- Add your dashboard content here -->
+<div class="main-container">
+    <h1>Welcome, {{ current_user.full_name or current_user.username }}!</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Progress Overview -->
+    <div class="card">
+        <h2 class="card-title">Your Progress</h2>
+        
+        <div class="progress-stats">
+            <div class="stat-item">
+                <h3>{{ completed_count }}/{{ total_scenarios }}</h3>
+                <p class="text-muted">Scenarios Completed</p>
+            </div>
+            
+            <div class="stat-item">
+                <h3>{{ total_points }}</h3>
+                <p class="text-muted">Total Points</p>
+            </div>
+            
+            <div class="stat-item">
+                <h3>{{ "%.1f"|format(progress_percentage) }}%</h3>
+                <p class="text-muted">Progress</p>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-bar-inner" style="width: {{ progress_percentage }}%;"></div>
+        </div>
+    </div>
+    
+    <!-- Certificate Status -->
+    {% if is_eligible %}
+    <div class="card flash-success">
+        <h3>🎉 Congratulations!</h3>
+        <p>You're eligible for a certificate! You've completed {{ completed_count }} scenarios and earned {{ total_points }} points.</p>
+        <a href="{{ url_for('app.certificate') }}" class="btn">Download Certificate</a>
+    </div>
+    {% else %}
+    <div class="card flash-warning">
+        <h3>📚 Keep Learning!</h3>
+        <p>
+            You need 100+ points and 8+ completed scenarios to earn your certificate. 
+            Currently: {{ total_points }} points, {{ completed_count }} scenarios completed.
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Actions -->
+    <div class="card">
+        <h2 class="card-title">Quick Actions</h2>
+        
+        <div class="action-grid">
+            <a href="{{ url_for('app.upload') }}" class="action-card">
+                <h3>📸 Upload Screenshot</h3>
+                <p>Submit proof of scenario completion</p>
+            </a>
+            
+            <a href="{{ url_for('app.progress') }}" class="action-card">
+                <h3>📊 View Progress</h3>
+                <p>Detailed progress tracking</p>
+            </a>
+            
+            <a href="{{ url_for('app.profile') }}" class="action-card">
+                <h3>👤 Profile</h3>
+                <p>Manage your account</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Workshop Phases -->
+    <div class="card">
+        <h2 class="card-title">Workshop Phases</h2>
+        
+        {% for phase_name, scenarios in phases.items() %}
+        <div class="phase-section">
+            <h3 class="phase-title">{{ phase_name }}</h3>
+            
+            <div class="scenario-grid">
+                {% for scenario in scenarios %}
+                {% set user_progress_item = user_progress|selectattr("scenario_id", "equalto", scenario.id)|first %}
+                <div class="scenario-card {% if user_progress_item and user_progress_item.completed %}completed{% endif %}">
+                    <div class="scenario-header">
+                        <h4>{{ scenario.name }}</h4>
+                        <span class="status-badge {% if user_progress_item and user_progress_item.completed %}completed{% endif %}">
+                            {% if user_progress_item and user_progress_item.completed %}✅ Completed{% else %}⏳ Pending{% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if scenario.description %}
+                    <p class="scenario-description">{{ scenario.description }}</p>
+                    {% endif %}
+                    
+                    <div class="scenario-footer">
+                        <span class="points">{{ scenario.points }} points</span>
+                        {% if user_progress_item and user_progress_item.completed %}
+                        <span class="earned">+{{ user_progress_item.points_earned }} earned</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

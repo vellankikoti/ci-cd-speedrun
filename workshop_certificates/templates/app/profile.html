@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - CI/CD Chaos Workshop{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <h1>Your Profile</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Profile Information -->
+    <div class="card">
+        <h3 class="card-title">Profile Information</h3>
+        
+        <div class="profile-details">
+            <div class="detail-row">
+                <strong>Username:</strong>
+                <span>{{ current_user.username }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <strong>Email:</strong>
+                <span>{{ current_user.email }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <strong>Member Since:</strong>
+                <span>{{ current_user.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <strong>Last Login:</strong>
+                <span>{{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'Never' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Workshop Statistics -->
+    <div class="card">
+        <h3 class="card-title">Workshop Statistics</h3>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h4>📊 Total Points</h4>
+                <div class="stat-value">{{ stats.total_points }}</div>
+                <p class="stat-description">Points earned across all scenarios</p>
+            </div>
+            
+            <div class="stat-card">
+                <h4>🎯 Scenarios Completed</h4>
+                <div class="stat-value">{{ stats.completed_scenarios }}</div>
+                <p class="stat-description">Scenarios successfully finished</p>
+            </div>
+            
+            <div class="stat-card">
+                <h4>📈 Completion Rate</h4>
+                <div class="stat-value">{{ "%.1f"|format(stats.completion_rate) }}%</div>
+                <p class="stat-description">Percentage of scenarios completed</p>
+            </div>
+            
+            <div class="stat-card">
+                <h4>🏆 Certificates</h4>
+                <div class="stat-value">{{ stats.certificates_earned }}</div>
+                <p class="stat-description">Certificates generated</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="card">
+        <h3 class="card-title">Recent Activity</h3>
+        
+        {% if recent_activity %}
+        <div class="activity-list">
+            {% for activity in recent_activity %}
+            <div class="activity-item">
+                <div class="activity-icon">
+                    {% if activity.type == 'scenario_completed' %}✅
+                    {% elif activity.type == 'points_earned' %}🎯
+                    {% elif activity.type == 'certificate_earned' %}🏆
+                    {% else %}📝
+                    {% endif %}
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">{{ activity.title }}</div>
+                    <div class="activity-time">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No recent activity to display.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Account Actions -->
+    <div class="card">
+        <h3 class="card-title">Account Actions</h3>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('app.dashboard') }}" class="btn">← Back to Dashboard</a>
+            <a href="{{ url_for('app.progress') }}" class="btn">View Progress</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

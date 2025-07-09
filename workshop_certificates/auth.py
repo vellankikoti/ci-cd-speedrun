@@ -70,4 +70,4 @@ def register():
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('docs_index')) 
+    return redirect(url_for('auth.login')) 

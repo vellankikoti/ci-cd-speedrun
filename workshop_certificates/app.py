@@ -1,9 +1,11 @@
 import os
-from flask import Flask, send_from_directory, redirect, url_for
+from flask import Flask, send_from_directory, redirect, url_for, jsonify
 from flask_login import LoginManager, current_user
 from flask_admin import Admin
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+import time
+import psutil
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +19,9 @@ migrate = Migrate()
 admin = Admin(name='Workshop Admin', template_mode='bootstrap4')
 
 MKDOCS_SITE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../site'))
+
+# Global variable to track start time for uptime calculation
+START_TIME = time.time()
 
 def create_app():
     app = Flask(__name__)
@@ -45,6 +50,37 @@ def create_app():
     @app.route('/')
     def home():
         return redirect(url_for('auth.login'))
+
+    # Health check endpoint for Docker and monitoring
+    @app.route('/health')
+    def health():
+        try:
+            # Check database connectivity
+            db.session.execute(db.text('SELECT 1'))
+            db_status = 'healthy'
+        except Exception as e:
+            db_status = f'unhealthy: {str(e)}'
+        
+        # Calculate uptime
+        uptime_seconds = time.time() - START_TIME
+        uptime_hours = uptime_seconds / 3600
+        
+        # Get system info
+        memory_info = psutil.virtual_memory()
+        cpu_percent = psutil.cpu_percent(interval=1)
+        
+        return jsonify({
+            'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
+            'timestamp': time.time(),
+            'uptime_hours': round(uptime_hours, 2),
+            'version': '1.0.0',
+            'database': db_status,
+            'system': {
+                'memory_usage_percent': round(memory_info.percent, 2),
+                'cpu_usage_percent': round(cpu_percent, 2),
+                'memory_available_mb': round(memory_info.available / 1024 / 1024, 2)
+            }
+        })
 
     @app.route('/docs/<path:filename>')
     def docs_files(filename):

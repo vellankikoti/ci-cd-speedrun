@@ -3,180 +3,120 @@
 {% block title %}Upload Screenshot - CI/CD Chaos Workshop{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">📸 Upload Screenshot</h5>
+<div class="main-container">
+    <h1>Upload Screenshot</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Upload Form -->
+    <div class="card">
+        <h3 class="card-title">Upload Your Screenshot</h3>
+        
+        <form method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="form-group">
+                <label for="scenario">Select Scenario:</label>
+                <select name="scenario" id="scenario" required>
+                    <option value="">Choose a scenario...</option>
+                    <option value="docker_build">Docker Build Scenario</option>
+                    <option value="testcontainers">TestContainers Scenario</option>
+                    <option value="html_reports">HTML Reports Scenario</option>
+                    <option value="secrets_management">Secrets Management Scenario</option>
+                    <option value="eks_deployment">EKS Deployment Scenario</option>
+                </select>
             </div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                    <div class="mb-4">
-                        <label for="scenario_id" class="form-label">Select Scenario</label>
-                        <select class="form-select" id="scenario_id" name="scenario_id" required>
-                            <option value="">Choose a scenario...</option>
-                            {% for scenario in scenarios %}
-                            <option value="{{ scenario.id }}">
-                                {{ scenario.phase }} - {{ scenario.name }} ({{ scenario.points }} points)
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Select the scenario this screenshot proves completion for.</div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="screenshot" class="form-label">Screenshot</label>
-                        <div class="upload-area" id="uploadArea">
-                            <div class="upload-content text-center">
-                                <div class="upload-icon mb-3">
-                                    <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
-                                </div>
-                                <h5>Drag & Drop your screenshot here</h5>
-                                <p class="text-muted">or click to browse files</p>
-                                <input type="file" class="form-control" id="screenshot" name="screenshot" 
-                                       accept="image/*" required style="display: none;">
-                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('screenshot').click()">
-                                    Choose File
-                                </button>
-                            </div>
-                            <div class="upload-preview" id="uploadPreview" style="display: none;">
-                                <img id="previewImage" class="img-fluid rounded" alt="Preview">
-                                <div class="mt-3">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearUpload()">
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-text">
-                            Supported formats: PNG, JPG, JPEG, GIF, BMP (Max 16MB)
-                        </div>
-                    </div>
-                    
-                    <!-- Removed the Upload Guidelines alert as per user request -->
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            📤 Upload Screenshot
-                        </button>
-                    </div>
-                </form>
+            
+            <div class="form-group">
+                <label for="screenshot">Screenshot File:</label>
+                <input type="file" name="screenshot" id="screenshot" accept="image/*" required>
+                <small class="form-help">Accepted formats: PNG, JPG, JPEG, GIF (max 5MB)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description (Optional):</label>
+                <textarea name="description" id="description" rows="3" placeholder="Describe what you accomplished in this scenario..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn">📤 Upload Screenshot</button>
+        </form>
+    </div>
+    
+    <!-- Upload Guidelines -->
+    <div class="card">
+        <h3 class="card-title">Upload Guidelines</h3>
+        
+        <div class="guidelines-grid">
+            <div class="guideline-item">
+                <h4>📸 Screenshot Requirements</h4>
+                <ul>
+                    <li>Clear, readable screenshots</li>
+                    <li>Show completed tasks or results</li>
+                    <li>Include relevant terminal output</li>
+                    <li>Maximum file size: 5MB</li>
+                </ul>
+            </div>
+            
+            <div class="guideline-item">
+                <h4>✅ What to Include</h4>
+                <ul>
+                    <li>Successful test results</li>
+                    <li>Completed build outputs</li>
+                    <li>Working application screens</li>
+                    <li>Deployment confirmations</li>
+                </ul>
+            </div>
+            
+            <div class="guideline-item">
+                <h4>❌ What to Avoid</h4>
+                <ul>
+                    <li>Blurry or unclear images</li>
+                    <li>Error messages only</li>
+                    <li>Unrelated screenshots</li>
+                    <li>Files larger than 5MB</li>
+                </ul>
             </div>
         </div>
     </div>
+    
+    <!-- Recent Uploads -->
+    <div class="card">
+        <h3 class="card-title">Recent Uploads</h3>
+        
+        {% if recent_uploads %}
+        <div class="uploads-list">
+            {% for upload in recent_uploads %}
+            <div class="upload-item">
+                <div class="upload-info">
+                    <div class="upload-title">{{ upload.scenario_name }}</div>
+                    <div class="upload-meta">
+                        <span class="upload-date">{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        <span class="upload-status status-{{ upload.status }}">
+                            {% if upload.verified %}✅ Verified{% else %}⏳ Pending{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="upload-actions">
+                    <a href="{{ url_for('app.view_screenshot', screenshot_id=upload.id) }}" class="btn btn-small">View</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No uploads yet. Upload your first screenshot to get started!</p>
+        {% endif %}
+    </div>
+    
+    <!-- Navigation -->
+    <div class="text-center">
+        <a href="{{ url_for('app.dashboard') }}" class="btn">← Back to Dashboard</a>
+        <a href="{{ url_for('app.progress') }}" class="btn">View Progress</a>
+    </div>
 </div>
-
-<style>
-.upload-area {
-    border: 3px dashed #326CE5;
-    border-radius: 15px;
-    padding: 40px;
-    text-align: center;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.upload-area:hover {
-    border-color: #3263D2;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    transform: translateY(-2px);
-}
-
-.upload-area.dragover {
-    border-color: #10B981;
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    transform: scale(1.02);
-}
-
-.upload-icon {
-    color: #326CE5;
-}
-
-.upload-preview img {
-    max-height: 300px;
-    object-fit: contain;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('screenshot');
-    const preview = document.getElementById('uploadPreview');
-    const previewImage = document.getElementById('previewImage');
-    const uploadContent = document.querySelector('.upload-content');
-    
-    // Drag and drop functionality
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-    
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-    });
-    
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFile(files[0]);
-        }
-    });
-    
-    // File input change
-    fileInput.addEventListener('change', function(e) {
-        if (e.target.files.length > 0) {
-            handleFile(e.target.files[0]);
-        }
-    });
-    
-    // Click to upload
-    uploadArea.addEventListener('click', function() {
-        fileInput.click();
-    });
-    
-    function handleFile(file) {
-        // Validate file type
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'];
-        if (!allowedTypes.includes(file.type)) {
-            alert('Please select a valid image file (PNG, JPG, JPEG, GIF, BMP)');
-            return;
-        }
-        
-        // Validate file size (16MB)
-        if (file.size > 16 * 1024 * 1024) {
-            alert('File size must be less than 16MB');
-            return;
-        }
-        
-        // Show preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewImage.src = e.target.result;
-            uploadContent.style.display = 'none';
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-        
-        // Update file input
-        fileInput.files = new DataTransfer().files;
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-    }
-    
-    window.clearUpload = function() {
-        fileInput.value = '';
-        preview.style.display = 'none';
-        uploadContent.style.display = 'block';
-    };
-});
-</script>
 {% endblock %} 

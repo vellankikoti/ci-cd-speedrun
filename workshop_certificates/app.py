@@ -46,10 +46,10 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(app_blueprint, url_prefix='/app')
 
-    # Make login page the homepage
+    # Make docs the homepage
     @app.route('/')
     def home():
-        return redirect(url_for('auth.login'))
+        return send_from_directory(MKDOCS_SITE_DIR, 'index.html')
 
     # Health check endpoint for Docker and monitoring
     @app.route('/health')
@@ -87,8 +87,8 @@ def create_app():
         return send_from_directory(MKDOCS_SITE_DIR, filename)
 
     @app.route('/docs')
-    def docs_redirect():
-        return redirect(url_for('home'))
+    def docs_index():
+        return send_from_directory(MKDOCS_SITE_DIR, 'index.html')
 
     # Create database tables and default config
     with app.app_context():

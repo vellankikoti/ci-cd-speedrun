@@ -178,5 +178,39 @@ def download_certificate(cert_id):
 @app.route('/profile')
 @login_required
 def profile():
-    """User profile page"""
-    return render_template('app/profile.html') 
+    # Calculate stats
+    user_progress = Progress.query.filter_by(user_id=current_user.id).all()
+    total_points = sum(p.points_earned for p in user_progress)
+    completed_scenarios = [p for p in user_progress if p.completed]
+    completion_rate = (len(completed_scenarios) / Scenario.query.filter_by(is_active=True).count()) * 100 if Scenario.query.filter_by(is_active=True).count() > 0 else 0
+    certificates_earned = Certificate.query.filter_by(user_id=current_user.id).count()
+    stats = {
+        'total_points': total_points,
+        'completed_scenarios': len(completed_scenarios),
+        'completion_rate': completion_rate,
+        'certificates_earned': certificates_earned
+    }
+    # Recent activity (last 5 progress or certificate events)
+    recent_activity = []
+    for p in sorted(user_progress, key=lambda x: x.completed_at or x.updated_at or x.created_at, reverse=True)[:5]:
+        if p.completed:
+            recent_activity.append({
+                'type': 'scenario_completed',
+                'title': f"Completed: {Scenario.query.get(p.scenario_id).name}",
+                'timestamp': p.completed_at or p.updated_at or p.created_at
+            })
+        elif p.points_earned > 0:
+            recent_activity.append({
+                'type': 'points_earned',
+                'title': f"Points Earned: {p.points_earned}",
+                'timestamp': p.updated_at or p.created_at
+            })
+    for c in Certificate.query.filter_by(user_id=current_user.id).order_by(Certificate.generated_at.desc()).limit(2):
+        recent_activity.append({
+            'type': 'certificate_earned',
+            'title': f"Certificate Generated: {c.certificate_number}",
+            'timestamp': c.generated_at
+        })
+    # Sort by timestamp descending
+    recent_activity = sorted(recent_activity, key=lambda x: x['timestamp'], reverse=True)[:5]
+    return render_template('app/profile.html', stats=stats, recent_activity=recent_activity) 

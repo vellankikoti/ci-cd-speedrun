@@ -6,7 +6,7 @@
 </head>
 <body>
     <nav style="background: #326CE5; padding: 1em;">
-        <a href="{{ url_for('home') }}" style="color: #fff; margin-right: 1em; text-decoration: none; font-weight: bold;">Home</a>
+        <a href="/docs" style="color: #fff; margin-right: 1em; text-decoration: none; font-weight: bold;">Home</a>
         {% if current_user.is_authenticated %}
             <a href="{{ url_for('app.dashboard') }}" style="color: #fff; margin-right: 1em; text-decoration: none;">Dashboard</a>
             <a href="{{ url_for('auth.logout') }}" style="color: #fff; margin-right: 1em; text-decoration: none;">Logout</a>

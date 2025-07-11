@@ -1,39 +1,14 @@
 services:
   - type: web
-    name: nginx
-    env: docker
-    dockerfilePath: ./Dockerfile
-    plan: free
+    name: ci-cd-chaos-workshop
+    env: static
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install mkdocs mkdocs-material
+      mkdocs build
+    staticPublishPath: ./site
     envVars:
-      - key: FLASK_SERVICE_URL
-        value: http://flask-app:8000
-    # Nginx will serve static docs and proxy /app/, /auth/, /health to Flask
-    # Make sure your Dockerfile/nginx.conf is set up for this
-
-  - type: web
-    name: flask-app
-    env: docker
-    dockerfilePath: ./workshop_certificates/Dockerfile
+      - key: PYTHON_VERSION
+        value: 3.9
     plan: free
-    envVars:
-      - key: DATABASE_URL
-        fromService:
-          type: postgres
-          name: db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
-      - key: SECRET_KEY
-        generateValue: true
-    # Flask app runs on port 8000
-
-  - type: postgres
-    name: db
-    plan: free
-
-  - type: redis
-    name: redis
-    plan: free 
+    autoDeploy: true 

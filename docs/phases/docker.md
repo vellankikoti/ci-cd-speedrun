@@ -1,20 +1,56 @@
-# 🐳 Phase 2 – Docker Mastery
+# 🐳 Docker Mastery
 
 Welcome to **Phase 2** of the CI/CD Chaos Workshop — the stage where we dive deep into Docker, learn how to build Python apps properly, and create chaos-worthy Docker images for production!
 
-This phase demonstrates:
+---
 
-✅ Multi-stage builds  
-✅ Docker image size comparisons  
-✅ Production vs. dev Dockerfiles  
-✅ Deploying multiple versions of your app  
-✅ Generating Docker analysis reports
+## 🚀 What You'll Experience in This Phase
 
-> 🎯 **Goal:** Show how tiny changes in Dockerfiles affect:
-> - Build times
-> - Image sizes
-> - Security
-> - Performance
+### **Scenario 01: Streaming Server with Docker**
+- Launch your own live streaming server using Docker and Owncast.
+- Connect OBS Studio, stream video, and share it with the world.
+- Learn about containerized media, port mapping, and real-world Docker deployment.
+- See how Docker makes complex app stacks portable and reproducible.
+
+### **Scenario 02: Progressive Chaos Engineering Pipeline**
+- Enter the world of chaos engineering — safely, in Docker!
+- Run a Jenkins pipeline that simulates real-world failures: network outages, resource exhaustion, missing dependencies, and database crashes.
+- Watch as each pipeline step introduces a new failure, then learn how to fix it.
+- Master Docker-in-Docker (DinD), container orchestration, and resilient CI/CD design.
+- Build confidence in troubleshooting and debugging containerized pipelines.
+
+### **Scenario 03: Docker Networking Magic**
+- Deploy a live voting app and see how containers communicate (or fail to!).
+- Simulate broken networks, missing databases, and container isolation.
+- Fix networking issues live and watch your app come to life.
+- Learn about Docker networks, bridges, and best practices for multi-container apps.
+- Experience the "AHA!" moment when everything just works.
+
+### **Scenario 04: Docker Image Scanner**
+- Upload any Dockerfile and get instant, real-world security and best-practices analysis.
+- See how Trivy scans for vulnerabilities and how small Dockerfile changes impact security.
+- Learn to optimize, harden, and benchmark your images — and get actionable feedback.
+- Discover the power of automated image analysis in modern DevOps.
+
+### **Scenario 05: Docker Escape Room**
+- Enter a gamified, puzzle-based Docker adventure.
+- Solve hands-on challenges: volumes, networking, secrets, resource limits, and multi-stage builds.
+- Race against the clock, outsmart Dr. NullPointer, and escape the Docker Vault!
+- Experience Docker as a real-world troubleshooting and problem-solving journey.
+- Walk away with Docker mastery, confidence, and a smile.
+
+---
+
+## 🎬 What You'll Learn
+- How to containerize and run real-world apps (media, web, CI/CD, games)
+- The art of troubleshooting and debugging Dockerized systems
+- Chaos engineering and resilience in pipelines
+- Docker networking, volumes, and resource management
+- Security scanning and best practices for Dockerfiles
+- The fun and power of hands-on, scenario-based learning
+
+> **This phase is your Docker bootcamp, playground, and proving ground.**
+> Get ready to build, break, fix, and master Docker — with a little chaos and a lot of fun!
 
 ---
 

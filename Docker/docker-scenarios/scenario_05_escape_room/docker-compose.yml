@@ -1,0 +1,20 @@
+services:
+  escape-room-web:
+    build:
+      context: ./webui
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    depends_on: []
+    restart: unless-stopped
+    networks:
+      - escape-room-network
+
+networks:
+  escape-room-network:
+    driver: bridge 

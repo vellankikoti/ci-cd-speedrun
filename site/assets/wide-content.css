@@ -1,0 +1,19 @@
+/* Balanced wide content area for better readability and space utilization */
+.md-main__inner,
+.md-content {
+  max-width: 1400px !important;
+  margin-left: 32px !important;
+  margin-right: 32px !important;
+}
+
+/* Force hide the right sidebar (TOC) in all cases */
+.md-sidebar--secondary,
+.md-sidebar[data-md-type="toc"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  flex: 0 0 0 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+} 

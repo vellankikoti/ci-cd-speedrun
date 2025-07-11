@@ -1,0 +1,9 @@
+{# Custom sidebar header: make site name a link to Home #}
+<a href="{{ config.site_url | default(nav.homepage.url) | url }}" class="md-header-nav__button md-logo" title="{{ config.site_name }}">
+  {% if config.theme.logo %}
+    <img src="{{ config.theme.logo | url }}" alt="{{ config.site_name }}" width="48" height="48">
+  {% endif %}
+  <span class="md-header-nav__title">
+    {{ config.site_name }}
+  </span>
+</a> 

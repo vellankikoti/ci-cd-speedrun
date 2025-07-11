@@ -1,0 +1,30 @@
+.rollout-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.rollout-controls label {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.rollout-controls input[type="range"] {
+  margin-left: 1rem;
+  width: 180px;
+}
+.rollout-controls button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  background: #27ae60;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rollout-controls button:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+} 

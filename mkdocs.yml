@@ -6,6 +6,7 @@ repo_name: GitHub
 edit_uri: edit/main/docs/
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
     - scheme: default
       primary: blue
@@ -34,7 +35,7 @@ theme:
     - search.share
     - content.code.copy
     - content.tabs.link
-    - toc.integrate
+    # Removed toc.integrate for clean sidebar
     - content.code.annotate
     - content.action.edit
     - content.action.view
@@ -48,6 +49,7 @@ nav:
   - Home: index.md
   - 🛠️ Setup:
       - Setup Guide: phases/setup.md
+      - Troubleshooting: troubleshooting.md
   - 🧪 TestContainers:
       - TestContainers Phase: phases/testcontainers.md
       - "Scenario 01: MySQL": testcontainers/mysql.md
@@ -57,6 +59,11 @@ nav:
       - "Scenario 05: Redis": testcontainers/redis.md
   - 🐳 Docker:
       - Docker Phase: phases/docker.md
+      - "Scenario 01: Streaming Server": docker/scenario_01_streaming.md
+      - "Scenario 02: Chaos Pipeline": docker/scenario_02_chaos_pipeline.md
+      - "Scenario 03: Networking": docker/scenario_03_networking.md
+      - "Scenario 04: Docker Image Scanner": docker/scenario_04_layers.md
+      - "Scenario 05: Escape Room": docker/scenario_05_escape_room.md
   - 🤖 Jenkins:
       - Jenkins Phase: phases/jenkins.md
       - "Scenario 01: Docker Build": jenkins/scenario_01_docker_build.md
@@ -66,6 +73,11 @@ nav:
       - "Scenario 05: Deploy to EKS": jenkins/scenario_05_deploy_eks.md
   - ☸️ Kubernetes:
       - Kubernetes Phase: phases/k8s.md
+      - "Scenario 01: Python Deploy": kubernetes/scenario_01_python_deploy.md
+      - "Scenario 02: Secret Automation": kubernetes/scenario_02_secret_automation.md
+      - "Scenario 03: Auto Scaling": kubernetes/scenario_03_auto_scaling.md
+      - "Scenario 04: Blue-Green Deployments": kubernetes/scenario_04_blue_green.md
+      - "Scenario 05: GitOps with ArgoCD": kubernetes/scenario_05_gitops_argocd.md
   - 🎓 Certificate: certificate.md
 
 # Additional configuration for workshop experience
@@ -77,11 +89,16 @@ extra:
       link: https://twitter.com/your-handle
     - icon: fontawesome/brands/linkedin
       link: https://linkedin.com/in/your-profile
+  extra_javascript:
+    - overrides/assets/sidebar-autocollapse.js
+  extra_css:
+    # (Removed all custom CSS for default layout)
 
 # Plugins for enhanced workshop experience
 plugins:
   - search
-  - git-revision-date-localized:
-      enable_creation_date: true
+  # - git-revision-date-localized:
+  #     enable_creation_date: true
+  #     enable_git_follow: false
   - minify:
       minify_html: true

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-app
+  namespace: scaling-challenge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard-app
+  template:
+    metadata:
+      labels:
+        app: dashboard-app
+    spec:
+      containers:
+        - name: dashboard-app
+          image: dashboard:latest  # Replace with your built image
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-service
+  namespace: scaling-challenge
+spec:
+  type: NodePort
+  selector:
+    app: dashboard-app
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 31500
+      protocol: TCP 

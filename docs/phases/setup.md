@@ -1,226 +1,137 @@
-# 🛠️ Workshop Setup Guide
+# 🛠️ Complete Workshop Setup Guide
 
-<div class="setup-hero">
-  <div class="setup-content">
-    <h1>Prepare for Chaos: Complete Setup Guide</h1>
-    <p class="setup-subtitle">Get your environment battle-ready to defeat the Chaos Agent 🕶️</p>
-    <div class="setup-stats">
-      <div class="stat-item">
-        <span class="stat-number">15-20</span>
-        <span class="stat-label">minutes</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">8</span>
-        <span class="stat-label">steps</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">100%</span>
-        <span class="stat-label">success rate</span>
-      </div>
-    </div>
-  </div>
-</div>
+Welcome to the **CI/CD Chaos Workshop Setup Guide**! This comprehensive guide will prepare your environment for all phases and scenarios—from local Python testing to advanced Kubernetes GitOps with ArgoCD and Argo Rollouts.
+
+> 🎯 **Goal:** Get your environment battle-ready to defeat the Chaos Agent in every scenario! 🕶️
 
 ---
 
 ## 📋 Prerequisites Checklist
 
-<div class="prerequisites-grid">
-  <div class="prereq-card">
-    <h3>💻 Hardware Requirements</h3>
-    <ul>
-      <li>Computer with 8GB+ RAM</li>
-      <li>10GB+ free disk space</li>
-      <li>Internet connection</li>
-      <li>Administrator access</li>
-    </ul>
-  </div>
-  
-  <div class="prereq-card">
-    <h3>🛠️ Software Requirements</h3>
-    <ul>
-      <li>Python 3.10+</li>
-      <li>Docker Desktop</li>
-      <li>Kubernetes cluster</li>
-      <li>Git</li>
-    </ul>
-  </div>
-  
-  <div class="prereq-card">
-    <h3>🎯 Workshop Goals</h3>
-    <ul>
-      <li>Build chaos-resistant pipelines</li>
-      <li>Master Testcontainers</li>
-      <li>Deploy to Kubernetes</li>
-      <li>Defeat the Chaos Agent</li>
-    </ul>
-  </div>
-</div>
+### 💻 Hardware Requirements
+- **RAM:** 8GB+ (16GB recommended for Kubernetes/ArgoCD scenarios)
+- **Storage:** 10GB+ free disk space
+- **Network:** Reliable internet connection
+- **Access:** Administrator/root access
+
+### 🛠️ Software Requirements
+- **Python:** 3.10+ for automation and testing
+- **Docker:** Desktop or Engine for containerization
+- **Kubernetes:** Local cluster (Docker Desktop, Minikube, Kind, or cloud)
+- **Git:** Version control
+- **Node.js:** For frontend demos (optional but recommended)
+
+### 🎯 Workshop Goals
+- Build chaos-resistant CI/CD pipelines
+- Master Testcontainers for reliable testing
+- Deploy to Kubernetes with confidence
+- Implement GitOps with ArgoCD and Argo Rollouts
+- Defeat the Chaos Agent in all scenarios! 🔥
 
 ---
 
 ## 🐍 Step 1: Install Python 3.10+
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">1</div>
-    <h2>Install Python 3.10+</h2>
-    <p>Set up Python for automation and testing</p>
-  </div>
+### 🪟 Windows Installation
 
-  <div class="platform-tabs">
-    <div class="tab-content active" id="windows-python">
-      <h3>🪟 Windows Installation</h3>
-      
-      <div class="install-step">
-        <h4>1. Download Python</h4>
-        <ul>
-          <li>Go to <a href="https://python.org/downloads" target="_blank">python.org/downloads</a></li>
-          <li>Download Python 3.10 or higher</li>
-          <li><strong>Important:</strong> Check "Add Python to PATH" during installation</li>
-        </ul>
-      </div>
-      
-      <div class="install-step">
-        <h4>2. Verify Installation</h4>
-        <div class="code-block">
-          <div class="code-header">Command Prompt</div>
-          <pre><code>python --version
-# Should show: Python 3.10.x or higher</code></pre>
-        </div>
-      </div>
-    </div>
+1. **Download Python**
+   - Go to [python.org/downloads](https://python.org/downloads)
+   - Download Python 3.10 or higher
+   - **Important:** Check "Add Python to PATH" during installation
 
-    <div class="tab-content" id="macos-python">
-      <h3>🍎 macOS Installation</h3>
-      
-      <div class="install-step">
-        <h4>Option A: Using Homebrew (Recommended)</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code># Install Homebrew first if you don't have it
+2. **Verify Installation**
+   ```cmd
+   python --version
+   # Should show: Python 3.10.x or higher
+   ```
+
+### 🍎 macOS Installation
+
+**Option A: Using Homebrew (Recommended)**
+```bash
+# Install Homebrew first if you don't have it
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install Python
-brew install python@3.10</code></pre>
-        </div>
-      </div>
-      
-      <div class="install-step">
-        <h4>Option B: Download from python.org</h4>
-        <ul>
-          <li>Visit <a href="https://python.org/downloads" target="_blank">python.org/downloads</a></li>
-          <li>Download the macOS installer</li>
-          <li>Run the installer</li>
-        </ul>
-      </div>
-      
-      <div class="install-step">
-        <h4>3. Verify Installation</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code>python3 --version
-# Should show: Python 3.10.x or higher</code></pre>
-        </div>
-      </div>
-    </div>
+brew install python@3.10
+```
 
-    <div class="tab-content" id="linux-python">
-      <h3>🐧 Linux Installation</h3>
-      
-      <div class="install-step">
-        <h4>Ubuntu/Debian</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code># Update package list
+**Option B: Download from python.org**
+- Visit [python.org/downloads](https://python.org/downloads)
+- Download the macOS installer
+- Run the installer
+
+**Verify Installation**
+```bash
+python3 --version
+# Should show: Python 3.10.x or higher
+```
+
+### 🐧 Linux Installation
+
+**Ubuntu/Debian**
+```bash
+# Update package list
 sudo apt update
 
 # Install Python 3.10
 sudo apt install python3.10 python3.10-venv python3-pip
 
 # Verify installation
-python3.10 --version</code></pre>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+python3.10 --version
+```
+
+**CentOS/RHEL**
+```bash
+# Install Python 3.10
+sudo yum install python3.10 python3-pip
+
+# Verify installation
+python3.10 --version
+```
 
 ---
 
 ## 🐳 Step 2: Install Docker Desktop
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">2</div>
-    <h2>Install Docker Desktop</h2>
-    <p>Containerize your applications and run Testcontainers</p>
-  </div>
+### 🪟 Windows Installation
 
-  <div class="platform-tabs">
-    <div class="tab-content active" id="windows-docker">
-      <h3>🪟 Windows Installation</h3>
-      
-      <div class="install-step">
-        <h4>1. Download Docker Desktop</h4>
-        <ul>
-          <li>Go to <a href="https://docker.com/products/docker-desktop" target="_blank">docker.com/products/docker-desktop</a></li>
-          <li>Download Docker Desktop for Windows</li>
-          <li>Run the installer</li>
-          <li><strong>Important:</strong> Enable WSL 2 if prompted</li>
-        </ul>
-      </div>
-      
-      <div class="install-step">
-        <h4>2. Start Docker Desktop</h4>
-        <ul>
-          <li>Launch Docker Desktop from Start Menu</li>
-          <li>Wait for the whale icon to stop animating</li>
-          <li>Docker is ready when the icon is static</li>
-        </ul>
-      </div>
-      
-      <div class="install-step">
-        <h4>3. Verify Installation</h4>
-        <div class="code-block">
-          <div class="code-header">Command Prompt</div>
-          <pre><code>docker --version
-docker run hello-world</code></pre>
-        </div>
-      </div>
-    </div>
+1. **Download Docker Desktop**
+   - Go to [docker.com/products/docker-desktop](https://docker.com/products/docker-desktop)
+   - Download Docker Desktop for Windows
+   - Run the installer
+   - **Important:** Enable WSL 2 if prompted
 
-    <div class="tab-content" id="macos-docker">
-      <h3>🍎 macOS Installation</h3>
-      
-      <div class="install-step">
-        <h4>1. Download Docker Desktop</h4>
-        <ul>
-          <li>Go to <a href="https://docker.com/products/docker-desktop" target="_blank">docker.com/products/docker-desktop</a></li>
-          <li>Download Docker Desktop for Mac</li>
-          <li>Drag Docker to Applications folder</li>
-          <li>Launch Docker Desktop</li>
-        </ul>
-      </div>
-      
-      <div class="install-step">
-        <h4>2. Verify Installation</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code>docker --version
-docker run hello-world</code></pre>
-        </div>
-      </div>
-    </div>
+2. **Start Docker Desktop**
+   - Launch Docker Desktop from Start Menu
+   - Wait for the whale icon to stop animating
+   - Docker is ready when the icon is static
 
-    <div class="tab-content" id="linux-docker">
-      <h3>🐧 Linux Installation</h3>
-      
-      <div class="install-step">
-        <h4>Install Docker</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code># Install Docker using convenience script
+3. **Verify Installation**
+   ```cmd
+   docker --version
+   docker run hello-world
+   ```
+
+### 🍎 macOS Installation
+
+1. **Download Docker Desktop**
+   - Go to [docker.com/products/docker-desktop](https://docker.com/products/docker-desktop)
+   - Download Docker Desktop for Mac
+   - Drag Docker to Applications folder
+   - Launch Docker Desktop
+
+2. **Verify Installation**
+   ```bash
+   docker --version
+   docker run hello-world
+   ```
+
+### 🐧 Linux Installation
+
+**Install Docker using convenience script**
+```bash
+# Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
@@ -233,408 +144,348 @@ sudo systemctl enable docker
 
 # Verify installation
 docker --version
-docker run hello-world</code></pre>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+docker run hello-world
+```
 
 ---
 
 ## ☸️ Step 3: Choose Your Kubernetes Cluster
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">3</div>
-    <h2>Install Kubernetes</h2>
-    <p>Choose the best option for your system</p>
-  </div>
+### 🐳 Docker Desktop Kubernetes (Easiest)
 
-  <div class="k8s-options">
-    <div class="k8s-option-card">
-      <div class="option-header">
-        <h3>🐳 Docker Desktop Kubernetes</h3>
-        <span class="difficulty easy">Easiest</span>
-      </div>
-      <p>Perfect if you already installed Docker Desktop above!</p>
-      
-      <div class="install-steps">
-        <h4>Setup Steps:</h4>
-        <ol>
-          <li>Open Docker Desktop</li>
-          <li>Go to Settings → Kubernetes</li>
-          <li>Check "Enable Kubernetes"</li>
-          <li>Click "Apply & Restart"</li>
-        </ol>
-      </div>
-      
-      <div class="verify-step">
-        <h4>Verify Installation:</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code>kubectl version --client
-kubectl cluster-info</code></pre>
-        </div>
-      </div>
-    </div>
+**Perfect if you already installed Docker Desktop above!**
 
-    <div class="k8s-option-card">
-      <div class="option-header">
-        <h3>🚀 Minikube</h3>
-        <span class="difficulty medium">Popular</span>
-      </div>
-      <p>The most popular local Kubernetes cluster</p>
-      
-      <div class="install-steps">
-        <h4>Install Minikube:</h4>
-        
-        <div class="platform-install">
-          <h5>Windows:</h5>
-          <div class="code-block">
-            <div class="code-header">Command Prompt</div>
-            <pre><code># Using Chocolatey
+1. **Enable Kubernetes**
+   - Open Docker Desktop
+   - Go to Settings → Kubernetes
+   - Check "Enable Kubernetes"
+   - Click "Apply & Restart"
+
+2. **Verify Installation**
+   ```bash
+   kubectl version --client
+   kubectl cluster-info
+   ```
+
+### 🚀 Minikube (Most Popular)
+
+**The most popular local Kubernetes cluster**
+
+**Install Minikube:**
+
+**Windows:**
+```cmd
+# Using Chocolatey
 choco install minikube
 
-# Or download manually from: https://minikube.sigs.k8s.io/docs/start/</code></pre>
-          </div>
-        </div>
-        
-        <div class="platform-install">
-          <h5>macOS:</h5>
-          <div class="code-block">
-            <div class="code-header">Terminal</div>
-            <pre><code># Using Homebrew
-brew install minikube</code></pre>
-          </div>
-        </div>
-        
-        <div class="platform-install">
-          <h5>Linux:</h5>
-          <div class="code-block">
-            <div class="code-header">Terminal</div>
-            <pre><code># Download and install
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-sudo install minikube-linux-amd64 /usr/local/bin/minikube</code></pre>
-          </div>
-        </div>
-      </div>
-      
-      <div class="verify-step">
-        <h4>Start and Verify:</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code>minikube start
-kubectl version --client
-minikube status</code></pre>
-        </div>
-      </div>
-    </div>
+# Or download manually from: https://minikube.sigs.k8s.io/docs/start/
+```
 
-    <div class="k8s-option-card">
-      <div class="option-header">
-        <h3>🐳 Kind (Kubernetes in Docker)</h3>
-        <span class="difficulty advanced">Advanced</span>
-      </div>
-      <p>Lightweight Kubernetes cluster using Docker</p>
-      
-      <div class="install-steps">
-        <h4>Install Kind:</h4>
-        
-        <div class="platform-install">
-          <h5>Windows:</h5>
-          <div class="code-block">
-            <div class="code-header">Command Prompt</div>
-            <pre><code># Using Chocolatey
-choco install kind</code></pre>
-          </div>
-        </div>
-        
-        <div class="platform-install">
-          <h5>macOS:</h5>
-          <div class="code-block">
-            <div class="code-header">Terminal</div>
-            <pre><code># Using Homebrew
-brew install kind</code></pre>
-          </div>
-        </div>
-        
-        <div class="platform-install">
-          <h5>Linux:</h5>
-          <div class="code-block">
-            <div class="code-header">Terminal</div>
-            <pre><code># Download and install
+**macOS:**
+```bash
+# Using Homebrew
+brew install minikube
+```
+
+**Linux:**
+```bash
+# Download and install
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+
+**Start and Verify:**
+```bash
+minikube start
+kubectl version --client
+minikube status
+```
+
+### 🐳 Kind (Kubernetes in Docker)
+
+**Lightweight Kubernetes cluster using Docker**
+
+**Install Kind:**
+
+**Windows:**
+```cmd
+# Using Chocolatey
+choco install kind
+```
+
+**macOS:**
+```bash
+# Using Homebrew
+brew install kind
+```
+
+**Linux:**
+```bash
+# Download and install
 curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
 chmod +x ./kind
-sudo mv ./kind /usr/local/bin/kind</code></pre>
-          </div>
-        </div>
-      </div>
-      
-      <div class="verify-step">
-        <h4>Create Cluster and Verify:</h4>
-        <div class="code-block">
-          <div class="code-header">Terminal</div>
-          <pre><code>kind create cluster --name chaos-workshop
+sudo mv ./kind /usr/local/bin/kind
+```
+
+**Create Cluster and Verify:**
+```bash
+kind create cluster --name chaos-workshop
 kubectl version --client
-kind get clusters</code></pre>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+kind get clusters
+```
+
+### ☁️ Cloud Kubernetes (GKE/EKS/AKS)
+
+**For cloud-based development**
+
+- **Google Kubernetes Engine (GKE):** Follow [GKE setup guide](https://cloud.google.com/kubernetes-engine/docs/quickstart)
+- **Amazon EKS:** Follow [EKS setup guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
+- **Azure Kubernetes Service (AKS):** Follow [AKS setup guide](https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough)
 
 ---
 
 ## 🎯 Step 4: Install kubectl (Kubernetes CLI)
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">4</div>
-    <h2>Install kubectl</h2>
-    <p>Command-line tool for Kubernetes</p>
-  </div>
+### 🪟 Windows Installation
 
-  <div class="platform-tabs">
-    <div class="tab-content active" id="windows-kubectl">
-      <h3>🪟 Windows Installation</h3>
-      <div class="code-block">
-        <div class="code-header">Command Prompt</div>
-        <pre><code># Using Chocolatey
+```cmd
+# Using Chocolatey
 choco install kubernetes-cli
 
-# Or download from: https://kubernetes.io/docs/tasks/tools/install-kubectl/</code></pre>
-      </div>
-    </div>
+# Or download from: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+```
 
-    <div class="tab-content" id="macos-kubectl">
-      <h3>🍎 macOS Installation</h3>
-      <div class="code-block">
-        <div class="code-header">Terminal</div>
-        <pre><code># Using Homebrew
+### 🍎 macOS Installation
+
+```bash
+# Using Homebrew
 brew install kubectl
 
 # Or using curl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"
 chmod +x ./kubectl
-sudo mv ./kubectl /usr/local/bin/kubectl</code></pre>
-      </div>
-    </div>
+sudo mv ./kubectl /usr/local/bin/kubectl
+```
 
-    <div class="tab-content" id="linux-kubectl">
-      <h3>🐧 Linux Installation</h3>
-      <div class="code-block">
-        <div class="code-header">Terminal</div>
-        <pre><code># Download kubectl
+### 🐧 Linux Installation
+
+```bash
+# Download kubectl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 chmod +x kubectl
-sudo mv kubectl /usr/local/bin/</code></pre>
-      </div>
-    </div>
-  </div>
+sudo mv kubectl /usr/local/bin/
+```
 
-  <div class="verify-section">
-    <h3>Verify kubectl Installation:</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>kubectl version --client</code></pre>
-    </div>
-  </div>
-</div>
+**Verify kubectl Installation:**
+```bash
+kubectl version --client
+```
 
 ---
 
 ## 📦 Step 5: Clone Workshop Repository
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">5</div>
-    <h2>Get Workshop Code</h2>
-    <p>Download the workshop materials</p>
-  </div>
+### Install Git (if not already installed)
 
-  <div class="install-step">
-    <h3>1. Install Git (if not already installed)</h3>
-    
-    <div class="platform-install">
-      <h4>Windows:</h4>
-      <p>Download from <a href="https://git-scm.com" target="_blank">git-scm.com</a></p>
-    </div>
-    
-    <div class="platform-install">
-      <h4>macOS:</h4>
-      <div class="code-block">
-        <div class="code-header">Terminal</div>
-        <pre><code>brew install git</code></pre>
-      </div>
-    </div>
-    
-    <div class="platform-install">
-      <h4>Linux:</h4>
-      <div class="code-block">
-        <div class="code-header">Terminal</div>
-        <pre><code>sudo apt install git  # Ubuntu/Debian
-sudo yum install git  # CentOS/RHEL</code></pre>
-      </div>
-    </div>
-  </div>
+**Windows:**
+Download from [git-scm.com](https://git-scm.com)
 
-  <div class="install-step">
-    <h3>2. Clone the workshop repository</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>git clone https://github.com/vellankikoti/ci-cd-chaos-workshop.git
-cd ci-cd-chaos-workshop</code></pre>
-    </div>
-  </div>
-</div>
+**macOS:**
+```bash
+brew install git
+```
+
+**Linux:**
+```bash
+sudo apt install git  # Ubuntu/Debian
+sudo yum install git  # CentOS/RHEL
+```
+
+### Clone the workshop repository
+
+```bash
+git clone https://github.com/vellankikoti/ci-cd-chaos-workshop.git
+cd ci-cd-chaos-workshop
+```
 
 ---
 
 ## 🐍 Step 6: Set Up Python Virtual Environment
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">6</div>
-    <h2>Create Virtual Environment</h2>
-    <p>Isolate workshop dependencies</p>
-  </div>
+### Create a virtual environment
 
-  <div class="install-step">
-    <h3>1. Create a virtual environment</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code># Windows
+```bash
+# Windows
 python -m venv venv
 
 # macOS/Linux
-python3 -m venv venv</code></pre>
-    </div>
-  </div>
+python3 -m venv venv
+```
 
-  <div class="install-step">
-    <h3>2. Activate the virtual environment</h3>
-    
-    <div class="platform-activate">
-      <h4>Windows:</h4>
-      <div class="code-block">
-        <div class="code-header">Command Prompt</div>
-        <pre><code>venv\Scripts\activate</code></pre>
-      </div>
-    </div>
-    
-    <div class="platform-activate">
-      <h4>macOS/Linux:</h4>
-      <div class="code-block">
-        <div class="code-header">Terminal</div>
-        <pre><code>source venv/bin/activate</code></pre>
-      </div>
-    </div>
-  </div>
+### Activate the virtual environment
 
-  <div class="install-step">
-    <h3>3. Verify activation</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code># You should see (venv) at the start of your prompt
+**Windows:**
+```cmd
+venv\Scripts\activate
+```
+
+**macOS/Linux:**
+```bash
+source venv/bin/activate
+```
+
+### Verify activation
+
+```bash
+# You should see (venv) at the start of your prompt
 which python  # macOS/Linux
-where python  # Windows</code></pre>
-    </div>
-  </div>
-</div>
+where python  # Windows
+```
 
 ---
 
 ## 📚 Step 7: Install Required Packages
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">7</div>
-    <h2>Install Dependencies</h2>
-    <p>Get all the tools you need for chaos</p>
-  </div>
+### Upgrade pip
 
-  <div class="install-step">
-    <h3>1. Upgrade pip</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>pip install --upgrade pip</code></pre>
-    </div>
-  </div>
+```bash
+pip install --upgrade pip
+```
 
-  <div class="install-step">
-    <h3>2. Install workshop dependencies</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>pip install -r requirements.txt</code></pre>
-    </div>
-  </div>
+### Install workshop dependencies
 
-  <div class="install-step">
-    <h3>3. Install additional packages</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>pip install docker
+```bash
+pip install -r requirements.txt
+```
+
+### Install additional packages
+
+```bash
+pip install docker
 pip install kubernetes
 pip install jenkins
 pip install jinja2
 pip install weasyprint
 pip install mkdocs
-pip install mkdocs-material</code></pre>
-    </div>
-  </div>
+pip install mkdocs-material
+```
 
-  <div class="install-step">
-    <h3>4. Verify installations</h3>
-    <div class="code-block">
-      <div class="code-header">All Platforms</div>
-      <pre><code>python -c "import pytest, testcontainers, docker, kubernetes, fastapi, uvicorn; print('✅ All packages installed successfully!')"</code></pre>
-    </div>
-  </div>
-</div>
+### Verify installations
+
+```bash
+python -c "import pytest, testcontainers, docker, kubernetes, fastapi, uvicorn; print('✅ All packages installed successfully!')"
+```
 
 ---
 
-## 🧪 Step 8: Test Your Setup
+## 🎯 Step 8: Install Node.js (for frontend demos)
 
-<div class="step-container">
-  <div class="step-header">
-    <div class="step-number">8</div>
-    <h2>Verify Everything Works</h2>
-    <p>Run tests to ensure your setup is ready</p>
-  </div>
+### 🍎 macOS Installation
 
-  <div class="test-grid">
-    <div class="test-card">
-      <h3>🐍 Test Python</h3>
-      <div class="code-block">
-        <div class="code-header">All Platforms</div>
-        <pre><code>python --version</code></pre>
-      </div>
-    </div>
+```bash
+brew install node
+```
 
-    <div class="test-card">
-      <h3>🐳 Test Docker</h3>
-      <div class="code-block">
-        <div class="code-header">All Platforms</div>
-        <pre><code>docker run hello-world</code></pre>
-      </div>
-    </div>
+### 🪟 Windows Installation
 
-    <div class="test-card">
-      <h3>☸️ Test Kubernetes</h3>
-      <div class="code-block">
-        <div class="code-header">All Platforms</div>
-        <pre><code>kubectl version --client
-kubectl cluster-info</code></pre>
-      </div>
-    </div>
+Download from [nodejs.org](https://nodejs.org/)
 
-    <div class="test-card">
-      <h3>🧪 Test Testcontainers</h3>
-      <div class="code-block">
-        <div class="code-header">All Platforms</div>
-        <pre><code>python -c "
+### 🐧 Linux Installation
+
+**Ubuntu/Debian:**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+**CentOS/RHEL:**
+```bash
+curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+sudo yum install -y nodejs
+```
+
+### Verify Node.js installation
+
+```bash
+node --version
+npm --version
+```
+
+---
+
+## 🚀 Step 9: Install ArgoCD CLI (Optional, for advanced GitOps)
+
+### 🍎 macOS Installation
+
+```bash
+brew install argocd
+```
+
+### 🐧 Linux Installation
+
+```bash
+curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+chmod +x argocd
+sudo mv argocd /usr/local/bin/
+```
+
+### 🪟 Windows Installation
+
+```cmd
+choco install argocd-cli
+```
+
+---
+
+## 🔄 Step 10: Install Argo Rollouts Plugin (Optional, for advanced rollout UI)
+
+### 🍎 macOS Installation
+
+```bash
+brew install argo-rollouts
+```
+
+### 🐧 Linux Installation
+
+```bash
+curl -sLO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+chmod +x kubectl-argo-rollouts-linux-amd64
+sudo mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+```
+
+### 🪟 Windows Installation
+
+```cmd
+choco install argo-rollouts
+```
+
+---
+
+## 🧪 Step 11: Test Your Setup
+
+### Test Python
+
+```bash
+python --version
+```
+
+### Test Docker
+
+```bash
+docker run hello-world
+```
+
+### Test Kubernetes
+
+```bash
+kubectl version --client
+kubectl cluster-info
+```
+
+### Test Testcontainers
+
+```bash
+python -c "
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
@@ -643,139 +494,176 @@ with DockerContainer('redis:alpine') as redis:
     redis.with_exposed_ports(6379)
     redis.start()
     print('✅ Testcontainers working!')
-"</code></pre>
-      </div>
-    </div>
-  </div>
-</div>
+"
+```
+
+### Test Node.js
+
+```bash
+node --version
+npm --version
+```
 
 ---
 
-## 🎉 Step 9: You're Ready!
+## 🎉 Step 12: You're Ready!
 
-<div class="success-section">
-  <div class="success-content">
-    <h2>🎊 Congratulations! You're Ready for Chaos!</h2>
-    <p>If all tests pass, you're ready to battle the Chaos Agent! 🕶️</p>
-    
-    <div class="next-steps">
-      <h3>🚀 Next Steps:</h3>
-      <ol>
-        <li>✅ Read the <a href="../index">Workshop Overview</a></li>
-        <li>✅ Start with <a href="../phases/testcontainers">Phase 1: Test Mayhem</a></li>
-        <li>✅ Prepare to defeat chaos! 🔥</li>
-      </ol>
-    </div>
-  </div>
-</div>
+### 🎊 Congratulations! You're Ready for Chaos!
+
+If all tests pass, you're ready to battle the Chaos Agent in every scenario!
+
+### 🚀 Next Steps:
+
+1. ✅ Read the [Workshop Overview](../index.md)
+2. ✅ Start with [Phase 1: Test Mayhem](testcontainers.md)
+3. ✅ Prepare to defeat chaos! 🔥
 
 ---
 
 ## 🆘 Troubleshooting
 
-<div class="troubleshooting-section">
-  <h2>Common Issues & Solutions</h2>
+### Common Issues & Solutions
 
-  <div class="trouble-grid">
-    <div class="trouble-card">
-      <h3>🐳 Docker not starting</h3>
-      <ul>
-        <li><strong>Windows:</strong> Make sure WSL 2 is enabled</li>
-        <li><strong>macOS:</strong> Check Docker Desktop is running</li>
-        <li><strong>Linux:</strong> Run <code>sudo systemctl start docker</code></li>
-      </ul>
-    </div>
+#### 🐳 Docker not starting
 
-    <div class="trouble-card">
-      <h3>☸️ Kubernetes connection issues</h3>
-      <ul>
-        <li><strong>Minikube:</strong> Run <code>minikube start</code></li>
-        <li><strong>Kind:</strong> Run <code>kind create cluster</code></li>
-        <li><strong>Docker Desktop:</strong> Enable Kubernetes in settings</li>
-      </ul>
-    </div>
+**Windows:**
+- Make sure WSL 2 is enabled
+- Check Docker Desktop is running
 
-    <div class="trouble-card">
-      <h3>🐍 Python package issues</h3>
-      <ul>
-        <li>Make sure your virtual environment is activated</li>
-        <li>Try: <code>pip install --upgrade pip setuptools wheel</code></li>
-        <li>Check Python version: <code>python --version</code></li>
-      </ul>
-    </div>
+**macOS:**
+- Check Docker Desktop is running
+- Restart Docker Desktop if needed
 
-    <div class="trouble-card">
-      <h3>🔐 Permission errors</h3>
-      <ul>
-        <li><strong>Windows:</strong> Run as Administrator</li>
-        <li><strong>Linux/macOS:</strong> Use <code>sudo</code> where needed</li>
-        <li>Check file permissions and ownership</li>
-      </ul>
-    </div>
-  </div>
+**Linux:**
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
 
-  <div class="help-section">
-    <h3>Still Stuck?</h3>
-    <ol>
-      <li>Check the <a href="../troubleshooting">Troubleshooting Guide</a></li>
-      <li>Ask in the workshop Discord/Slack</li>
-      <li>Open an issue on GitHub</li>
-    </ol>
-  </div>
-</div>
+#### ☸️ Kubernetes connection issues
+
+**Minikube:**
+```bash
+minikube start
+```
+
+**Kind:**
+```bash
+kind create cluster
+```
+
+**Docker Desktop:**
+- Enable Kubernetes in Docker Desktop settings
+
+#### 🐍 Python package issues
+
+- Make sure your virtual environment is activated
+- Try: `pip install --upgrade pip setuptools wheel`
+- Check Python version: `python --version`
+
+#### 🔐 Permission errors
+
+**Windows:**
+- Run as Administrator
+
+**Linux/macOS:**
+- Use `sudo` where needed
+- Check file permissions and ownership
+
+### Still Stuck?
+
+1. Check the [Troubleshooting Guide](../troubleshooting.md)
+2. Ask in the workshop Discord/Slack
+3. Open an issue on GitHub
 
 ---
 
 ## 🎯 Quick Verification Checklist
 
-<div class="verification-section">
-  <h2>Final Verification</h2>
-  <p>Before the workshop starts, make sure you can run:</p>
+### Final Verification
 
-  <div class="verification-grid">
-    <div class="verify-item">
-      <h4>✅ Python works</h4>
-      <div class="code-block">
-        <pre><code>python --version</code></pre>
-      </div>
-    </div>
+Before the workshop starts, make sure you can run:
 
-    <div class="verify-item">
-      <h4>✅ Docker works</h4>
-      <div class="code-block">
-        <pre><code>docker run hello-world</code></pre>
-      </div>
-    </div>
+#### ✅ Python works
+```bash
+python --version
+```
 
-    <div class="verify-item">
-      <h4>✅ Kubernetes works</h4>
-      <div class="code-block">
-        <pre><code>kubectl version --client</code></pre>
-      </div>
-    </div>
+#### ✅ Docker works
+```bash
+docker run hello-world
+```
 
-    <div class="verify-item">
-      <h4>✅ Virtual environment is active</h4>
-      <div class="code-block">
-        <pre><code>echo $VIRTUAL_ENV  # Should show path to venv</code></pre>
-      </div>
-    </div>
+#### ✅ Kubernetes works
+```bash
+kubectl version --client
+```
 
-    <div class="verify-item">
-      <h4>✅ Packages are installed</h4>
-      <div class="code-block">
-        <pre><code>python -c "import pytest, testcontainers, docker, kubernetes, fastapi, uvicorn; print('Ready!')"</code></pre>
-      </div>
-    </div>
-  </div>
+#### ✅ Virtual environment is active
+```bash
+echo $VIRTUAL_ENV  # Should show path to venv
+```
 
-  <div class="ready-message">
-    <p><strong>If all ✅ pass, you're ready to create some chaos! 🧨</strong></p>
-  </div>
-</div>
+#### ✅ Packages are installed
+```bash
+python -c "import pytest, testcontainers, docker, kubernetes, fastapi, uvicorn; print('Ready!')"
+```
+
+#### ✅ Node.js works (optional)
+```bash
+node --version
+npm --version
+```
+
+### Ready Message
+
+**If all ✅ pass, you're ready to create some chaos! 🧨**
+
+---
+
+## 📊 Workshop Phases Overview
+
+### Phase 1: Testcontainers
+- **Goal:** Master reliable testing with containers
+- **Skills:** Python testing, Docker integration, database testing
+- **Duration:** 30 minutes
+
+### Phase 2: Jenkins
+- **Goal:** Build chaos-resistant CI/CD pipelines
+- **Skills:** Jenkins automation, pipeline scripting, error handling
+- **Duration:** 45 minutes
+
+### Phase 3: Docker
+- **Goal:** Containerize applications and handle Docker chaos
+- **Skills:** Docker builds, multi-stage builds, image optimization
+- **Duration:** 40 minutes
+
+### Phase 4: Kubernetes
+- **Goal:** Deploy to Kubernetes and survive chaos
+- **Skills:** K8s deployments, auto-scaling, GitOps with ArgoCD
+- **Duration:** 60 minutes
+
+---
+
+## 🎯 Success Criteria
+
+### ✅ Complete Setup Checklist:
+- ✅ Python 3.10+ installed and working
+- ✅ Docker Desktop/Engine installed and running
+- ✅ Kubernetes cluster accessible (local or cloud)
+- ✅ kubectl configured and working
+- ✅ Git installed and configured
+- ✅ Virtual environment created and activated
+- ✅ All Python packages installed
+- ✅ Node.js installed (for frontend demos)
+- ✅ ArgoCD CLI installed (for GitOps scenarios)
+- ✅ Argo Rollouts plugin installed (for advanced rollouts)
+- ✅ All verification tests passing
 
 ---
 
 <div class="footer-note">
-  <p><strong>See you in the workshop! Let's defeat that Chaos Agent together! 🕶️🔥</strong></p>
+
+**See you in the workshop! Let's defeat that Chaos Agent together! 🕶️🔥**
+
 </div>

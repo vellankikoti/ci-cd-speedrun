@@ -1,0 +1,2 @@
+FROM ubuntu:22.04
+CMD ["bash", "-c", "echo Hello from Ubuntu! && cat /etc/os-release"]

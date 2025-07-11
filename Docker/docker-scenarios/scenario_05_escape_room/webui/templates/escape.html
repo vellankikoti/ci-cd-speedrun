@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Escape Room Challenge</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; animation: fadeInDown 1s ease-out; }
+        .title { font-size: 2.5em; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 10px; }
+        .subtitle { font-size: 1.2em; opacity: 0.9; color: #ffd700; }
+        .game-panel { background: rgba(0, 0, 0, 0.8); border: 2px solid #ffd700; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideInUp 0.8s ease-out; }
+        .puzzle-info { margin-bottom: 25px; }
+        .puzzle-title { font-size: 1.8em; color: #ffd700; margin-bottom: 15px; text-align: center; }
+        .puzzle-clue { font-size: 1.1em; line-height: 1.6; background: rgba(255, 215, 0, 0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #ffd700; margin-bottom: 20px; }
+        .docker-command { background: #2d3748; color: #68d391; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9em; margin: 15px 0; border: 1px solid #4a5568; }
+        .input-section { text-align: center; margin: 25px 0; }
+        .answer-input { width: 80%; max-width: 400px; padding: 15px; font-size: 1.1em; border: 2px solid #ffd700; border-radius: 8px; background: rgba(0, 0, 0, 0.7); color: #fff; font-family: 'Courier New', monospace; }
+        .answer-input:focus { outline: none; border-color: #ff6b6b; box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+        .submit-btn, .hint-btn, .skip-btn, .back-btn { display: inline-block; background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none; padding: 15px 30px; font-size: 1.1em; border-radius: 8px; cursor: pointer; margin: 10px 5px 0 5px; transition: all 0.3s ease; font-weight: bold; }
+        .hint-btn { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
+        .skip-btn { background: linear-gradient(45deg, #ffd700, #ff6b6b); color: #222; }
+        .back-btn { background: linear-gradient(45deg, #888, #444); }
+        .submit-btn:disabled, .hint-btn:disabled, .skip-btn:disabled, .back-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .progress-section { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .progress-bar { flex: 1; height: 20px; background: rgba(255, 255, 255, 0.2); border-radius: 10px; margin: 0 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #ffd700, #ff6b6b); transition: width 0.5s ease; border-radius: 10px; }
+        .stats { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
+        .stat-item { text-align: center; padding: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; margin: 5px; min-width: 120px; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #ffd700; }
+        .stat-label { font-size: 0.9em; opacity: 0.8; }
+        .message { padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-weight: bold; animation: fadeIn 0.5s ease-out; }
+        .message.success { background: rgba(72, 187, 120, 0.2); border: 1px solid #48bb78; color: #68d391; }
+        .message.error { background: rgba(245, 101, 101, 0.2); border: 1px solid #f56565; color: #fc8181; }
+        .villain-quote { font-style: italic; color: #ff6b6b; text-align: center; margin: 20px 0; font-size: 1.1em; }
+        .confetti { position: fixed; width: 10px; height: 10px; background: #ffd700; animation: confetti-fall 3s linear infinite; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        .loading { display: none; text-align: center; margin: 20px 0; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #ffd700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hint-section { background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 10px; padding: 20px; margin: 20px 0; animation: slideInDown 0.5s ease-out; display: none; }
+        .hint-content h3 { color: #4ecdc4; margin-bottom: 15px; }
+        .command-box { background: #2d3748; color: #68d391; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9em; margin-top: 15px; border: 1px solid #4a5568; }
+        @media (max-width: 768px) { .container { padding: 10px; } .title { font-size: 2em; } .answer-input { width: 100%; margin-bottom: 10px; } .submit-btn, .hint-btn, .skip-btn, .back-btn { width: 100%; margin-left: 0; } .stats { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🚀 Docker Escape Room Challenge</h1>
+            <p class="subtitle">Dr. NullPointer has trapped you in the Docker Vault!</p>
+        </div>
+        <div class="game-panel">
+            <div class="puzzle-info">
+                <h2 class="puzzle-title" id="puzzleTitle"></h2>
+                <div class="puzzle-clue" id="puzzleClue"></div>
+                <div id="hintSection" class="hint-section">
+                    <div class="hint-content">
+                        <h3>💡 Dr. NullPointer's Hint:</h3>
+                        <p id="hintText"></p>
+                        <div class="command-box" id="commandBox" style="display:none;">
+                            <strong>Command:</strong>
+                            <code id="commandText"></code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="input-section">
+                <input type="text" id="answerInput" class="answer-input" placeholder="Enter your answer here..." autocomplete="off">
+                <button id="submitBtn" class="submit-btn">SUBMIT ANSWER</button>
+                <button id="hintBtn" class="hint-btn">💡 GET HINT</button>
+                <button id="skipBtn" class="skip-btn">⏭️ SKIP</button>
+                <button id="backBtn" class="back-btn">⬅️ BACK</button>
+            </div>
+            <div id="message" class="message" style="display: none;"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Dr. NullPointer is evaluating your answer...</p>
+            </div>
+        </div>
+        <div class="progress-section">
+            <div class="stat-item">
+                <div class="stat-value" id="currentPuzzle"></div>
+                <div class="stat-label">Current Puzzle</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalPuzzles"></div>
+                <div class="stat-label">Total Puzzles</div>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="score"></div>
+                <div class="stat-label">Score</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="attempts"></div>
+                <div class="stat-label">Attempts</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="timeElapsed">0:00</div>
+                <div class="stat-label">Time</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let gameState = {
+            currentPuzzle: 1,
+            score: 0,
+            attempts: 0,
+            startTime: Date.now(),
+            totalPuzzles: 5
+        };
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('timeElapsed').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = message;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => { messageEl.style.display = 'none'; }, 5000);
+        }
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.backgroundColor = ['#ffd700', '#ff6b6b', '#68d391', '#4ecdc4'][Math.floor(Math.random() * 4)];
+                document.body.appendChild(confetti);
+                setTimeout(() => { confetti.remove(); }, 3000);
+            }
+        }
+        function renderPuzzle(data) {
+            document.getElementById('puzzleTitle').textContent = `Puzzle ${data.current_puzzle}: ${data.name}`;
+            document.getElementById('puzzleClue').textContent = data.clue;
+            document.getElementById('score').textContent = data.score;
+            document.getElementById('attempts').textContent = data.attempts;
+            document.getElementById('currentPuzzle').textContent = data.current_puzzle;
+            document.getElementById('totalPuzzles').textContent = data.total_puzzles;
+            document.getElementById('progressFill').style.width = `${(data.current_puzzle / data.total_puzzles) * 100}%`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('hintSection').style.display = 'none';
+            document.getElementById('commandBox').style.display = 'none';
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('hintBtn').textContent = '💡 GET HINT';
+            if (data.show_command) {
+                document.getElementById('hintSection').style.display = 'block';
+                document.getElementById('hintText').textContent = data.hint;
+                document.getElementById('commandBox').style.display = 'block';
+                document.getElementById('commandText').textContent = data.command;
+                document.getElementById('hintBtn').disabled = true;
+                document.getElementById('hintBtn').textContent = '💡 HINT USED';
+            }
+        }
+        function fetchPuzzle() {
+            fetch('/current_puzzle')
+                .then(response => response.json())
+                .then(data => {
+                    gameState.currentPuzzle = data.current_puzzle;
+                    gameState.score = data.score;
+                    gameState.attempts = data.attempts;
+                    gameState.totalPuzzles = data.total_puzzles;
+                    renderPuzzle(data);
+                });
+        }
+        function submitAnswer() {
+            const answer = document.getElementById('answerInput').value.trim();
+            if (!answer) { showMessage('Please enter an answer!', 'error'); return; }
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            submitBtn.disabled = true; loading.style.display = 'block';
+            fetch('/submit_answer', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ answer: answer })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none'; submitBtn.disabled = false;
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    gameState.score = data.new_score;
+                    if (data.game_complete) {
+                        createConfetti();
+                        setTimeout(() => { window.location.href = '/game_complete'; }, 2000);
+                    } else {
+                        setTimeout(fetchPuzzle, 1200);
+                    }
+                } else {
+                    showMessage(data.message, 'error');
+                    gameState.score = data.new_score;
+                }
+                gameState.attempts++;
+                document.getElementById('attempts').textContent = gameState.attempts;
+                document.getElementById('answerInput').value = '';
+            })
+            .catch(error => {
+                loading.style.display = 'none'; submitBtn.disabled = false;
+                showMessage('An error occurred. Please try again.', 'error');
+            });
+        }
+        function getHint() {
+            fetch('/get_hint', { method: 'POST', headers: { 'Content-Type': 'application/json', } })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hint && data.command) {
+                    document.getElementById('hintSection').style.display = 'block';
+                    document.getElementById('hintText').textContent = data.hint;
+                    document.getElementById('commandBox').style.display = 'block';
+                    document.getElementById('commandText').textContent = data.command;
+                    document.getElementById('hintBtn').disabled = true;
+                    document.getElementById('hintBtn').textContent = '💡 HINT USED';
+                }
+            })
+            .catch(error => { showMessage('Error getting hint. Please try again.', 'error'); });
+        }
+        function skipPuzzle() {
+            fetch('/skip', { method: 'POST', headers: { 'Content-Type': 'application/json', } })
+            .then(() => { fetchPuzzle(); });
+        }
+        function backPuzzle() {
+            fetch('/back', { method: 'POST', headers: { 'Content-Type': 'application/json', } })
+            .then(() => { fetchPuzzle(); });
+        }
+        document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+        document.getElementById('answerInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') { submitAnswer(); } });
+        document.getElementById('hintBtn').addEventListener('click', getHint);
+        document.getElementById('skipBtn').addEventListener('click', skipPuzzle);
+        document.getElementById('backBtn').addEventListener('click', backPuzzle);
+        setInterval(updateTimer, 1000); updateTimer();
+        document.getElementById('answerInput').focus();
+        fetchPuzzle();
+    </script>
+</body>
+</html> 

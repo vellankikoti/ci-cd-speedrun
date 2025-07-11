@@ -1,0 +1,6 @@
+FROM python:3.9-alpine
+WORKDIR /app
+COPY real_dashboard_app.py /app/real_dashboard_app.py
+RUN pip install flask requests
+EXPOSE 5000
+CMD ["python", "real_dashboard_app.py"] 

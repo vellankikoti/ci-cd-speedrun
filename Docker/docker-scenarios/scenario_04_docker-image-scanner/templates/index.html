@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐳 Docker Image Analyzer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🐳</span>
+                    <h1>Enterprise Docker Analyzer</h1>
+                </div>
+                <div class="header-subtitle">
+                    <p>Real-time vulnerability scanning with educational insights</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Analysis Input Section -->
+            <section class="input-section">
+                <div class="input-container">
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="image">🔍 Analyze Image</button>
+                        <button class="tab-btn" data-tab="dockerfile">📄 Analyze Dockerfile</button>
+                        <button class="tab-btn" data-tab="compare">⚖️ Compare Images</button>
+                    </div>
+
+                    <!-- Image Analysis Tab -->
+                    <div id="image-tab" class="tab-content active">
+                        <div class="input-group">
+                            <label for="imageName">Docker Image Name:</label>
+                            <input type="text" id="imageName" placeholder="e.g., nginx:alpine, python:3.9-slim" />
+                            <button id="analyzeBtn" class="btn btn-primary">🔍 Analyze Image</button>
+                        </div>
+                        <div class="example-images">
+                            <p><strong>Try these examples:</strong></p>
+                            <div class="example-buttons">
+                                <button class="example-btn" onclick="document.getElementById('imageName').value='nginx:alpine'">nginx:alpine</button>
+                                <button class="example-btn" onclick="document.getElementById('imageName').value='python:3.9-slim'">python:3.9-slim</button>
+                                <button class="example-btn" onclick="document.getElementById('imageName').value='node:16-alpine'">node:16-alpine</button>
+                                <button class="example-btn" onclick="document.getElementById('imageName').value='postgres:13'">postgres:13</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dockerfile Analysis Tab -->
+                    <div id="dockerfile-tab" class="tab-content">
+                        <div class="upload-container">
+                            <label for="dockerfileInput">Upload Dockerfile:</label>
+                            <input type="file" id="dockerfileInput" />
+                            <p class="upload-hint">Upload any file to be treated as a Dockerfile for analysis (file name does not matter).</p>
+                        </div>
+                    </div>
+
+                    <!-- Compare Images Tab -->
+                    <div id="compare-tab" class="tab-content">
+                        <div class="compare-inputs">
+                            <div class="input-group">
+                                <label for="compareImage1">First Image:</label>
+                                <input type="text" id="compareImage1" placeholder="e.g., nginx:alpine" />
+                            </div>
+                            <div class="input-group">
+                                <label for="compareImage2">Second Image:</label>
+                                <input type="text" id="compareImage2" placeholder="e.g., nginx:latest" />
+                            </div>
+                            <button id="compareBtn" class="btn btn-primary">⚖️ Compare Images</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section id="progress" class="progress-section" style="display: none;">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p id="status" class="progress-text">Analyzing...</p>
+                </div>
+            </section>
+
+            <!-- Results Dashboard -->
+            <section id="dashboard" class="dashboard-section">
+                <!-- Dashboard content will be populated by JavaScript -->
+            </section>
+
+            <!-- Educational Insights -->
+            <section id="learningInsights" class="insights-section">
+                <!-- Learning insights will be populated by JavaScript -->
+            </section>
+
+            <!-- Best Practices -->
+            <section id="bestPractices" class="practices-section">
+                <!-- Best practices will be populated by JavaScript -->
+            </section>
+
+            <!-- Industry Comparison -->
+            <section id="industryComparison" class="comparison-section">
+                <!-- Industry comparison will be populated by JavaScript -->
+            </section>
+
+            <!-- Detailed Analysis Cards -->
+            <section class="analysis-cards">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🐳 Docker Analysis</h3>
+                    </div>
+                    <div class="card-content" id="dockerAnalysis">
+                        <p>Analyze an image to see Docker configuration details</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🛡️ Security Analysis</h3>
+                    </div>
+                    <div class="card-content" id="securityAnalysis">
+                        <p>Real Trivy vulnerability scanning results</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚡ Performance Analysis</h3>
+                    </div>
+                    <div class="card-content" id="performanceAnalysis">
+                        <p>Image size and performance metrics</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vulnerability Details -->
+            <section id="vulnerabilities" class="vulnerabilities-section">
+                <!-- Detailed vulnerability information will be populated by JavaScript -->
+            </section>
+
+            <!-- Comparison Results -->
+            <section id="comparisonResults" class="comparison-results">
+                <!-- Comparison results will be populated by JavaScript -->
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 Enterprise Docker Analyzer - Educational Edition</p>
+                <p>Powered by Trivy for real vulnerability scanning</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 

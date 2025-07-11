@@ -1,5 +1,5 @@
 # Multi-stage build for production deployment
-# Stage 1: Build Flask app and MkDocs docs
+# Stage 1: Build MkDocs docs
 FROM python:3.11-slim AS builder
 
 # Set environment variables
@@ -30,23 +30,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Install mkdocs and plugins in builder
-RUN pip install --no-cache-dir mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
+RUN pip install --no-cache-dir mkdocs mkdocs-material mkdocs-minify-plugin
 
 # Copy docs and mkdocs.yml, build the documentation
 COPY mkdocs-prod.yml ./mkdocs.yml
 COPY docs/ ./docs/
 RUN mkdocs build
 
-# Stage 2: Nginx for static docs
-FROM nginx:alpine AS nginx-docs
-COPY --from=builder /site /usr/share/nginx/html
-COPY workshop_certificates/nginx.conf /etc/nginx/nginx.conf
-
-# Expose port
-EXPOSE 80
-
-# Stage 3: (Optional) Flask app as separate image
-# FROM python:3.11-slim AS flask-app
-# ... (Flask app setup here if needed) ...
-
-# To build and push:
+# The static site is now in /site
+# Use a static site host (like Render Static Site) to serve /site

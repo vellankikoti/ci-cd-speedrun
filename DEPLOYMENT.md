@@ -6,11 +6,10 @@ This guide will help you deploy your MkDocs documentation site to Render.
 
 - A Render account (free tier available)
 - Your repository connected to GitHub/GitLab
-- Python 3.9+ support
 
-## 🎯 Deployment Options
+## 🎯 Deployment Method
 
-### Option 1: Static Site (Recommended)
+### Static Site Deployment (Recommended)
 
 This is the most efficient option for documentation sites.
 
@@ -32,120 +31,44 @@ This is the most efficient option for documentation sites.
    - Click "Create Static Site"
    - Render will automatically build and deploy your site
 
-### Option 2: Web Service
+## 🔧 Manual Deployment (Alternative)
 
-If you need server-side functionality:
-
-1. **Connect your repository to Render**
-   - Go to [render.com](https://render.com)
-   - Click "New +" → "Web Service"
-   - Connect your GitHub/GitLab repository
-
-2. **Configure the deployment**
-   - **Name**: `ci-cd-chaos-workshop`
-   - **Environment**: Python
-   - **Build Command**: 
-     ```bash
-     python -m pip install --upgrade pip && pip install -r requirements.txt && mkdocs build
-     ```
-   - **Start Command**: 
-     ```bash
-     mkdocs serve --dev-addr=0.0.0.0:$PORT --no-livereload
-     ```
-
-3. **Environment Variables**
-   - `PYTHON_VERSION`: `3.9`
-
-## 🔧 Configuration Files
-
-### render.yaml
-```yaml
-services:
-  - type: web
-    name: ci-cd-chaos-workshop
-    env: static
-    buildCommand: |
-      python -m pip install --upgrade pip
-      pip install mkdocs mkdocs-material
-      mkdocs build
-    staticPublishPath: ./site
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9
-    plan: free
-    autoDeploy: true
-```
-
-### requirements.txt
-```
-mkdocs==1.6.1
-mkdocs-material==9.6.14
-mkdocs-minify-plugin==0.7.2
-```
-
-## 🌐 Custom Domain (Optional)
-
-1. **Add Custom Domain**
-   - Go to your Render dashboard
-   - Select your service
-   - Go to "Settings" → "Custom Domains"
-   - Add your domain
-
-2. **Configure DNS**
-   - Add a CNAME record pointing to your Render URL
-   - Or use Render's automatic DNS configuration
-
-## 🔄 Auto-Deployment
-
-- **GitHub Integration**: Automatic deployments on push to main branch
-- **Preview Deployments**: Automatic preview deployments for pull requests
-- **Manual Deployments**: Available through Render dashboard
-
-## 📊 Monitoring
-
-- **Build Logs**: Available in Render dashboard
-- **Performance**: Static sites are served via CDN
-- **Analytics**: Available through Render dashboard
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-1. **Build Fails**
-   - Check Python version compatibility
-   - Verify all dependencies are in requirements.txt
-   - Check mkdocs.yml syntax
-
-2. **Site Not Loading**
-   - Verify staticPublishPath is correct (`./site`)
-   - Check build logs for errors
-   - Ensure mkdocs build completes successfully
-
-3. **Missing Assets**
-   - Verify all assets are in the docs directory
-   - Check mkdocs.yml navigation configuration
-   - Ensure all referenced files exist
-
-### Local Testing
-
-Test your deployment locally before pushing:
+If you prefer to build locally and upload:
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install mkdocs
+pip install mkdocs mkdocs-material
 
 # Build the site
 mkdocs build
 
-# Test locally
-mkdocs serve
+# The site will be in the ./site directory
+# Upload the contents of ./site to any static hosting service
 ```
 
-## 🎉 Success!
+## 📁 Files Structure
 
-Once deployed, your documentation will be available at:
-`https://your-app-name.onrender.com`
+```
+ci-cd-chaos-workshop/
+├── docs/                    # Your documentation
+├── mkdocs.yml              # MkDocs configuration
+├── render.yaml             # Render configuration
+└── site/                   # Built static site (generated)
+```
 
----
+## 🎉 Benefits of This Approach
 
-**Happy Deploying! 🚀** 
+- ✅ **No Docker complexity** - Simple Python installation
+- ✅ **Fast builds** - Minimal dependencies
+- ✅ **Easy maintenance** - Standard MkDocs workflow
+- ✅ **Cost effective** - Free tier friendly
+- ✅ **Automatic deployments** - Git-based triggers
+
+## 🚀 Your Site Will Be Available At
+
+Once deployed, your site will be available at:
+`https://your-site-name.onrender.com`
+
+## 🔄 Continuous Deployment
+
+Every time you push to your main branch, Render will automatically rebuild and deploy your site! 

@@ -7,8 +7,5 @@ services:
       pip install mkdocs mkdocs-material
       mkdocs build
     staticPublishPath: ./site
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9
     plan: free
     autoDeploy: true 

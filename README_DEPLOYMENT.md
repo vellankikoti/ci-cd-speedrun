@@ -4,14 +4,13 @@
 
 Your CI/CD Chaos Workshop documentation is now ready for deployment to Render!
 
-### 📁 Files Created for Deployment:
+### 📁 Files for Deployment:
 
 1. **`render.yaml`** - Render configuration (Static Site)
-2. **`requirements.txt`** - Python dependencies
-3. **`deploy.sh`** - Deployment script (backup option)
-4. **`DEPLOYMENT.md`** - Detailed deployment guide
+2. **`mkdocs.yml`** - MkDocs configuration
+3. **`docs/`** - Your documentation files
 
-### 🎯 Recommended Deployment Method:
+### 🎯 Deployment Method:
 
 **Static Site** (Most efficient for documentation)
 
@@ -40,21 +39,18 @@ services:
     autoDeploy: true
 ```
 
-### ✅ Local Testing Passed:
+### 🎉 Benefits:
 
-- ✅ MkDocs build successful
-- ✅ Site directory generated
-- ✅ All assets included
-- ✅ No warnings or errors
+- ✅ **No Docker complexity**
+- ✅ **Fast builds** (just Python + MkDocs)
+- ✅ **Automatic deployments** on git push
+- ✅ **Free tier friendly**
+- ✅ **CDN-powered** static hosting
 
-### 🌐 After Deployment:
+### 🚀 Your Site URL:
 
-Your site will be available at: `https://your-app-name.onrender.com`
-
-### 📚 Full Documentation:
-
-See `DEPLOYMENT.md` for detailed instructions and troubleshooting.
+Once deployed: `https://your-site-name.onrender.com`
 
 ---
 
-**Ready to deploy! 🚀** 
+**Ready to deploy! Just connect your repo to Render and you're done! 🎉** 

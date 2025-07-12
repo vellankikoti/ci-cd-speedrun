@@ -306,10 +306,10 @@ We welcome contributions! Whether it's:
 
 ## 📞 **Get in Touch**
 
-- 🌐 **Live Workshop**: [Deployed on Render](https://your-site-name.onrender.com)
-- 📧 **Email**: [your-email@example.com]
-- 🐦 **Twitter**: [@your-handle]
-- 💼 **LinkedIn**: [your-profile]
+- 🌐 **Live Workshop**: [DevOps Workshop](https://ep2025.argo.in)
+- 📧 **Email**: [vellankikoti@gmail.com]
+- 🐦 **X/Twitter**: [@DevOpsCircuit]
+- 💼 **LinkedIn**: [Koti Vellanki](https://www.linkedin.com/in/vellankikoti/)
 
 ---
 

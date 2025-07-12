@@ -170,5 +170,3 @@ docker logs <container_id>
 ```
 
 ---
-
-**Next:** [MySQL Testing](mysql.md) | [PostgreSQL Testing](postgres.md) | [MariaDB Testing](mariadb.md) | [Redis Testing](redis.md)

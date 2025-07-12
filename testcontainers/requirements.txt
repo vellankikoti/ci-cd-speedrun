@@ -1,0 +1,6 @@
+testcontainers
+sqlalchemy
+redis
+pymongo
+pymysql
+psycopg2-binary

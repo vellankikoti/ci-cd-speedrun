@@ -1,5 +1,51 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+  {{ super() }}
+  <link rel="icon" type="image/png" href="{{ base_url }}/assets/site-icon.png" sizes="32x32">
+  <link rel="shortcut icon" type="image/png" href="{{ base_url }}/assets/site-icon.png">
+  <style>
+    .md-header__button.md-logo {
+      height: 48px !important;
+      width: 48px !important;
+      min-width: 48px !important;
+      min-height: 48px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 !important;
+      margin: 0 8px 0 0 !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+    .md-header__button.md-logo img,
+    .md-header__button.md-logo svg {
+      height: 40px !important;
+      width: 40px !important;
+      min-width: 40px !important;
+      min-height: 40px !important;
+      max-width: 40px !important;
+      max-height: 40px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      background: #fff !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10) !important;
+      display: block;
+      object-fit: contain;
+      border: 2px solid #e0e0e0;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
   {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="{{ base_url }}/assets/js/magic-link-progress.js"></script>
+  <script src="{{ base_url }}/assets/js/scenario-progress.js"></script>
+  <script src="{{ base_url }}/assets/js/name-input.js"></script>
 {% endblock %} 

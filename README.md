@@ -308,7 +308,7 @@ We welcome contributions! Whether it's:
 
 - 🌐 **Live Workshop**: [DevOps Workshop](https://ep2025.argo.in)
 - 📧 **Email**: [vellankikoti@gmail.com]
-- 🐦 **X/Twitter**: [@DevOpsCircuit]
+- 🐦 **X/Twitter**: [DevOpsCircuit](https://x.com/DevOpsCircuit)
 - 💼 **LinkedIn**: [Koti Vellanki](https://www.linkedin.com/in/vellankikoti/)
 
 ---

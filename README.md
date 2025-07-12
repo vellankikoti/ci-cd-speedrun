@@ -12,9 +12,9 @@
 
 ## 🎯 **Mission Statement**
 
-Welcome to the **CI/CD Chaos Workshop** - where we intentionally break things to build unbreakable DevOps pipelines! This comprehensive workshop transforms you from a DevOps novice into a **Certified Chaos Slayer** through hands-on scenarios that mirror real-world challenges.
+Welcome to the **CI/CD Chaos Workshop** - where we intentionally break things to build unbreakable DevOps pipelines! This comprehensive workshop transforms you from a DevOps novice into a DevOps pro through hands-on scenarios that mirror real-world challenges.
 
-> **"Chaos Agent 🕶️ is sabotaging your deployments. Your mission is to build a robust CI/CD pipeline that defeats Chaos at every stage."**
+> **"Chaos Agent 🕷️ is sabotaging your deployments. Your mission is to build a robust CI/CD pipeline that defeats Chaos at every stage."**
 
 ---
 
@@ -25,15 +25,15 @@ Welcome to the **CI/CD Chaos Workshop** - where we intentionally break things to
 - **Emotional Hooks**: Every phase has "aha" moments
 - **Real-World Scenarios**: Based on actual production challenges
 
-### 🧪 **Hands-On Chaos Scenarios**
+### 🧨 **Hands-On Chaos Scenarios**
 - **25+ Interactive Scenarios** across 4 major technologies
 - **Progressive Difficulty**: From basic to advanced production patterns
 - **Failure Simulation**: Learn by breaking things intentionally
 
-### 🏆 **Certification Journey**
-- **Progress Tracking**: Visual progress through phases
-- **Certificate Generation**: Earn your "Chaos Slayer" certificate
-- **Portfolio Ready**: Real projects you can showcase
+### 🏆 **Gamified Experience**
+- Progress tracking with visual feedback
+- Achievement badges for completed phases
+- Community recognition
 
 ---
 
@@ -224,18 +224,9 @@ By completing this workshop, you will:
 ### **Real-World Experience**
 - ✅ **25+ Production Scenarios** based on actual challenges
 - ✅ **Portfolio Projects** you can showcase to employers
-- ✅ **Certification** as a "Certified Chaos Slayer"
 - ✅ **Community Recognition** in the DevOps space
 
 ---
-
-## 🏆 **Certification Journey**
-
-### **Progress Tracking**
-- 📊 **Visual Progress Bar** through all phases
-- 🎯 **Scenario Completion** tracking
-- 🏅 **Achievement Badges** for each phase
-- 📜 **Certificate Generation** with unique IDs
 
 ### **Final Assessment**
 - 📝 **5-Question Quiz** covering all phases
@@ -256,7 +247,6 @@ Every scenario is based on real production issues. You'll encounter the same pro
 ### **🎮 Gamified Experience**
 - Progress tracking with visual feedback
 - Achievement badges for completed phases
-- Certificate generation upon completion
 - Community recognition
 
 ### **📚 Comprehensive Coverage**
@@ -316,10 +306,10 @@ We welcome contributions! Whether it's:
 
 ## 📞 **Get in Touch**
 
-- 🌐 **Live Workshop**: [Deployed on Render](https://your-site-name.onrender.com)
-- 📧 **Email**: [your-email@example.com]
-- 🐦 **Twitter**: [@your-handle]
-- 💼 **LinkedIn**: [your-profile]
+- 🌐 **Live Workshop**: [DevOps Workshop](https://ep2025.argo.in)
+- 📧 **Email**: [vellankikoti@gmail.com]
+- 🐦 **X/Twitter**: [@DevOpsCircuit]
+- 💼 **LinkedIn**: [Koti Vellanki](https://www.linkedin.com/in/vellankikoti/)
 
 ---
 

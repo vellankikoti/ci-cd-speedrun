@@ -249,14 +249,6 @@ By the end of Phase 1, you'll be able to:
 
 ---
 
-## 🏁 Next Steps
-
-✅ **Phase 1 Complete:** You now have chaos-proof database tests!  
-✅ **Ready for Phase 2:** [Docker Mastery](docker.md) — where you'll build, analyze, and break real Docker images.  
-✅ **Chaos Agent Status:** Defeated in database testing! 🕶️  
-
----
-
 **Remember:** Testcontainers are your shield against chaos. When production throws a curveball, your tests will be ready! 🚀
 
 > 💡 **Pro Tip:** The chaos delays and random failures in these tests aren't bugs — they're features! They're teaching you to write resilient code that handles real-world unpredictability.

@@ -44,7 +44,8 @@ theme:
     - navigation.tracking
     - navigation.prune
     - navigation.sections
-  logo: assets/logo.svg
+  logo: assets/site-icon.png
+  favicon: assets/site-icon.png
 nav:
   - Home: index.md
   - 🛠️ Setup:
@@ -91,6 +92,11 @@ extra:
       link: https://linkedin.com/in/your-profile
   extra_javascript:
     - overrides/assets/sidebar-autocollapse.js
+    - assets/js/test-loading.js
+    - https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+    - assets/js/magic-link-progress.js
+    - assets/js/scenario-progress.js
+    - assets/js/name-input.js
   extra_css:
     # (Removed all custom CSS for default layout)
 

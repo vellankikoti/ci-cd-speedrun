@@ -8,7 +8,7 @@
   <img src="assets/testcontainers-logo.png" alt="Testcontainers" style="height:96px;">
 </div>
 
-<div align="center" style="margin-bottom: 2rem;">
+<div id="workshop-welcome-section" align="center" style="margin-bottom: 2rem;">
   <h1 style="font-size:1.8rem; font-weight:bold; margin-bottom:0.5rem;">Welcome to the Ultimate CI/CD Chaos Experience</h1>
   <p style="font-size:1.3rem; color:#326CE5;">Break things. Fix things. Become unstoppable.</p>
   <a href="#start-here" class="workshop-button" style="font-size:1.2rem; padding:0.8rem 2rem; margin:1rem 0; background:linear-gradient(90deg,#326CE5,#00ADD8); color:white; border-radius:8px; text-decoration:none;">🚀 Start Your Journey</a>
@@ -21,7 +21,7 @@
 !!! info "Real-World Chaos, Real-World Skills"
     - **No boring theory.** You’ll break real pipelines, fix real failures, and build confidence for production.
     - **Hands-on everything:** Python, Docker, Kubernetes, Jenkins, Testcontainers.
-    - **Earn a certificate** that proves you can handle chaos.
+    - **Track your progress** as you master chaos engineering skills.
 
 ---
 
@@ -65,15 +65,6 @@
   </a>
 </div>
 
-
-<!-- Fixed navigation links -->
-<a href="phases/setup" class="phase-button" style="color:#326CE5;">Start Setup →</a>
-<a href="phases/testcontainers" class="phase-button" style="color:#326CE5;">Begin Testing →</a>
-<a href="phases/docker" class="phase-button" style="color:#326CE5;">Docker Mastery →</a>
-<a href="phases/jenkins" class="phase-button" style="color:#326CE5;">Build Pipelines →</a>
-<a href="phases/k8s" class="phase-button" style="color:#326CE5;">Deploy to K8s →</a>
-
----
 
 ## 💡 What You'll Master
 

@@ -210,12 +210,11 @@ Tasks:
 
 - `main` → Complete working pipeline
 - Phases:
-  - `phase-0-setup`
-  - `phase-1-tests`
-  - `phase-2-docker`
-  - `phase-3-jenkins`
-  - `phase-4-k8s`
-  - `phase-5-final`
+  - `Setup`
+  - `Testcontainers`
+  - `Docker`
+  - `Jenkins`
+  - `Kuberntes`
 
 Each branch:
 ✅ Fully functional  
@@ -225,12 +224,6 @@ Each branch:
 ---
 
 ## 📝 MkDocs Structure
-
-Pages:
-- Home
-- Phases 1–5
-- Quizzes
-- Certificate page
 
 Features:
 ✅ Navigation sidebar  

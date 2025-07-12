@@ -21,7 +21,7 @@
 !!! info "Real-World Chaos, Real-World Skills"
     - **No boring theory.** You’ll break real pipelines, fix real failures, and build confidence for production.
     - **Hands-on everything:** Python, Docker, Kubernetes, Jenkins, Testcontainers.
-    - **Earn a certificate** that proves you can handle chaos.
+    - **Track your progress** as you master chaos engineering skills.
 
 ---
 

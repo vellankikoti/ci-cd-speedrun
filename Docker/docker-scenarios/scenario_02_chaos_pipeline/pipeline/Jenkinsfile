@@ -204,7 +204,8 @@ pipeline {
                                 docker logs test-${step} 2>/dev/null || echo "No logs available"
                                 
                                 # Test health endpoint with retry
-                                for i in {1..5}; do
+                                i=1
+                                while [ $i -le 5 ]; do
                                     if curl -f http://localhost:${port}/health 2>/dev/null; then
                                         echo "✅ Health check passed for ${step}"
                                         break
@@ -212,6 +213,7 @@ pipeline {
                                         echo "⏳ Health check attempt $i failed, retrying..."
                                         sleep 3
                                     fi
+                                    i=$((i+1))
                                 done
                             else
                                 echo "❌ Container test-${step} is not running"

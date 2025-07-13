@@ -1,12 +1,12 @@
-# 🚀 Docker Scenario 02 — Enhanced Progressive Chaos Engineering Workshop
+# 🚀 Docker Scenario 02 — Progressive Chaos Engineering Workshop
 
 **Goal:**  
-- Demonstrate powerful Docker capabilities in CI/CD pipelines  
+- Demonstrate powerful Docker capabilities in chaos engineering  
 - Show progressive chaos engineering with 5 different failure scenarios
-- Run chaos tests to simulate failures and prove pipeline resilience  
+- Run chaos tests to simulate failures and prove system resilience  
 - Teach how to run Docker **inside** Docker (DinD) safely
 - Provide educational, interactive experience with real microservices
-- **NEW:** Enhanced learning experience with real microservices, interactive debugging, and comprehensive monitoring
+- **Enhanced learning experience** with real microservices, interactive debugging, and comprehensive monitoring
 
 This scenario creates an unforgettable learning experience:
 
@@ -16,7 +16,7 @@ This scenario creates an unforgettable learning experience:
 
 # 🚀 Quick Start
 
-## Option 1: Local Demo (Recommended for Presentations)
+## Local Demo (Recommended for Presentations)
 
 1. **Clone and navigate to the scenario:**
    ```bash
@@ -35,76 +35,20 @@ This scenario creates an unforgettable learning experience:
    ```
    This script runs automatically without user interaction.
 
-## Option 2: Jenkins Pipeline (Recommended for CI/CD)
-
-1. **Set up Jenkins workspace:**
-   ```bash
-   cd Docker/docker-scenarios/scenario_02_chaos_pipeline
-   ./setup_jenkins_workspace.sh
-   ```
-
-2. **Configure Jenkins pipeline:**
-   
-   **Step-by-step Jenkins job configuration:**
-   
-   a) **Create New Job:**
-   - Go to Jenkins Dashboard
-   - Click "New Item" or "Create new jobs"
-   - Enter job name: `chaos-ci-pipeline`
-   - Select "Pipeline"
-   - Click "OK"
-   
-   b) **Configure Parameters:**
-   - In the job configuration, check "This project is parameterized"
-   - Add parameter: Name: `SCENARIO`, Type: `Choice Parameter`
-   - Choices:
-     ```
-     chaos-full
-     chaos-1
-     chaos-2
-     chaos-3
-     chaos-free
-     progressive-demo
-     ```
-   - Default Value: `progressive-demo`
-   - Description: `Select the chaos scenario to run`
-   
-   c) **Configure Pipeline:**
-   - **Definition:** Select "Pipeline script from SCM"
-   - **SCM:** Select "Git"
-   - **Repository URL:** Your repository URL (e.g., `https://github.com/your-username/your-repo.git`)
-   - **Credentials:** Add your Git credentials if needed
-   - **Branch Specifier:** `*/main` (or `*/master` depending on your default branch)
-   - **Script Path:** `Docker/docker-scenarios/scenario_02_chaos_pipeline/pipeline/Jenkinsfile`
-   
-   d) **Save Configuration:**
-   - Click "Save" to create the job
-
-3. **Run the pipeline:**
-   - Go to Jenkins dashboard
-   - Click "Build with Parameters"
-   - Select scenario: `progressive-demo`
-   - Click "Build"
-
 ## Demo Scripts Explained
 
 - **`demo_manual.sh`**: Step-by-step control with educational pauses
 - **`demo_simple.sh`**: Automated demo for quick demonstrations
 - **`cleanup.sh`**: Clean up all containers and resources
-- **`setup_jenkins_workspace.sh`**: Prepare Jenkins workspace with all required files
 
-## Jenkins Pipeline Scenarios
+## Progressive Chaos Scenarios
 
-The Jenkins pipeline supports multiple scenarios:
+The demo supports multiple scenarios:
 
 - **`progressive-demo`**: Complete educational journey (recommended)
 - **`chaos-full`**: Maximum chaos (everything broken)
 - **`chaos-free`**: Perfect pipeline (all working)
 - **`chaos-1/2/3`**: Progressive fixes showing issue cascades
-
-For detailed Jenkins setup instructions, see [JENKINS_SETUP.md](JENKINS_SETUP.md).
-
-**Quick Setup:** For a 5-minute setup guide, see [JENKINS_QUICK_REFERENCE.md](JENKINS_QUICK_REFERENCE.md).
 
 ---
 
@@ -112,7 +56,6 @@ For detailed Jenkins setup instructions, see [JENKINS_SETUP.md](JENKINS_SETUP.md
 
 - Docker installed
 - Basic Python knowledge
-- Basic familiarity with Jenkins pipelines
 - Enough RAM (~2GB) for Docker containers
 - **NEW:** `jq` for JSON formatting (will be auto-installed if missing)
 
@@ -122,8 +65,7 @@ For detailed Jenkins setup instructions, see [JENKINS_SETUP.md](JENKINS_SETUP.md
 
 In this **enhanced** scenario:
 
-✅ We spin up Jenkins in Docker.  
-✅ Jenkins runs a progressive chaos engineering pipeline with **real microservices**:
+✅ We run progressive chaos engineering with **real microservices**:
   - **Step 1**: Network failure simulation with web API
   - **Step 2**: Resource limitation with image processing service
   - **Step 3**: Service dependency failure with Redis session management
@@ -159,13 +101,6 @@ Your workshop directory will look like this:
 ```
 scenario_02_chaos_pipeline/
 │
-├── jenkins-docker/
-│     └── Dockerfile
-│
-├── pipeline/
-│     ├── Jenkinsfile
-│     └── requirements.txt
-│
 ├── scenarios/
 │     ├── step1_fail_network/
 │     │   ├── app.py          # NEW: Real web API with network testing
@@ -188,10 +123,10 @@ scenario_02_chaos_pipeline/
 │
 ├── setup.sh
 ├── cleanup.sh
-├── install_plugins.sh
 ├── test_setup.sh
 ├── test_all_scenarios.sh
-├── demo_enhanced_chaos.sh    # NEW: Enhanced demo script
+├── demo_manual.sh           # Step-by-step demo script
+├── demo_simple.sh           # Automated demo script
 └── README.md
 ```
 
@@ -239,62 +174,7 @@ This **enhanced** scenario teaches chaos engineering through 5 progressive steps
 
 ---
 
-## ✅ 1. Build a Jenkins Docker Image
-
-We'll build a custom Jenkins Docker image that:
-
-- Has Docker CLI available
-- Allows running Docker commands in pipelines
-
-### **`docker-scenario-02/jenkins-docker/Dockerfile`**
-
-```Dockerfile
-FROM jenkins/jenkins:lts
-
-USER root
-
-# Install Docker CLI inside Jenkins container
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    rm -rf /var/lib/apt/lists/*
-
-USER jenkins
-```
-
----
-
-### Build the image
-
-```bash
-cd docker-scenario-02/jenkins-docker
-
-docker build -t jenkins-docker .
-```
-
-✅ This builds a Jenkins image that can run Docker commands inside itself.
-
----
-
-## ✅ 2. Run Jenkins Container
-
-Run Jenkins and mount Docker socket:
-
-```bash
-docker run -d \
-  --name jenkins \
-  -p 8080:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  jenkins-docker
-```
-
-✅ Jenkins can now:
-
-* Run Docker CLI commands
-* Spin up containers during builds
-
----
-
-## ✅ 3. Enhanced Progressive Chaos Engineering Apps
+## ✅ 1. Enhanced Progressive Chaos Engineering Apps
 
 Each scenario step now has **real microservices** with actual functionality:
 
@@ -360,7 +240,7 @@ Each scenario step now has **real microservices** with actual functionality:
 
 ---
 
-## ✅ 4. Enhanced Dockerfiles
+## ✅ 2. Enhanced Dockerfiles
 
 Each step now has enhanced Dockerfiles with proper dependencies:
 
@@ -431,9 +311,9 @@ CMD ["python", "app.py"]
 
 ---
 
-## ✅ 5. Enhanced Demo Script
+## ✅ 5. Enhanced Demo Scripts
 
-**NEW:** `demo_enhanced_chaos.sh` - Comprehensive demo script with:
+**NEW:** `demo_manual.sh` and `demo_simple.sh` - Comprehensive demo scripts with:
 
 - **Real microservices** with actual functionality
 - **Interactive debugging** and health monitoring
@@ -444,11 +324,14 @@ CMD ["python", "app.py"]
 ### **Run the Enhanced Demo**
 
 ```bash
-# Make the script executable
-chmod +x demo_enhanced_chaos.sh
+# Make the scripts executable
+chmod +x demo_manual.sh demo_simple.sh
 
-# Run the enhanced demo
-./demo_enhanced_chaos.sh
+# Run the manual demo (step-by-step control)
+./demo_manual.sh
+
+# Or run the simple demo (automated)
+./demo_simple.sh
 ```
 
 This will:
@@ -461,179 +344,31 @@ This will:
 
 ---
 
-## ✅ 6. Enhanced Jenkins Pipeline Script
-
-### **`pipeline/Jenkinsfile`**
-
-```groovy
-pipeline {
-    agent any
-
-    parameters {
-        choice(
-            name: "STAGE",
-            choices: ["step1_fail_network", "step2_fail_resource", "step3_fail_service", "step4_fail_db", "step5_success"],
-            description: "Select the enhanced scenario step to run"
-        )
-    }
-
-    environment {
-        SCENARIO_DIR = "scenarios/${params.STAGE}"
-        IMAGE_NAME = "chaos-${params.STAGE}"
-        PORT_MAPPING = [
-            "step1_fail_network": "8081:8080",
-            "step2_fail_resource": "8082:8080",
-            "step3_fail_service": "8083:8080",
-            "step4_fail_db": "8084:8080",
-            "step5_success": "8085:8080"
-        ]
-    }
-
-    stages {
-        stage("Build Enhanced Scenario Docker Image") {
-            steps {
-                echo "🚧 Building enhanced Docker image for ${params.STAGE}..."
-                sh """
-                    docker build -t $IMAGE_NAME $SCENARIO_DIR
-                """
-            }
-        }
-        stage("Run Enhanced Scenario Container") {
-            steps {
-                script {
-                    echo "🚀 Running enhanced scenario: ${params.STAGE}"
-                    def runArgs = ""
-                    if (params.STAGE == "step2_fail_resource") {
-                        runArgs = "--memory=128m --memory-swap=128m"
-                    }
-                    sh """
-                        docker run -d --name chaos-${params.STAGE} -p ${PORT_MAPPING[params.STAGE]} $runArgs $IMAGE_NAME
-                    """
-                }
-            }
-        }
-        stage("Wait for Service Health") {
-            steps {
-                script {
-                    echo "⏳ Waiting for service to be healthy..."
-                    def port = PORT_MAPPING[params.STAGE].split(":")[0]
-                    sh """
-                        timeout 60 bash -c 'until curl -f http://localhost:$port/health; do sleep 2; done'
-                    """
-                }
-            }
-        }
-        stage("Run Chaos Experiment") {
-            steps {
-                script {
-                    echo "🔬 Running chaos experiment..."
-                    def port = PORT_MAPPING[params.STAGE].split(":")[0]
-                    sh """
-                        curl -s http://localhost:$port/run-experiment | jq '.'
-                    """
-                }
-            }
-        }
-        stage("Show Debug Information") {
-            steps {
-                script {
-                    echo "🔍 Showing debug information..."
-                    def port = PORT_MAPPING[params.STAGE].split(":")[0]
-                    sh """
-                        echo "=== Health Status ==="
-                        curl -s http://localhost:$port/health | jq '.'
-                        echo "=== Debug Info ==="
-                        curl -s http://localhost:$port/debug | jq '.'
-                    """
-                }
-            }
-        }
-        stage("Highlight Educational Insights") {
-            steps {
-                script {
-                    def messages = [
-                        "step1_fail_network": [
-                            fixed: "Nothing fixed yet! This is the first intentional failure.",
-                            broken: "Network is broken. App cannot reach the outside world.",
-                            learning: "Understanding container networking limitations"
-                        ],
-                        "step2_fail_resource": [
-                            fixed: "Network is now working! (But... memory is too low)",
-                            broken: "Resource limits are too strict. App crashes with MemoryError.",
-                            learning: "Understanding Docker resource management"
-                        ],
-                        "step3_fail_service": [
-                            fixed: "Network and resources are now fine! (But... missing Redis service)",
-                            broken: "Service dependency (Redis) is missing. App cannot connect.",
-                            learning: "Understanding service dependencies and microservices"
-                        ],
-                        "step4_fail_db": [
-                            fixed: "Network, resources, and service are all good! (But... missing MySQL)",
-                            broken: "Database connection fails. MySQL is not running.",
-                            learning: "Understanding database dependencies and persistence"
-                        ],
-                        "step5_success": [
-                            fixed: "All previous issues are fixed! 🎉",
-                            broken: "Nothing! This is the chaos-free, production-ready step.",
-                            learning: "Understanding production-ready, resilient systems"
-                        ]
-                    ]
-                    def msg = messages[params.STAGE]
-                    echo "✅ FIXED: ${msg.fixed}"
-                    echo "❌ STILL BROKEN: ${msg.broken}"
-                    echo "🎓 LEARNING: ${msg.learning}"
-                }
-            }
-        }
-    }
-    post {
-        always {
-            echo "🏁 Enhanced scenario run complete! Check the logs above for details."
-            script {
-                echo "🔗 Service available at: http://localhost:${PORT_MAPPING[params.STAGE].split(':')[0]}"
-            }
-        }
-        success {
-            echo "🎉 Success!"
-        }
-        failure {
-            echo "💥 Failure (as expected for some steps)!"
-        }
-    }
-}
-```
-
-✅ What this enhanced pipeline does:
-
-* Builds enhanced Docker images with real microservices
-* Runs containers with proper health monitoring
-* Executes chaos experiments with real functionality
-* Shows debugging information and educational insights
-* Provides comprehensive monitoring and observability
-
----
-
-## ✅ 7. Enhanced Automation and Testing Scripts
+## ✅ 6. Enhanced Automation and Testing Scripts
 
 ### **Setup Scripts**
 
-- **`setup.sh`**: Complete Jenkins setup with Docker and plugins
-- **`install_plugins.sh`**: Install required Jenkins plugins
+- **`setup.sh`**: Complete environment setup with Docker
 - **`cleanup.sh`**: Clean up all containers and images
-- **`test_setup.sh`**: Verify Jenkins is working correctly
+- **`test_setup.sh`**: Verify environment is working correctly
 
 ### **Testing Scripts**
 
 - **`test_all_scenarios.sh`**: Run all 5 enhanced scenarios locally for testing
 - **`test_setup.sh`**: Verify the complete setup is working
-- **`demo_enhanced_chaos.sh`**: **NEW** - Comprehensive demo with real microservices
+- **`demo_manual.sh`**: Step-by-step demo with real microservices
+- **`demo_simple.sh`**: Automated demo with real microservices
 
 ### **Local Testing**
 
 Run all enhanced scenarios locally to verify they work:
 
 ```bash
-./demo_enhanced_chaos.sh
+# Step-by-step demo (recommended for presentations)
+./demo_manual.sh
+
+# Automated demo (for quick testing)
+./demo_simple.sh
 ```
 
 This will:
@@ -645,74 +380,109 @@ This will:
 
 ---
 
-## ✅ 8. Run the Enhanced Pipeline
+## ✅ 7. Run the Enhanced Demo
 
-1. **Start Jenkins:**
+1. **Setup the environment:**
    ```bash
    ./setup.sh
    ```
 
-2. **Access Jenkins UI:**
-   - Open [http://localhost:8080](http://localhost:8080)
-   - Get initial password: `docker logs jenkins`
+2. **Run the demo:**
+   ```bash
+   # For presentations with step-by-step control
+   ./demo_manual.sh
+   
+   # For automated testing
+   ./demo_simple.sh
+   ```
 
-3. **Create Pipeline Job:**
-   - Create new "Pipeline" job
-   - Point to your enhanced Jenkinsfile
-   - Run with parameters to select scenario step
-
-4. **Watch Enhanced Chaos Unfold:**
+3. **Watch Enhanced Chaos Unfold:**
    - Each step demonstrates different failure modes with **real microservices**
-   - **Educational messages** explain what's happening
-   - **Interactive debugging** and health monitoring
-   - **Progressive learning** from failure to success
-   - **Clear "What's Fixed" and "What's Still Broken"** messages
-   - **Real endpoints** for hands-on interaction
+   - Interactive debugging and health monitoring
+   - Educational content and learning objectives
+   - Progressive complexity and resilience building
+
+4. **Clean up when done:**
+   ```bash
+   ./cleanup.sh
+   ```
 
 ---
 
-## ✅ 9. Enhanced Educational Benefits
+## ✅ 8. Educational Value
 
-This **enhanced** scenario provides:
+This enhanced scenario provides:
 
-- **Real Microservices**: Each step has actual functionality and real endpoints
-- **Interactive Learning**: Participants can interact with services via web APIs
-- **Comprehensive Monitoring**: Health checks, debugging, and metrics
-- **Progressive Complexity**: Each step builds on the previous with real use cases
-- **Production-Ready Patterns**: Best practices and resilience patterns
-- **Hands-On Experience**: Real debugging and troubleshooting opportunities
-- **Educational Content**: Clear explanations and learning objectives
-- **Real-World Scenarios**: Simulates actual production issues with real services
+### **Real Microservices**
+- **Step 1**: Network testing with real web API
+- **Step 2**: Image processing with memory monitoring
+- **Step 3**: Session management with Redis integration
+- **Step 4**: User management with MySQL database
+- **Step 5**: Complete resilient microservices architecture
+
+### **Interactive Learning**
+- Health monitoring and debugging endpoints
+- Educational content and learning objectives
+- Progressive complexity and hands-on experience
+- Production-ready patterns and best practices
+
+### **Comprehensive Monitoring**
+- Health checks and metrics
+- Debugging tools and observability
+- Error handling and fallback mechanisms
+- Performance monitoring and resource management
 
 ---
 
-## ✅ 10. Enhanced Clean Up
+## ✅ 9. Troubleshooting
 
-When done, clean up everything:
+### **Common Issues**
+
+1. **Port conflicts**: Make sure ports 8081-8085 are available
+2. **Memory issues**: Ensure you have at least 2GB RAM available
+3. **Docker permissions**: Make sure your user can run Docker commands
+4. **Network issues**: Check if Docker networking is working properly
+
+### **Debugging**
+
+- Use `docker logs <container-name>` to check container logs
+- Use `docker ps` to see running containers
+- Use `docker stats` to monitor resource usage
+- Check the `/health` and `/debug` endpoints for each service
+
+### **Cleanup**
+
+If something goes wrong, clean up everything:
 
 ```bash
 ./cleanup.sh
 ```
 
-This removes:
-- Jenkins container
-- All enhanced scenario Docker images
-- Docker networks
-- Temporary files
+This will remove all containers, images, and networks created by the demo.
 
 ---
 
-## ✅ 11. What Makes This Enhanced Version Super Useful
+## ✅ 10. Next Steps
 
-✅ **Participants actually BUILD and RUN** real microservices with actual functionality  
-✅ **Interactive debugging** with real web APIs and health monitoring  
-✅ **Comprehensive monitoring** with health checks, metrics, and observability  
-✅ **Educational content** that explains what's happening and why  
-✅ **Progressive learning** with real use cases and hands-on experience  
-✅ **Production-ready patterns** and best practices  
-✅ **Real-world scenarios** that mirror actual production issues  
-✅ **Hands-on troubleshooting** with real debugging tools  
-✅ **Comprehensive documentation** and learning objectives  
+After completing this scenario, you can:
 
-This enhanced version transforms the workshop from simple test runs into an **immersive, educational experience** that participants will remember and apply in their real work!
+1. **Explore the code**: Look at the `scenarios/` directory to understand how each service works
+2. **Modify scenarios**: Add your own chaos experiments or failure modes
+3. **Extend the demo**: Add more services or complexity to the scenarios
+4. **Practice chaos engineering**: Use this as a foundation for your own chaos engineering practices
+
+---
+
+## 🎯 Summary
+
+This enhanced scenario provides:
+
+✅ **Real microservices** with actual functionality  
+✅ **Interactive debugging** and health monitoring  
+✅ **Educational content** and learning objectives  
+✅ **Progressive complexity** and hands-on learning  
+✅ **Production-ready features** and best practices  
+✅ **Comprehensive monitoring** and observability  
+
+**Perfect for**: Workshops, presentations, learning Docker, and understanding chaos engineering with real microservices!
 

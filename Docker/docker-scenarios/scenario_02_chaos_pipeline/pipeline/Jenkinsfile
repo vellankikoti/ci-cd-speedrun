@@ -210,7 +210,7 @@ pipeline {
                                         echo "✅ Health check passed for ${step}"
                                         break
                                     else
-                                        echo "⏳ Health check attempt $i failed, retrying..."
+                                        echo "⏳ Health check attempt \$i failed, retrying..."
                                         sleep 3
                                     fi
                                     i=\$((i+1))

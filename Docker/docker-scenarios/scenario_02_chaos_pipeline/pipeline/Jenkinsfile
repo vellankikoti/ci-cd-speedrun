@@ -213,7 +213,7 @@ pipeline {
                                         echo "⏳ Health check attempt $i failed, retrying..."
                                         sleep 3
                                     fi
-                                    i=$((i+1))
+                                    i=\$((i+1))
                                 done
                             else
                                 echo "❌ Container test-${step} is not running"

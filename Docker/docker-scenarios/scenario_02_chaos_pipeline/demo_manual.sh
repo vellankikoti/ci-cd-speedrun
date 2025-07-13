@@ -242,7 +242,9 @@ main() {
     
     # Start the production system with docker-compose
     print_step "Starting production system with docker-compose..."
-    docker-compose -f docker-compose-step5.yml up -d --build
+    cd scenarios/step5_success
+    docker-compose up -d --build
+    cd ../..
     
     print_step "Waiting for services to be ready..."
     sleep 30
@@ -275,7 +277,9 @@ main() {
     echo "=================="
     echo ""
     print_step "Cleaning up all containers..."
-    docker-compose -f docker-compose-step5.yml down 2>/dev/null || true
+    cd scenarios/step5_success
+    docker-compose down 2>/dev/null || true
+    cd ../..
     docker stop $(docker ps -q --filter "name=chaos-step") 2>/dev/null || true
     docker rm $(docker ps -aq --filter "name=chaos-step") 2>/dev/null || true
     print_success "All containers cleaned up"

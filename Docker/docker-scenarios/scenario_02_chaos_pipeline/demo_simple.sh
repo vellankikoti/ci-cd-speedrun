@@ -222,8 +222,35 @@ main() {
     
     wait_for_user
     
-    # Step 5: Success
-    run_step 5 8085 "Success" "step5_success"
+    # Step 5: Success with Real Services
+    print_header "STEP 5: Success with Real Services"
+    echo "=========================================="
+    
+    print_step "Setting up production-ready system with Redis and MySQL..."
+    
+    # Clean up previous step
+    docker stop chaos-step4-fail-db 2>/dev/null || true
+    docker rm chaos-step4-fail-db 2>/dev/null || true
+    
+    # Start the production system with docker-compose
+    print_step "Starting production system with docker-compose..."
+    cd scenarios/step5_success
+    docker-compose up -d --build
+    cd ../../
+    
+    print_step "Waiting for services to be ready..."
+    sleep 30
+    
+    print_success "Production system is running!"
+    echo ""
+    print_step "Services available:"
+    print_step "• Main app: http://localhost:8085"
+    print_step "• Health check: http://localhost:8085/health"
+    print_step "• Debug info: http://localhost:8085/debug"
+    print_step "• Metrics: http://localhost:8085/metrics"
+    print_step "• Run experiment: http://localhost:8085/run-experiment"
+    print_step "• Redis: localhost:6379"
+    print_step "• MySQL: localhost:3306"
     
     echo "📚 EDUCATIONAL CONTENT - Step 5:"
     echo "This is a complete, resilient microservices architecture. It has"

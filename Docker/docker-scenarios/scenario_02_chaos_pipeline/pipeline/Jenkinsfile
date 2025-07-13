@@ -239,69 +239,66 @@ pipeline {
                     echo "🏭 Testing Step 5 production system with Redis and MySQL..."
                     sh """
                         cd ${WORKSPACE}/${SCENARIO_DIR}
-                        
-                        # Check if docker-compose is available
-                        if command -v docker-compose >/dev/null 2>&1; then
-                            echo "✅ docker-compose is available"
-                            
-                            # Create docker-compose file if it doesn't exist
-                            if [ ! -f docker-compose-step5.yml ]; then
-                                echo 'version: "3.8"' > docker-compose-step5.yml
-                                echo 'services:' >> docker-compose-step5.yml
-                                echo '  app:' >> docker-compose-step5.yml
-                                echo '    build: ./scenarios/step5_success' >> docker-compose-step5.yml
-                                echo '    ports:' >> docker-compose-step5.yml
-                                echo '      - "8085:8080"' >> docker-compose-step5.yml
-                                echo '  redis:' >> docker-compose-step5.yml
-                                echo '    image: redis:7-alpine' >> docker-compose-step5.yml
-                                echo '    ports:' >> docker-compose-step5.yml
-                                echo '      - "6379:6379"' >> docker-compose-step5.yml
-                                echo '  mysql:' >> docker-compose-step5.yml
-                                echo '    image: mysql:8.0' >> docker-compose-step5.yml
-                                echo '    environment:' >> docker-compose-step5.yml
-                                echo '      - MYSQL_ROOT_PASSWORD=password' >> docker-compose-step5.yml
-                                echo '      - MYSQL_DATABASE=test' >> docker-compose-step5.yml
-                                echo '    ports:' >> docker-compose-step5.yml
-                                echo '      - "3306:3306"' >> docker-compose-step5.yml
-                            fi
-                            
-                            # Start the production system
-                            docker-compose -f docker-compose-step5.yml down || true
-                            docker-compose -f docker-compose-step5.yml up -d --build || echo "Docker compose failed"
-                            
-                            # Wait for services to be ready
-                            sleep 30
-                            
-                            # Test all endpoints
-                            echo "🔍 Testing production system endpoints..."
-                            curl -f http://localhost:8085/health || echo "Health check failed"
-                            
-                            # Show service status
-                            docker-compose -f docker-compose-step5.yml ps || echo "Docker compose ps failed"
-                            
-                            # Clean up
-                            docker-compose -f docker-compose-step5.yml down || true
-                        else
-                            echo "⚠️ docker-compose not available, running simplified Step 5 test"
-                            
-                            # Run Step 5 container directly
-                            docker run -d --name test-step5-simple -p 8085:8080 chaos-step5_success || echo "Step 5 container failed"
-                            sleep 15
-                            
-                            # Test health endpoint
-                            if docker ps | grep -q test-step5-simple; then
-                                echo "✅ Step 5 container is running"
-                                curl -f http://localhost:8085/health || echo "Health check failed"
-                            else
-                                echo "❌ Step 5 container is not running"
-                                docker logs test-step5-simple 2>/dev/null || echo "No logs available"
-                            fi
-                            
-                            # Clean up
-                            docker stop test-step5-simple || true
-                            docker rm test-step5-simple || true
+                        # Create docker-compose file if it doesn't exist
+                        if [ ! -f docker-compose-step5.yml ]; then
+                            echo 'version: "3.8"' > docker-compose-step5.yml
+                            echo 'services:' >> docker-compose-step5.yml
+                            echo '  app:' >> docker-compose-step5.yml
+                            echo '    build: ./scenarios/step5_success' >> docker-compose-step5.yml
+                            echo '    ports:' >> docker-compose-step5.yml
+                            echo '      - "8085:8080"' >> docker-compose-step5.yml
+                            echo '    environment:' >> docker-compose-step5.yml
+                            echo '      - REDIS_HOST=redis' >> docker-compose-step5.yml
+                            echo '      - REDIS_PORT=6379' >> docker-compose-step5.yml
+                            echo '      - MYSQL_HOST=mysql' >> docker-compose-step5.yml
+                            echo '      - MYSQL_PORT=3306' >> docker-compose-step5.yml
+                            echo '      - MYSQL_USER=root' >> docker-compose-step5.yml
+                            echo '      - MYSQL_PASSWORD=password' >> docker-compose-step5.yml
+                            echo '      - MYSQL_DATABASE=test' >> docker-compose-step5.yml
+                            echo '    depends_on:' >> docker-compose-step5.yml
+                            echo '      - redis' >> docker-compose-step5.yml
+                            echo '      - mysql' >> docker-compose-step5.yml
+                            echo '    networks:' >> docker-compose-step5.yml
+                            echo '      - chaos-network' >> docker-compose-step5.yml
+                            echo '  redis:' >> docker-compose-step5.yml
+                            echo '    image: redis:7-alpine' >> docker-compose-step5.yml
+                            echo '    ports:' >> docker-compose-step5.yml
+                            echo '      - "6379:6379"' >> docker-compose-step5.yml
+                            echo '    networks:' >> docker-compose-step5.yml
+                            echo '      - chaos-network' >> docker-compose-step5.yml
+                            echo '  mysql:' >> docker-compose-step5.yml
+                            echo '    image: mysql:8.0' >> docker-compose-step5.yml
+                            echo '    ports:' >> docker-compose-step5.yml
+                            echo '      - "3306:3306"' >> docker-compose-step5.yml
+                            echo '    environment:' >> docker-compose-step5.yml
+                            echo '      - MYSQL_ROOT_PASSWORD=password' >> docker-compose-step5.yml
+                            echo '      - MYSQL_DATABASE=test' >> docker-compose-step5.yml
+                            echo '    networks:' >> docker-compose-step5.yml
+                            echo '      - chaos-network' >> docker-compose-step5.yml
+                            echo 'networks:' >> docker-compose-step5.yml
+                            echo '  chaos-network:' >> docker-compose-step5.yml
+                            echo '    driver: bridge' >> docker-compose-step5.yml
                         fi
                     """
+                    dockerCompose(
+                        useDockerComposeFile: true,
+                        dockerComposeFile: "${WORKSPACE}/${SCENARIO_DIR}/docker-compose-step5.yml",
+                        dockerComposeCommand: "up -d --build"
+                    )
+                    sh """
+                        sleep 45
+                        echo "🔍 Testing production system endpoints..."
+                        curl -f http://localhost:8085/health || echo "App health check failed"
+                        curl -f http://localhost:8085/debug || echo "Debug endpoint failed"
+                        curl -f http://localhost:8085/metrics || echo "Metrics endpoint failed"
+                        curl -f http://localhost:8085/run-experiment || echo "Experiment endpoint failed"
+                        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+                    """
+                    dockerCompose(
+                        useDockerComposeFile: true,
+                        dockerComposeFile: "${WORKSPACE}/${SCENARIO_DIR}/docker-compose-step5.yml",
+                        dockerComposeCommand: "down"
+                    )
                 }
             }
         }

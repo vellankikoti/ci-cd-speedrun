@@ -130,7 +130,7 @@ run_step() {
                 print_step "Service is designed to fail - this demonstrates resource limitations"
             fi
         else
-            print_step "Service took longer than expected to start"
+        print_step "Service took longer than expected to start"
         fi
     fi
     
@@ -143,7 +143,7 @@ run_step() {
         print_step "Safe experiment: http://localhost:$port/run-experiment-safe"
         print_step "Run experiment (kills container): http://localhost:$port/run-experiment"
     else
-        print_step "Run experiment: http://localhost:$port/run-experiment"
+    print_step "Run experiment: http://localhost:$port/run-experiment"
     fi
     
     wait_for_user

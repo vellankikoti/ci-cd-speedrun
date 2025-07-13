@@ -1,17 +1,20 @@
-import sys
-import sqlalchemy
+#!/usr/bin/env python3
+from flask import Flask, jsonify
+import time
 
-print("STEP 4: DATABASE FAILURE")
-print("=" * 30)
-print("Trying to connect to MySQL...")
+app = Flask(__name__)
 
-try:
-    engine = sqlalchemy.create_engine('mysql+pymysql://root:password@localhost:3306/test')
-    with engine.connect() as conn:
-        conn.execute("SELECT 1")
-    print("Unexpected: MySQL is running!")
-    sys.exit(1)
-except Exception as e:
-    print(f"Database error as expected: {e}")
-    print("This step is supposed to fail due to missing database.")
-    sys.exit(1)
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "unhealthy",
+        "step": "step4_fail_db",
+        "message": "Database connectivity failure"
+    })
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Step 4: Database Failure"})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)

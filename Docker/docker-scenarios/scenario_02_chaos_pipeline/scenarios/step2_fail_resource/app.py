@@ -1,14 +1,21 @@
-import sys
+#!/usr/bin/env python3
+import psutil
+from flask import Flask, jsonify
+import time
 
-print("STEP 2: RESOURCE FAILURE")
-print("=" * 30)
-print("Trying to allocate 2GB of memory...")
+app = Flask(__name__)
 
-try:
-    x = ' ' * (1024 * 1024 * 1024 * 2)  # 2GB allocation
-    print("Unexpected: Allocation succeeded!")
-    sys.exit(1)
-except MemoryError as e:
-    print(f"MemoryError as expected: {e}")
-    print("This step is supposed to fail due to resource limits.")
-    sys.exit(1)
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "unhealthy",
+        "step": "step2_fail_resource",
+        "message": "Resource exhaustion"
+    })
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Step 2: Resource Failure"})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)

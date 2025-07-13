@@ -1,16 +1,21 @@
-import sys
+#!/usr/bin/env python3
 import redis
+from flask import Flask, jsonify
+import time
 
-print("STEP 3: SERVICE FAILURE")
-print("=" * 30)
-print("Trying to connect to Redis...")
+app = Flask(__name__)
 
-try:
-    r = redis.Redis(host='localhost', port=6379, socket_connect_timeout=2)
-    r.ping()
-    print("Unexpected: Redis is running!")
-    sys.exit(1)
-except Exception as e:
-    print(f"Service error as expected: {e}")
-    print("This step is supposed to fail due to missing service.")
-    sys.exit(1)
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "unhealthy",
+        "step": "step3_fail_service",
+        "message": "Service dependency failure"
+    })
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Step 3: Service Failure"})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)

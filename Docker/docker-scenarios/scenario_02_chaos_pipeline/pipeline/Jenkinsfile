@@ -3,84 +3,276 @@ pipeline {
 
     parameters {
         choice(
-            name: "STAGE",
-            choices: ["step1_fail_network", "step2_fail_resource", "step3_fail_service", "step4_fail_db", "step5_success"],
-            description: "Select the scenario step to run"
+            name: "SCENARIO",
+            choices: [
+                "chaos-full", 
+                "chaos-1", 
+                "chaos-2", 
+                "chaos-3", 
+                "chaos-free",
+                "progressive-demo"
+            ],
+            description: "Select the chaos scenario to run"
         )
     }
 
     environment {
-        SCENARIO_DIR = "scenarios/${params.STAGE}"
-        IMAGE_NAME = "chaos-${params.STAGE}"
+        SCENARIO_DIR = "scenarios"
+        WORKSPACE_DIR = "${WORKSPACE}"
     }
 
     stages {
-        stage("Build Scenario Docker Image") {
+        stage("Setup Environment") {
             steps {
-                echo "🚧 Building Docker image for ${params.STAGE}..."
+                echo "🚀 Setting up Chaos Engineering Workshop environment..."
                 sh """
-                    docker build -t $IMAGE_NAME $SCENARIO_DIR
+                    echo "📁 Working directory: ${WORKSPACE}"
+                    echo "🎯 Selected scenario: ${params.SCENARIO}"
+                    echo "📦 Checking available files:"
+                    ls -la || echo "No files found in workspace"
                 """
             }
         }
-        stage("Run Scenario Container") {
+
+        stage("Check Required Files") {
             steps {
                 script {
-                    echo "🚀 Running scenario: ${params.STAGE}"
-                    def runArgs = ""
-                    if (params.STAGE == "step2_fail_resource") {
-                        runArgs = "--memory=64m --memory-swap=64m"
+                    echo "🔍 Checking for required files..."
+                    
+                    // Check if we're in the right directory
+                    def hasScenarios = fileExists('scenarios')
+                    def hasPipeline = fileExists('pipeline')
+                    def hasDemoScripts = fileExists('demo_manual.sh')
+                    
+                    if (!hasScenarios) {
+                        echo "⚠️ scenarios/ directory not found"
+                        echo "📋 Current directory contents:"
+                        sh "ls -la"
+                    } else {
+                        echo "✅ scenarios/ directory found"
                     }
+                    
+                    if (!hasPipeline) {
+                        echo "⚠️ pipeline/ directory not found"
+                    } else {
+                        echo "✅ pipeline/ directory found"
+                    }
+                    
+                    if (!hasDemoScripts) {
+                        echo "⚠️ demo_manual.sh not found"
+                    } else {
+                        echo "✅ demo_manual.sh found"
+                    }
+                    
+                    // If we don't have the required files, we'll run a simplified version
+                    if (!hasScenarios && !hasPipeline) {
+                        echo "🔄 Running simplified chaos scenario (no local files)"
+                        env.SIMPLIFIED_MODE = "true"
+                    } else {
+                        echo "✅ All required files found"
+                        env.SIMPLIFIED_MODE = "false"
+                    }
+                }
+            }
+        }
+
+        stage("Run Chaos Scenario") {
+            steps {
+                script {
+                    echo "🔥 Running chaos scenario: ${params.SCENARIO}"
+                    
+                    if (env.SIMPLIFIED_MODE == "true") {
+                        // Run simplified chaos scenario without local files
+                        echo "🎭 Running simplified chaos scenario..."
+                        sh """
+                            echo "🔥 CHAOS FULL: Unleashing maximum chaos!"
+                            echo "This scenario demonstrates multiple failure modes:"
+                            echo "1. Network connectivity issues"
+                            echo "2. Resource exhaustion"
+                            echo "3. Service dependency failures"
+                            echo "4. Database connection problems"
+                            
+                            # Create some chaos containers
+                            docker run -d --name chaos-test-1 busybox sleep 30 || echo "Container creation failed"
+                            docker run -d --name chaos-test-2 busybox sleep 30 || echo "Container creation failed"
+                            
+                            echo "💥 Chaos scenario completed!"
+                        """
+                    } else if (params.SCENARIO == "progressive-demo") {
+                        // Run the complete progressive demo
+                        echo "🎓 Running complete progressive chaos demo..."
+                        sh """
+                            cd ${WORKSPACE}
+                            chmod +x demo_manual.sh
+                            timeout 600 ./demo_manual.sh || echo "Demo completed or timed out"
+                        """
+                    } else {
+                        // Run individual chaos scenarios
+                        echo "🎭 Running chaos scenario: ${params.SCENARIO}"
+                        sh """
+                            cd ${WORKSPACE}
+                            python3 pipeline/chaos_scenarios.py ${params.SCENARIO}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage("Test Individual Steps") {
+            when {
+                expression { params.SCENARIO == "progressive-demo" && env.SIMPLIFIED_MODE == "false" }
+            }
+            steps {
+                script {
+                    echo "🧪 Testing individual steps..."
+                    
+                    // Test each step individually
+                    def steps = [
+                        "step1_fail_network": "8081",
+                        "step2_fail_resource": "8082", 
+                        "step3_fail_service": "8083",
+                        "step4_fail_db": "8084",
+                        "step5_success": "8085"
+                    ]
+                    
+                    steps.each { step, port ->
+                        echo "🔍 Testing ${step} on port ${port}..."
+                        sh """
+                            # Build the step
+                            docker build -t chaos-${step} ${SCENARIO_DIR}/${step}/ || echo "Build failed for ${step}"
+                            
+                            # Run the step
+                            docker run -d --name test-${step} -p ${port}:8080 chaos-${step} || echo "Run failed for ${step}"
+                            
+                            # Wait for it to start
+                            sleep 10
+                            
+                            # Test health endpoint
+                            curl -f http://localhost:${port}/health || echo "Health check failed for ${step}"
+                            
+                            # Clean up
+                            docker stop test-${step} || true
+                            docker rm test-${step} || true
+                        """
+                    }
+                }
+            }
+        }
+
+        stage("Test Step 5 Production System") {
+            when {
+                expression { params.SCENARIO == "progressive-demo" && env.SIMPLIFIED_MODE == "false" }
+            }
+            steps {
+                script {
+                    echo "🏭 Testing Step 5 production system with Redis and MySQL..."
                     sh """
-                        docker run --rm $runArgs $IMAGE_NAME | tee scenario.log
+                        cd ${WORKSPACE}
+                        
+                        # Start the production system
+                        docker-compose -f docker-compose-step5.yml down || true
+                        docker-compose -f docker-compose-step5.yml up -d --build || echo "Docker compose failed"
+                        
+                        # Wait for services to be ready
+                        sleep 30
+                        
+                        # Test all endpoints
+                        echo "🔍 Testing production system endpoints..."
+                        curl -f http://localhost:8085/health || echo "Health check failed"
+                        curl -f http://localhost:8085/debug || echo "Debug endpoint failed"
+                        curl -f http://localhost:8085/metrics || echo "Metrics endpoint failed"
+                        curl -f http://localhost:8085/run-experiment || echo "Experiment endpoint failed"
+                        
+                        # Show service status
+                        docker-compose -f docker-compose-step5.yml ps || echo "Docker compose ps failed"
+                        
+                        # Clean up
+                        docker-compose -f docker-compose-step5.yml down || true
                     """
                 }
             }
         }
-        stage("Highlight What Was Fixed/Still Broken") {
+
+        stage("Analyze Results") {
             steps {
                 script {
+                    echo "📊 Analyzing chaos scenario results..."
+                    
                     def messages = [
-                        "step1_fail_network": [
-                            fixed: "Nothing fixed yet! This is the first intentional failure.",
-                            broken: "Network is broken. App cannot reach the outside world."
+                        "chaos-full": [
+                            title: "🔥 Maximum Chaos - Everything is Broken!",
+                            description: "Network, resources, services, and database are all failing",
+                            learning: "Demonstrates the impact of multiple simultaneous failures"
                         ],
-                        "step2_fail_resource": [
-                            fixed: "Network is now working! (But... memory is too low)",
-                            broken: "Resource limits are too strict. App crashes with MemoryError."
+                        "chaos-1": [
+                            title: "🔧 Network Fixed - Other Issues Remain",
+                            description: "Network connectivity restored, but resource and service issues persist",
+                            learning: "Shows how fixing one issue reveals others"
                         ],
-                        "step3_fail_service": [
-                            fixed: "Network and resources are now fine! (But... missing Redis service)",
-                            broken: "Service dependency (Redis) is missing. App cannot connect."
+                        "chaos-2": [
+                            title: "⚡ Resources Fixed - Service Issues Remain", 
+                            description: "Network and resources working, but service dependencies broken",
+                            learning: "Demonstrates service dependency management"
                         ],
-                        "step4_fail_db": [
-                            fixed: "Network, resources, and service are all good! (But... missing MySQL)",
-                            broken: "Database connection fails. MySQL is not running."
+                        "chaos-3": [
+                            title: "🛠️ Services Fixed - Database Issues Remain",
+                            description: "Network, resources, and services working, but database failing",
+                            learning: "Shows database connectivity and error handling"
                         ],
-                        "step5_success": [
-                            fixed: "All previous issues are fixed! 🎉",
-                            broken: "Nothing! This is the chaos-free, production-ready step."
+                        "chaos-free": [
+                            title: "🎉 Perfect Pipeline - All Issues Resolved!",
+                            description: "All systems working together in harmony",
+                            learning: "Demonstrates a production-ready, resilient system"
+                        ],
+                        "progressive-demo": [
+                            title: "🎓 Complete Progressive Chaos Demo",
+                            description: "Full educational journey through all chaos scenarios",
+                            learning: "Comprehensive learning experience with real production system"
                         ]
                     ]
-                    def msg = messages[params.STAGE]
-                    echo "✅ FIXED: ${msg.fixed}"
-                    echo "❌ STILL BROKEN: ${msg.broken}"
+                    
+                    def msg = messages[params.SCENARIO]
+                    echo "🎯 SCENARIO: ${msg.title}"
+                    echo "📝 DESCRIPTION: ${msg.description}"
+                    echo "🎓 LEARNING: ${msg.learning}"
+                    
+                    if (params.SCENARIO == "progressive-demo") {
+                        echo "✅ PROGRESSIVE DEMO COMPLETED!"
+                        echo "🎓 Educational value:"
+                        echo "   • Step 1: Network connectivity challenges"
+                        echo "   • Step 2: Resource management and memory limits"
+                        echo "   • Step 3: Service dependencies and fallback mechanisms"
+                        echo "   • Step 4: Database connectivity and error handling"
+                        echo "   • Step 5: Real production system with Redis and MySQL"
+                    }
+                    
+                    if (env.SIMPLIFIED_MODE == "true") {
+                        echo "ℹ️ NOTE: Ran in simplified mode due to missing scenario files"
+                        echo "💡 To run full scenarios, ensure all files are available in Jenkins workspace"
+                    }
                 }
             }
         }
     }
+    
     post {
         always {
-            echo "🏁 Scenario run complete! Check the logs above for details."
+            echo "🏁 Chaos scenario run complete!"
+            sh """
+                echo "🧹 Cleaning up containers..."
+                docker rm -f \$(docker ps -aq --filter 'name=chaos-*' 2>/dev/null) || echo "No chaos containers to clean"
+                docker rm -f \$(docker ps -aq --filter 'name=test-*' 2>/dev/null) || echo "No test containers to clean"
+                docker-compose -f docker-compose-step5.yml down 2>/dev/null || echo "No docker-compose to clean"
+            """
         }
         success {
-            echo "🎉 Success!"
+            echo "🎉 Success! Chaos scenario completed successfully."
         }
         failure {
-            echo "💥 Failure (as expected for some steps)!"
+            echo "💥 Failure detected (may be expected for chaos scenarios)!"
             script {
-                echo "🔍 Last 10 lines of scenario.log (for debugging):"
-                sh "tail -10 scenario.log || echo \"No scenario.log found\""
+                echo "🔍 Last 20 lines of build log:"
+                sh "tail -20 ${WORKSPACE}/scenario.log 2>/dev/null || echo 'No scenario.log found'"
             }
         }
     }

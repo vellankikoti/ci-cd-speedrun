@@ -1,16 +1,21 @@
-import sys
-import socket
+#!/usr/bin/env python3
+import requests
+from flask import Flask, jsonify
+import time
 
-print("STEP 1: NETWORK FAILURE")
-print("=" * 30)
-print("Trying to connect to nonexistent host...")
+app = Flask(__name__)
 
-try:
-    s = socket.create_connection(("nonexistent-host-12345.com", 80), timeout=3)
-    print("Unexpected: Network is working!")
-    s.close()
-    sys.exit(1)
-except Exception as e:
-    print(f"Network error as expected: {e}")
-    print("This step is supposed to fail due to network issues.")
-    sys.exit(1)
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "unhealthy",
+        "step": "step1_fail_network",
+        "message": "Network connectivity issues"
+    })
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Step 1: Network Failure"})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)

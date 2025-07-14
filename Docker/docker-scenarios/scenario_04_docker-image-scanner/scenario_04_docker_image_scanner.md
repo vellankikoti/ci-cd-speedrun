@@ -1,44 +1,40 @@
-# Scenario 04: Docker Image Scanner - Production-Grade Hands-On Guide
+# Scenario 04: Docker Image Scanner - Hands-On, Production-Grade Guide
 
-## 🎯 **Learning Objective**
-Master Docker security analysis using real vulnerability scanning with Trivy. Learn to identify security issues, apply best practices, and create secure Docker images through hands-on experience.
+## 🎯 Learning Objective
+Master Docker security analysis using real vulnerability scanning (Trivy via Docker). Learn to identify security issues, apply best practices, and make informed image choices through interactive, unforgettable demos.
 
 ---
 
-## 📋 **Prerequisites**
+## 📋 Prerequisites
 - Docker installed and running (no need to install Trivy locally)
 - Web browser
-- Basic understanding of Docker concepts
+- Basic Docker knowledge
 
 ---
 
-## 🚀 **Quick Start**
+## 🚀 Quick Start
 
-### **Step 1: No Trivy Installation Needed!**
-You do **not** need to install Trivy locally. The application will automatically use the official Trivy Docker image (`aquasec/trivy:latest`) for all scanning operations. Just make sure Docker is running and the Docker socket is available.
+### 1. No Trivy Installation Needed!
+The app uses the official Trivy Docker image (`aquasec/trivy:latest`). Just ensure Docker is running and the Docker socket is available.
 
-### **Step 2: Start the Docker Image Analyzer**
+### 2. Start the Analyzer
 ```bash
-# From the scenario_04_docker-image-scanner directory:
 python app.py
 ```
 
-### **Step 3: Open the Application**
-- Open your browser and go to: http://localhost:8000
+### 3. Open the App
+- Go to: http://localhost:8000
 
 ---
 
-## ✅ **Pre-Flight Checklist**
+## ✅ Pre-Flight Checklist
 - [ ] Docker is running (`docker ps`)
 - [ ] Port 8000 is available
-- [ ] You have internet access (for pulling images and Trivy Docker image)
+- [ ] Internet access (for pulling images and Trivy Docker image)
 
 ---
 
-## 🐳 **Curated Docker Image Examples for Demo**
-
-Use these production-grade images for demonstration:
-
+## 🐳 Demo Images
 - `nginx:1.25-alpine` (secure, minimal)
 - `python:3.11-slim` (modern, secure)
 - `python:3.8` (older, more vulnerabilities)
@@ -47,62 +43,51 @@ Use these production-grade images for demonstration:
 
 ---
 
-## 🛠️ **How to Demonstrate**
+## 🛠️ How to Use
 
-### **A. Image Analysis**
-1. Enter an image name (e.g., `nginx:1.25-alpine`, `python:3.11-slim`)
+### A. Image Analysis
+1. Enter an image name (e.g., `nginx:1.25-alpine`)
 2. Click "Analyze Image"
 3. Review:
-   - Security score and vulnerability breakdown
-   - Best practices and educational insights
+   - Security score & vulnerability breakdown
+   - Best practices & educational insights
    - Industry comparison
 
-### **B. Image Comparison**
+### B. Image Comparison (Supercharged!)
 1. Click the "Compare Images" tab
 2. Enter two image names (e.g., `python:3.8` vs `python:3.11-slim`)
-3. Compare security metrics and best practices
+3. See:
+   - Animated, side-by-side comparison
+   - Winner highlighted with a trophy
+   - Mini bar charts for vulnerabilities & score
+   - Downloadable comparison report
+   - Fun facts & security tips
+   - Swap or reset for more comparisons
 
 ---
 
-## 🔍 **What You'll Learn**
-- CVE understanding and severity
+## 🧠 What You'll Learn
+- CVE understanding & severity
 - Attack surface minimization
 - Secure base image selection
 - Non-root user best practices
-- Multi-stage builds and layer optimization
-- Secret management and image scanning
+- Multi-stage builds & layer optimization
+- Secret management & image scanning
 - Real-world CI/CD integration
+- How to compare images for security trade-offs
 
 ---
 
-## 🧪 **Recommended Images for Analysis**
-- `nginx:1.25-alpine` (secure, minimal)
-- `python:3.11-slim` (modern, secure)
-- `python:3.8` (older, more vulnerabilities)
-- `node:18-alpine` (modern Node.js)
-- `ubuntu:22.04` (large, more vulnerabilities)
-
----
-
-## 🔧 **Troubleshooting**
-- **Trivy not found:** Ensure Docker is running and the Docker socket is available. The app will pull and use the Trivy Docker image automatically.
-- **Docker connection failed:** Ensure Docker is running
-- **Build failed:** Check Dockerfile syntax and base image availability
-- **Port in use:** Stop other apps on port 8000 or change the port in `app.py`
-
----
-
-## 🧹 **Clean Up**
+## 🧹 Clean Up
 ```bash
-# Stop the app (if running in foreground, Ctrl+C)
-# Remove any test images if needed
-# Optionally, clean up the uploads/ directory
+# Stop the app (Ctrl+C)
+# Optionally, clean up uploads/
 rm -rf uploads/*
 ```
 
 ---
 
-## 🎯 **Next Steps**
+## 💡 Next Steps
 - Integrate scanning into your CI/CD pipeline
 - Apply best practices to your own Dockerfiles
 - Educate your team on container security
@@ -110,4 +95,4 @@ rm -rf uploads/*
 
 ---
 
-**Built for real-world, production-grade Docker security education.** 
+**Built by Koti with ❤️ for this workshop.** 

@@ -1,6 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+        SCENARIO_PATH = '/workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_01_docker_build'
+        IMAGE_NAME = "chaos-workshop-docker-build"
+        BUILD_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = "chaos-app-v${params.APP_VERSION}"
+        IMAGE_TAG = "ci-cd-chaos-app:v${params.APP_VERSION}"
+        WORKSPACE_PATH = "/workspace/ci-cd-chaos-workshop"
+        DOCKERFILE_PATH = "${SCENARIO_PATH}/Dockerfile"
+    }
+
     parameters {
         string(
             name: 'APP_VERSION',
@@ -14,24 +24,7 @@ pipeline {
         )
     }
 
-    environment {
-        CONTAINER_NAME = "chaos-app-v${params.APP_VERSION}"
-        IMAGE_TAG = "ci-cd-chaos-app:v${params.APP_VERSION}"
-        WORKSPACE_PATH = "/workspace/ci-cd-chaos-workshop"
-        DOCKERFILE_PATH = "${WORKSPACE_PATH}/Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile"
-    }
-
     stages {
-        stage('Pre-Cleanup') {
-            steps {
-                sh '''
-                    echo "🔪 Pre-cleanup: Killing any leftover app containers..."
-                    docker ps -q --filter publish=3000 | xargs -r docker rm -f || true
-                    docker ps -a --filter "name=$CONTAINER_NAME" -q | xargs -r docker rm -f || true
-                '''
-            }
-        }
-
         stage('Verify Local Workspace') {
             steps {
                 sh '''
@@ -39,10 +32,10 @@ pipeline {
                     pwd
                     echo "=== Workspace contents ==="
                     ls -la
-                    echo "=== Checking workshop files ==="
-                    ls -la /workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_01_docker_build
+                    echo "=== Checking scenario directory ==="
+                    ls -la ${SCENARIO_PATH}
 
-                    if [ ! -f /workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_01_docker_build/Dockerfile ]; then
+                    if [ ! -f ${SCENARIO_PATH}/Dockerfile ]; then
                         echo "ERROR: Dockerfile missing!"
                         exit 1
                     else
@@ -71,35 +64,45 @@ Valid versions are: 1, 2, 3, 4, 5.
             }
         }
 
-        stage('Build Docker Image') {
+        stage('🧹 Pre-Cleanup') {
+            steps {
+                sh '''
+                    echo "🔪 Pre-cleanup: Killing any leftover app containers..."
+                    docker ps -q --filter publish=3000 | xargs -r docker rm -f || true
+                    docker ps -a --filter "name=$CONTAINER_NAME" -q | xargs -r docker rm -f || true
+                '''
+            }
+        }
+
+        stage('🔧 Build Docker Image') {
             steps {
                 sh """
                     APP_VERSION=${params.APP_VERSION}
                     echo "🐳 Building Docker image for version \$APP_VERSION..."
                     cd \$WORKSPACE_PATH
-                    docker build -t \$IMAGE_TAG \
-                        --build-arg APP_VERSION=\$APP_VERSION \
-                        -f \$DOCKERFILE_PATH \
+                    docker build -t \$IMAGE_TAG \\
+                        --build-arg APP_VERSION=\$APP_VERSION \\
+                        -f \$DOCKERFILE_PATH \\
                         .
                 """
             }
         }
 
-        stage('Run App Container') {
+        stage('🚀 Run App Container') {
             steps {
                 sh """
                     APP_VERSION=${params.APP_VERSION}
                     CONTAINER_NAME=chaos-app-v\$APP_VERSION
                     IMAGE_TAG=ci-cd-chaos-app:v\$APP_VERSION
                     echo "🚀 Running app container: \$CONTAINER_NAME on port 3000..."
-                    docker run -d --name \$CONTAINER_NAME \
-                        -p 3000:3000 \
+                    docker run -d --name \$CONTAINER_NAME \\
+                        -p 3000:3000 \\
                         \$IMAGE_TAG
                 """
             }
         }
 
-        stage('Check App Logs') {
+        stage('📋 Check App Logs') {
             steps {
                 sh """
                     APP_VERSION=${params.APP_VERSION}
@@ -112,7 +115,7 @@ Valid versions are: 1, 2, 3, 4, 5.
             }
         }
 
-        stage('Test App HTTP Response') {
+        stage('🌐 Test App HTTP Response') {
             steps {
                 sh """
                     APP_VERSION=${params.APP_VERSION}
@@ -136,7 +139,7 @@ Valid versions are: 1, 2, 3, 4, 5.
             }
         }
 
-        stage('Demo Instructions') {
+        stage('🎉 Demo Instructions') {
             steps {
                 echo "\n\n🎉 DEMO READY!"
                 echo "App version: ${params.APP_VERSION} is running in Docker container: $CONTAINER_NAME"
@@ -163,6 +166,12 @@ Valid versions are: 1, 2, 3, 4, 5.
                 }
                 echo "✨ Chaos Agent defeated… for now! Pipeline finished."
             }
+        }
+        success {
+            echo "🎉 Docker build and deployment completed successfully!"
+        }
+        failure {
+            echo "💥 Docker build or deployment failed - Chaos Agent strikes again!"
         }
     }
 }

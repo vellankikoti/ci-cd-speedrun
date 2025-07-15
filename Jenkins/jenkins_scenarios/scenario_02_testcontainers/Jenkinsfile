@@ -2,8 +2,10 @@ pipeline {
     agent any
 
     environment {
+        SCENARIO_PATH = '/workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_02_testcontainers'
+        IMAGE_NAME = "chaos-workshop-testcontainers"
+        BUILD_TAG = "${BUILD_NUMBER}"
         TESTCONTAINERS_RYUK_DISABLED = 'true'
-        TEST_SCENARIO_DIR = '/workspace/ci-cd-chaos-workshop/Jenkins/jenkins_scenarios/scenario_02_testcontainers'
     }
 
     parameters {
@@ -15,22 +17,31 @@ pipeline {
     }
 
     stages {
-        stage('Verify Workspace') {
+        stage('Verify Local Workspace') {
             steps {
                 sh '''
                     echo "=== WORKSPACE ==="
                     pwd
+                    echo "=== Workspace contents ==="
+                    ls -la
                     echo "=== Checking scenario directory ==="
-                    ls -la ${TEST_SCENARIO_DIR}
+                    ls -la ${SCENARIO_PATH}
+
+                    if [ ! -f ${SCENARIO_PATH}/requirements.txt ]; then
+                        echo "ERROR: requirements.txt missing!"
+                        exit 1
+                    else
+                        echo "✅ requirements.txt found!"
+                    fi
                 '''
             }
         }
 
-        stage('Install Python and Dependencies') {
+        stage('🔧 Install Python and Dependencies') {
             steps {
                 sh '''
                     echo "🔧 Installing Python and dependencies..."
-                    cd ${TEST_SCENARIO_DIR}
+                    cd ${SCENARIO_PATH}
                     
                     # Install Python and pip if not available
                     if ! command -v python3 &> /dev/null; then
@@ -56,13 +67,22 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('🧹 Pre-Cleanup') {
+            steps {
+                sh '''
+                    echo "🔪 Pre-cleanup: Killing leftover containers..."
+                    docker ps -q --filter name=testcontainers | xargs -r docker rm -f || true
+                '''
+            }
+        }
+
+        stage('📊 Run Tests') {
             steps {
                 script {
                     if (params.TEST_MODE == 'fail') {
                         echo "Chaos Agent is laughing… we're running failing tests!"
                         sh '''
-                            cd ${TEST_SCENARIO_DIR}
+                            cd ${SCENARIO_PATH}
                             echo "=== Running failing tests ==="
                             
                             # Activate virtual environment and run tests
@@ -72,7 +92,7 @@ pipeline {
                     } else {
                         echo "Deploying TestContainers — Chaos Agent's defeat is imminent!"
                         sh '''
-                            cd ${TEST_SCENARIO_DIR}
+                            cd ${SCENARIO_PATH}
                             echo "=== Running passing tests ==="
                             
                             # Activate virtual environment and run tests
@@ -88,6 +108,12 @@ pipeline {
     post {
         always {
             echo "✨ Chaos Agent defeated… or plotting his next move!"
+        }
+        success {
+            echo "🎉 All TestContainers tests completed successfully!"
+        }
+        failure {
+            echo "💥 Some TestContainers tests failed - Chaos Agent strikes again!"
         }
     }
 }

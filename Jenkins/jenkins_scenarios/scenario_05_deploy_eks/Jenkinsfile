@@ -35,9 +35,9 @@ pipeline {
             description: '✅ Deployment Tests: Pass (true) or Fail (false)'
         )
         booleanParam(
-            name: 'SERVICE_PASS',
+            name: 'VULNERABILITY_PASS',
             defaultValue: true,
-            description: '✅ Service Tests: Pass (true) or Fail (false)'
+            description: '✅ Vulnerability Scan: Pass (true) or Fail (false)'
         )
     }
 
@@ -129,7 +129,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            def testMode = params.SERVICE_PASS ? 'pass' : 'fail'
+                            def testMode = params.VULNERABILITY_PASS ? 'pass' : 'fail'
                             echo "Running Service Tests in ${testMode} mode"
                             
                             docker.image("${IMAGE_NAME}:${BUILD_TAG}").inside('-u root -v /var/run/docker.sock:/var/run/docker.sock -w ${SCENARIO_PATH}') {
@@ -176,7 +176,7 @@ pipeline {
             echo "🎉 All EKS tests completed successfully!"
         }
         failure {
-            echo "�� Some EKS tests failed - Chaos Agent strikes again!"
+            echo "💥 Some EKS tests failed - Chaos Agent strikes again!"
         }
     }
 }

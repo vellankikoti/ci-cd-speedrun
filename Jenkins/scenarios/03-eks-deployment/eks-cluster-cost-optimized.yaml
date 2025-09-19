@@ -395,12 +395,8 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                !Sub 
-                  - "${EKSOidcProvider}:sub"
-                  - "system:serviceaccount:kube-system:aws-load-balancer-controller"
-                !Sub 
-                  - "${EKSOidcProvider}:aud"
-                  - "sts.amazonaws.com"
+                !Sub "${EKSOidcProvider}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+                !Sub "${EKSOidcProvider}:aud": "sts.amazonaws.com"
       Policies:
         - PolicyName: AWSLoadBalancerControllerIAMPolicy
           PolicyDocument:

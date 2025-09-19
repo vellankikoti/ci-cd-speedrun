@@ -69,7 +69,7 @@ pipeline {
                 echo 'Installing AWS CLI, kubectl, eksctl, and Helm'
                 sh '''#!/bin/bash
                     set -e
-                    echo "🔧 Installing required tools..."
+                    echo "Installing required tools..."
                     
                     # Update package list
                     apt-get update -y
@@ -115,9 +115,14 @@ pipeline {
                     echo "Installing Helm..."
                     curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
                     
-                    # Install Python dependencies
-                    echo "Installing Python dependencies..."
-                    pip install --no-cache-dir -r Jenkins/scenarios/03-eks-deployment/requirements.txt
+                    # Install Python dependencies if requirements file exists
+                    if [ -f "Jenkins/scenarios/03-eks-deployment/requirements.txt" ]; then
+                        echo "Installing Python dependencies..."
+                        pip install --no-cache-dir -r Jenkins/scenarios/03-eks-deployment/requirements.txt
+                    else
+                        echo "Installing basic Python dependencies..."
+                        pip install --no-cache-dir boto3 botocore pyyaml
+                    fi
                     
                     # Verify installations
                     echo "Verifying installations..."
@@ -126,7 +131,7 @@ pipeline {
                     eksctl version
                     helm version
                     
-                    echo "✅ All tools installed successfully"
+                    echo "All tools installed successfully"
                 '''
             }
         }
@@ -136,13 +141,13 @@ pipeline {
                 echo 'Configuring AWS credentials and environment'
                 script {
                     if (!params.AWS_CREDENTIALS || params.AWS_CREDENTIALS == '') {
-                        error("❌ AWS_CREDENTIALS parameter is required but not provided. Please select AWS credentials in the job parameters.")
+                        error("AWS_CREDENTIALS parameter is required but not provided. Please select AWS credentials in the job parameters.")
                     }
                     
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''#!/bin/bash
                             set -e
-                            echo "🔧 Configuring AWS credentials..."
+                            echo "Configuring AWS credentials..."
                             
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -158,10 +163,10 @@ pipeline {
                             echo "Testing AWS credentials..."
                             aws sts get-caller-identity
                             
-                            echo "✅ AWS credentials configured successfully"
+                            echo "AWS credentials configured successfully"
                             echo "   Region: ${AWS_REGION}"
                             # Use printf instead of bash substring to avoid substitution issues
-                            printf "   Access Key: %.8s...\n" "${AWS_ACCESS_KEY_ID}"
+                            printf "   Access Key: %.8s...\\n" "${AWS_ACCESS_KEY_ID}"
                         '''
                     }
                 }
@@ -180,7 +185,7 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
-                            echo "🔍 Validating prerequisites..."
+                            echo "Validating prerequisites..."
                             
                             # Check AWS CLI
                             aws --version
@@ -197,7 +202,7 @@ pipeline {
                             # Validate AWS credentials
                             aws sts get-caller-identity
                             
-                            echo "✅ All prerequisites validated successfully"
+                            echo "All prerequisites validated successfully"
                         '''
                     }
                 }
@@ -209,11 +214,52 @@ pipeline {
                 echo 'Running tests for EKS Deployment'
                 sh '''#!/bin/bash
                     echo "Running tests..."
-                    cd Jenkins/scenarios/03-eks-deployment
-                    export PYTHONPATH="${PWD}:${PYTHONPATH}"
-                    # Run tests but don't fail the pipeline if they fail
-                    python -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
+                    if [ -d "Jenkins/scenarios/03-eks-deployment/tests" ]; then
+                        cd Jenkins/scenarios/03-eks-deployment
+                        export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                        # Run tests but don't fail the pipeline if they fail
+                        python -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
+                    else
+                        echo "No test directory found, skipping tests..."
+                    fi
                 '''
+            }
+        }
+        
+        stage('Validate CloudFormation Template') {
+            steps {
+                echo 'Validating CloudFormation template'
+                script {
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''#!/bin/bash
+                            set -e
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "Validating CloudFormation template..."
+                            
+                            # Find the CloudFormation template
+                            TEMPLATE_FILE=""
+                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml" ]; then
+                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml"
+                            elif [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
+                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml"
+                            else
+                                echo "No CloudFormation template found!"
+                                exit 1
+                            fi
+                            
+                            echo "Using template: $TEMPLATE_FILE"
+                            
+                            # Validate the template
+                            aws cloudformation validate-template --template-body file://$TEMPLATE_FILE
+                            
+                            echo "CloudFormation template is valid"
+                        '''
+                    }
+                }
             }
         }
         
@@ -229,16 +275,25 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
-                            echo "🚀 Starting EKS cluster deployment..."
+                            echo "Starting EKS cluster deployment..."
                             echo "Cluster Name: ${CLUSTER_NAME}"
                             echo "Stack Name: ${STACK_NAME}"
                             echo "Region: ${AWS_REGION}"
                             echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
                             echo "Node Count: ${NODE_COUNT}"
                             
-                            # Create cost-optimized CloudFormation stack
-                            cd Jenkins/scenarios/03-eks-deployment
-                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            # Find the CloudFormation template
+                            TEMPLATE_FILE=""
+                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml" ]; then
+                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml"
+                            elif [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
+                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml"
+                            else
+                                echo "No CloudFormation template found!"
+                                exit 1
+                            fi
+                            
+                            echo "Using template: $TEMPLATE_FILE"
                             
                             # Convert boolean parameters to proper format
                             ENABLE_LOGGING_FLAG=""
@@ -252,14 +307,26 @@ pipeline {
                                 ENABLE_ALB_FLAG="--enable-alb-controller"
                             fi
                             
-                            python eks_manager.py deploy \
-                                --cluster-name ${CLUSTER_NAME} \
-                                --stack-name ${STACK_NAME} \
-                                --region ${AWS_REGION} \
-                                --node-instance-type ${NODE_INSTANCE_TYPE} \
-                                --node-count ${NODE_COUNT} \
-                                ${ENABLE_LOGGING_FLAG} \
-                                ${ENABLE_ALB_FLAG}
+                            # Deploy using eksctl for simplicity and reliability
+                            echo "Deploying EKS cluster using eksctl..."
+                            eksctl create cluster \\
+                                --name ${CLUSTER_NAME} \\
+                                --region ${AWS_REGION} \\
+                                --nodegroup-name workers \\
+                                --node-type ${NODE_INSTANCE_TYPE} \\
+                                --nodes ${NODE_COUNT} \\
+                                --nodes-min 1 \\
+                                --nodes-max 5 \\
+                                --managed \\
+                                --with-oidc \\
+                                --ssh-access \\
+                                --ssh-public-key default \\
+                                --full-ecr-access \\
+                                --zones ${AWS_REGION}a,${AWS_REGION}b \\
+                                --timeout=60m \\
+                                --verbose 4
+                            
+                            echo "EKS cluster deployed successfully!"
                         '''
                     }
                 }
@@ -278,16 +345,16 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
-                            echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
-                            cd Jenkins/scenarios/03-eks-deployment
-                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
-                            python eks_manager.py configure-kubectl \
-                                --cluster-name ${CLUSTER_NAME} \
-                                --region ${AWS_REGION}
+                            echo "Configuring kubectl for cluster: ${CLUSTER_NAME}"
                             
-                            echo "🔍 Verifying cluster connectivity..."
+                            # Update kubeconfig
+                            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+                            
+                            echo "Verifying cluster connectivity..."
                             kubectl get nodes
                             kubectl get pods --all-namespaces
+                            
+                            echo "kubectl configured successfully"
                         '''
                     }
                 }
@@ -306,13 +373,44 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
-                            echo "🔧 Running post-deployment setup..."
-                            cd Jenkins/scenarios/03-eks-deployment
-                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
-                            python eks_manager.py post-deploy \
-                                --cluster-name ${CLUSTER_NAME} \
-                                --stack-name ${STACK_NAME} \
-                                --region ${AWS_REGION}
+                            echo "Running post-deployment setup..."
+                            
+                            # Install AWS Load Balancer Controller if enabled
+                            if [ "${ENABLE_ALB_CONTROLLER}" = "true" ]; then
+                                echo "Installing AWS Load Balancer Controller..."
+                                
+                                # Create IAM policy
+                                curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
+                                
+                                # Create IAM role
+                                eksctl create iamserviceaccount \\
+                                    --cluster=${CLUSTER_NAME} \\
+                                    --namespace=kube-system \\
+                                    --name=aws-load-balancer-controller \\
+                                    --role-name=AmazonEKSLoadBalancerControllerRole \\
+                                    --attach-policy-arn=arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/AWSLoadBalancerControllerIAMPolicy \\
+                                    --approve
+                                
+                                # Install Helm chart
+                                helm repo add eks https://aws.github.io/eks-charts
+                                helm repo update
+                                helm install aws-load-balancer-controller eks/aws-load-balancer-controller \\
+                                    -n kube-system \\
+                                    --set clusterName=${CLUSTER_NAME} \\
+                                    --set serviceAccount.create=false \\
+                                    --set serviceAccount.name=aws-load-balancer-controller
+                                
+                                echo "AWS Load Balancer Controller installed"
+                            fi
+                            
+                            # Install Metrics Server
+                            echo "Installing Metrics Server..."
+                            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+                            
+                            # Wait for metrics server to be ready
+                            kubectl wait --for=condition=available --timeout=300s deployment/metrics-server -n kube-system
+                            
+                            echo "Post-deployment setup completed"
                         '''
                     }
                 }
@@ -331,15 +429,62 @@ pipeline {
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
-                            echo "📋 Generating connection information..."
-                            cd Jenkins/scenarios/03-eks-deployment
-                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
-                            python eks_manager.py generate-connection-info \
-                                --cluster-name ${CLUSTER_NAME} \
-                                --region ${AWS_REGION} \
-                                --output-file connection-info.txt
+                            echo "Generating connection information..."
                             
-                            echo "📄 Connection information saved to connection-info.txt"
+                            # Create connection info file
+                            cat > connection-info.txt << EOF
+# EKS Cluster Connection Information
+# =================================
+
+Cluster Name: ${CLUSTER_NAME}
+Region: ${AWS_REGION}
+Stack Name: ${STACK_NAME}
+
+## Connection Commands
+# Update kubeconfig
+aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+
+# Verify connection
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+## Cluster Details
+# Get cluster info
+aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}
+
+# List node groups
+aws eks list-nodegroups --cluster-name ${CLUSTER_NAME} --region ${AWS_REGION}
+
+## Cost Information
+# Estimated monthly cost: ~$50-80/month
+# - 3x ${NODE_INSTANCE_TYPE} nodes
+# - EKS control plane
+# - NAT Gateway (if applicable)
+
+## Workshop Commands
+# Deploy sample application
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --port=80 --type=LoadBalancer
+
+# Check services
+kubectl get services
+
+# Clean up
+kubectl delete deployment nginx
+kubectl delete service nginx
+
+## Troubleshooting
+# Check cluster status
+aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --query cluster.status
+
+# Check node group status
+aws eks describe-nodegroup --cluster-name ${CLUSTER_NAME} --nodegroup-name workers --region ${AWS_REGION}
+
+# View cluster logs
+aws logs describe-log-groups --log-group-name-prefix /aws/eks/${CLUSTER_NAME} --region ${AWS_REGION}
+EOF
+                            
+                            echo "Connection information saved to connection-info.txt"
                             cat connection-info.txt
                         '''
                     }
@@ -354,25 +499,30 @@ pipeline {
             script {
                 // Archive connection info if it exists
                 sh '''#!/bin/bash
-                    ls -la Jenkins/scenarios/03-eks-deployment/connection-info.txt || echo "No connection-info.txt found"
+                    if [ -f "connection-info.txt" ]; then
+                        echo "Archiving connection-info.txt"
+                        ls -la connection-info.txt
+                    else
+                        echo "No connection-info.txt found"
+                    fi
                 '''
-                archiveArtifacts artifacts: 'Jenkins/scenarios/03-eks-deployment/connection-info.txt', fingerprint: true, allowEmptyArchive: true
+                archiveArtifacts artifacts: 'connection-info.txt', fingerprint: true, allowEmptyArchive: true
             }
         }
         success {
             echo 'Pipeline succeeded for EKS Deployment'
             script {
                 sh '''#!/bin/bash
-                    echo "🎉 EKS cluster deployment completed successfully!"
-                    echo "📋 Cluster Details:"
+                    echo "EKS cluster deployment completed successfully!"
+                    echo "Cluster Details:"
                     echo "   Cluster Name: ${CLUSTER_NAME}"
                     echo "   Region: ${AWS_REGION}"
                     echo "   Stack Name: ${STACK_NAME}"
                     echo ""
-                    echo "🔗 To connect to your cluster, run:"
+                    echo "To connect to your cluster, run:"
                     echo "   aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}"
                     echo ""
-                    echo "📄 Check connection-info.txt for detailed connection instructions"
+                    echo "Check connection-info.txt for detailed connection instructions"
                 '''
             }
         }
@@ -380,17 +530,17 @@ pipeline {
             echo 'Pipeline failed for EKS Deployment'
             script {
                 sh '''#!/bin/bash
-                    echo "❌ EKS cluster deployment failed!"
-                    echo "🔍 Check the logs above for error details"
-                    echo "🧹 You may need to clean up resources manually:"
-                    echo "   aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}"
+                    echo "EKS cluster deployment failed!"
+                    echo "Check the logs above for error details"
+                    echo "You may need to clean up resources manually:"
+                    echo "   eksctl delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}"
                 '''
             }
         }
         cleanup {
             echo 'Cleaning up temporary files'
             sh '''#!/bin/bash
-                rm -f *.tmp *.log || true
+                rm -f *.tmp *.log iam_policy.json || true
             '''
         }
     }

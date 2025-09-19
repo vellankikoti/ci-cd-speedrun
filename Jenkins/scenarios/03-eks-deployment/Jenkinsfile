@@ -32,6 +32,12 @@ pipeline {
             defaultValue: true,
             description: 'Install AWS Load Balancer Controller'
         )
+        credentials(
+            name: 'AWS_CREDENTIALS',
+            credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
+            defaultValue: '',
+            description: 'AWS Access Key ID and Secret Access Key (Username=Access Key, Password=Secret Key)'
+        )
     }
     
     environment {
@@ -39,6 +45,7 @@ pipeline {
         STACK_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
         AWS_REGION = "${params.AWS_REGION}"
         CLUSTER_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
+        AWS_DEFAULT_REGION = "${params.AWS_REGION}"
     }
     
     stages {
@@ -49,26 +56,60 @@ pipeline {
             }
         }
         
+        stage('Configure AWS Credentials') {
+            steps {
+                echo 'Configuring AWS credentials and environment'
+                script {
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            echo "🔧 Configuring AWS credentials..."
+                            
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            # Configure AWS CLI
+                            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+                            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+                            aws configure set default.region ${AWS_REGION}
+                            
+                            echo "✅ AWS credentials configured"
+                            echo "   Region: ${AWS_REGION}"
+                            echo "   Access Key: ${AWS_ACCESS_KEY_ID:0:8}..."
+                        '''
+                    }
+                }
+            }
+        }
+        
         stage('Validate Prerequisites') {
             steps {
                 echo 'Validating AWS CLI and kubectl installation'
                 script {
-                    sh '''
-                        echo "🔍 Checking AWS CLI..."
-                        aws --version
-                        
-                        echo "🔍 Checking kubectl..."
-                        kubectl version --client
-                        
-                        echo "🔍 Checking eksctl..."
-                        eksctl version
-                        
-                        echo "🔍 Checking Helm..."
-                        helm version
-                        
-                        echo "🔍 Validating AWS credentials..."
-                        aws sts get-caller-identity
-                    '''
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "🔍 Checking AWS CLI..."
+                            aws --version
+                            
+                            echo "🔍 Checking kubectl..."
+                            kubectl version --client
+                            
+                            echo "🔍 Checking eksctl..."
+                            eksctl version
+                            
+                            echo "🔍 Checking Helm..."
+                            helm version
+                            
+                            echo "🔍 Validating AWS credentials..."
+                            aws sts get-caller-identity
+                        '''
+                    }
                 }
             }
         }
@@ -93,24 +134,31 @@ pipeline {
             steps {
                 echo 'Deploying EKS Cluster with cost optimization'
                 script {
-                    sh '''
-                        echo "🚀 Starting EKS cluster deployment..."
-                        echo "Cluster Name: ${CLUSTER_NAME}"
-                        echo "Stack Name: ${STACK_NAME}"
-                        echo "Region: ${AWS_REGION}"
-                        echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
-                        echo "Node Count: ${NODE_COUNT}"
-                        
-                        # Create cost-optimized CloudFormation stack
-                        python eks_manager.py deploy \
-                            --cluster-name ${CLUSTER_NAME} \
-                            --stack-name ${STACK_NAME} \
-                            --region ${AWS_REGION} \
-                            --node-instance-type ${NODE_INSTANCE_TYPE} \
-                            --node-count ${NODE_COUNT} \
-                            --enable-logging ${ENABLE_LOGGING} \
-                            --enable-alb-controller ${ENABLE_ALB_CONTROLLER}
-                    '''
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "🚀 Starting EKS cluster deployment..."
+                            echo "Cluster Name: ${CLUSTER_NAME}"
+                            echo "Stack Name: ${STACK_NAME}"
+                            echo "Region: ${AWS_REGION}"
+                            echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
+                            echo "Node Count: ${NODE_COUNT}"
+                            
+                            # Create cost-optimized CloudFormation stack
+                            python eks_manager.py deploy \
+                                --cluster-name ${CLUSTER_NAME} \
+                                --stack-name ${STACK_NAME} \
+                                --region ${AWS_REGION} \
+                                --node-instance-type ${NODE_INSTANCE_TYPE} \
+                                --node-count ${NODE_COUNT} \
+                                --enable-logging ${ENABLE_LOGGING} \
+                                --enable-alb-controller ${ENABLE_ALB_CONTROLLER}
+                        '''
+                    }
                 }
             }
         }
@@ -119,16 +167,23 @@ pipeline {
             steps {
                 echo 'Configuring kubectl and generating kubeconfig'
                 script {
-                    sh '''
-                        echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
-                        python eks_manager.py configure-kubectl \
-                            --cluster-name ${CLUSTER_NAME} \
-                            --region ${AWS_REGION}
-                        
-                        echo "🔍 Verifying cluster connectivity..."
-                        kubectl get nodes
-                        kubectl get pods --all-namespaces
-                    '''
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
+                            python eks_manager.py configure-kubectl \
+                                --cluster-name ${CLUSTER_NAME} \
+                                --region ${AWS_REGION}
+                            
+                            echo "🔍 Verifying cluster connectivity..."
+                            kubectl get nodes
+                            kubectl get pods --all-namespaces
+                        '''
+                    }
                 }
             }
         }
@@ -137,13 +192,20 @@ pipeline {
             steps {
                 echo 'Running post-deployment setup and add-ons installation'
                 script {
-                    sh '''
-                        echo "🔧 Running post-deployment setup..."
-                        python eks_manager.py post-deploy \
-                            --cluster-name ${CLUSTER_NAME} \
-                            --stack-name ${STACK_NAME} \
-                            --region ${AWS_REGION}
-                    '''
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "🔧 Running post-deployment setup..."
+                            python eks_manager.py post-deploy \
+                                --cluster-name ${CLUSTER_NAME} \
+                                --stack-name ${STACK_NAME} \
+                                --region ${AWS_REGION}
+                        '''
+                    }
                 }
             }
         }
@@ -152,16 +214,23 @@ pipeline {
             steps {
                 echo 'Generating connection information and commands'
                 script {
-                    sh '''
-                        echo "📋 Generating connection information..."
-                        python eks_manager.py generate-connection-info \
-                            --cluster-name ${CLUSTER_NAME} \
-                            --region ${AWS_REGION} \
-                            --output-file connection-info.txt
-                        
-                        echo "📄 Connection information saved to connection-info.txt"
-                        cat connection-info.txt
-                    '''
+                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            # Set AWS credentials
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${AWS_REGION}
+                            
+                            echo "📋 Generating connection information..."
+                            python eks_manager.py generate-connection-info \
+                                --cluster-name ${CLUSTER_NAME} \
+                                --region ${AWS_REGION} \
+                                --output-file connection-info.txt
+                            
+                            echo "📄 Connection information saved to connection-info.txt"
+                            cat connection-info.txt
+                        '''
+                    }
                 }
             }
         }

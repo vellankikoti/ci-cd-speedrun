@@ -315,17 +315,17 @@ pipeline {
                         # Create deployment directory
                         mkdir -p deployments/${ENVIRONMENT}
 
-                        # Generate Docker run command
-                        cat > deployments/${ENVIRONMENT}/run-local.sh << EOF
+                        # Generate Docker run command for HOST machine
+                        cat > deployments/${ENVIRONMENT}/run-on-host.sh << EOF
 #!/bin/bash
-# Local Docker run command for ${ENVIRONMENT} environment
-echo "🚀 Starting ${APP_NAME} in ${ENVIRONMENT} mode..."
+# Run this script on your HOST machine (not inside Jenkins)
+echo "🚀 Starting ${APP_NAME} in ${ENVIRONMENT} mode on HOST..."
 
 # Stop any existing container
 docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
 docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
 
-# Run the container
+# Run the container on host
 docker run -d \\
   --name ${APP_NAME}-${ENVIRONMENT} \\
   -p 5000:5000 \\
@@ -333,7 +333,7 @@ docker run -d \\
   -e APP_VERSION=${APP_VERSION} \\
   ${DOCKER_TAG}
 
-echo "✅ Container started!"
+echo "✅ Container started on HOST!"
 echo "🌐 Access the application at: http://localhost:5000"
 echo "❤️ Health check: http://localhost:5000/health"
 echo "📊 API info: http://localhost:5000/api/info"
@@ -342,7 +342,7 @@ echo "To stop the container, run:"
 echo "docker stop ${APP_NAME}-${ENVIRONMENT}"
 EOF
 
-                        chmod +x deployments/${ENVIRONMENT}/run-local.sh
+                        chmod +x deployments/${ENVIRONMENT}/run-on-host.sh
 
                         # Generate docker-compose.yml
                         cat > deployments/${ENVIRONMENT}/docker-compose.yml << EOF
@@ -369,8 +369,9 @@ EOF
                         echo "# ${APP_NAME} - ${ENVIRONMENT} Deployment" > deployments/${ENVIRONMENT}/README.md
                         echo "" >> deployments/${ENVIRONMENT}/README.md
                         echo "## Quick Start" >> deployments/${ENVIRONMENT}/README.md
-                        echo "1. Run: ./run-local.sh" >> deployments/${ENVIRONMENT}/README.md
-                        echo "2. Open: http://localhost:5000" >> deployments/${ENVIRONMENT}/README.md
+                        echo "1. Copy files to your host machine" >> deployments/${ENVIRONMENT}/README.md
+                        echo "2. Run: ./run-on-host.sh" >> deployments/${ENVIRONMENT}/README.md
+                        echo "3. Open: http://localhost:5000" >> deployments/${ENVIRONMENT}/README.md
                         echo "" >> deployments/${ENVIRONMENT}/README.md
                         echo "## Built Image: ${DOCKER_TAG}" >> deployments/${ENVIRONMENT}/README.md
                         echo "## Version: ${APP_VERSION}" >> deployments/${ENVIRONMENT}/README.md
@@ -381,10 +382,14 @@ EOF
                         ls -la deployments/${ENVIRONMENT}/
 
                         echo ""
-                        echo "🎯 TO TEST THE APPLICATION LOCALLY:"
-                        echo "1. cd Jenkins/scenarios/01-docker-build/deployments/${ENVIRONMENT}/"
-                        echo "2. ./run-local.sh"
-                        echo "3. Open http://localhost:5000 in your browser"
+                        echo "🎯 TO TEST THE APPLICATION ON YOUR HOST MACHINE:"
+                        echo "1. Exit this Jenkins container and run on your host:"
+                        echo "   docker run -d --name ${APP_NAME}-test -p 5000:5000 ${DOCKER_TAG}"
+                        echo "2. Then open http://localhost:5000 in your browser"
+                        echo "3. To stop: docker stop ${APP_NAME}-test && docker rm ${APP_NAME}-test"
+                        echo ""
+                        echo "📝 Or copy the deployment files to your host and run:"
+                        echo "   docker cp jenkins-workshop:/workspace/Jenkins/scenarios/01-docker-build/deployments/ ."
                     '''
                 }
             }

@@ -46,6 +46,7 @@ This scenario demonstrates how to deploy a cost-optimized EKS cluster using Jenk
 - `Jenkinsfile` - Parameterized Jenkins pipeline with EKS deployment stages
 - `eks-cluster-cost-optimized.yaml` - Cost-optimized CloudFormation template
 - `eks_manager.py` - Python script for cluster management and configuration
+- `demo.py` - Complete workshop demo script with automated deployment
 - `Dockerfile` - Container definition for the pipeline
 - `requirements.txt` - Python dependencies
 - `tests/` - Comprehensive test suite
@@ -145,7 +146,17 @@ python3 setup-jenkins-complete.py setup
 - **Delete workspace before build starts**
 - **Add timestamps to the Console Output**
 
-##### Step 5: Save and Run
+##### Step 5: Configure AWS Credentials
+1. **Go to Jenkins Dashboard** → **Manage Jenkins** → **Manage Credentials**
+2. **Click "Add Credentials"** → **Username with password**
+3. **Fill in AWS credentials**:
+   - **Username**: Your AWS Access Key ID
+   - **Password**: Your AWS Secret Access Key
+   - **ID**: `aws-workshop-credentials`
+   - **Description**: "AWS credentials for EKS workshop"
+4. **Click "OK"**
+
+##### Step 6: Save and Run
 1. **Click "Save"**
 2. **Click "Build with Parameters"**
 3. **Configure parameters**:
@@ -155,10 +166,48 @@ python3 setup-jenkins-complete.py setup
    - **NODE_COUNT**: `3` (or adjust as needed)
    - **ENABLE_LOGGING**: `true` (recommended)
    - **ENABLE_ALB_CONTROLLER**: `true` (recommended)
+   - **AWS_CREDENTIALS**: Select the credentials you created above
 4. **Click "Build"**
 5. **Monitor the pipeline execution**
 
+> 📋 **Detailed Credentials Guide**: See [CREDENTIALS_GUIDE.md](CREDENTIALS_GUIDE.md) for complete setup instructions
+
 ### 🖥️ **Local Development and Testing**
+
+#### Python Demo Script
+The `demo.py` script provides a complete, automated demonstration of the EKS deployment process:
+
+```bash
+# Basic usage - auto-generates cluster and stack names
+python demo.py
+
+# Custom cluster name
+python demo.py --cluster-name my-workshop-cluster
+
+# Custom parameters
+python demo.py --cluster-name my-cluster --stack-name my-stack --region us-east-1
+
+# Skip tests for faster repeated runs
+python demo.py --skip-tests
+
+# Skip sample application deployment
+python demo.py --skip-sample-app
+
+# Help
+python demo.py --help
+```
+
+**Demo Script Features:**
+- ✅ **Prerequisites Check**: Validates AWS CLI, kubectl, eksctl, and Helm installation
+- ✅ **AWS Credentials**: Verifies AWS credentials and gets account information
+- ✅ **Test Suite**: Runs comprehensive test suite before deployment
+- ✅ **Automated Deployment**: Deploys EKS cluster with cost optimization
+- ✅ **kubectl Configuration**: Automatically configures kubectl access
+- ✅ **Post-Deployment Setup**: Installs essential add-ons and configures storage
+- ✅ **Sample Application**: Deploys and exposes a sample nginx application
+- ✅ **Connection Info**: Generates detailed connection instructions
+- ✅ **Status Display**: Shows cluster status and resource information
+- ✅ **Cleanup Instructions**: Provides commands to clean up resources
 
 #### Run Tests
 ```bash
@@ -173,6 +222,24 @@ python -m pytest tests/test_eks_manager.py -v
 
 # Run with coverage
 python -m pytest tests/ --cov=eks_manager --cov-report=html
+```
+
+#### Quick Demo (Recommended)
+```bash
+# Run the complete demo with auto-generated names
+python demo.py
+
+# Run with custom cluster name
+python demo.py --cluster-name my-workshop-cluster
+
+# Run with custom parameters
+python demo.py --cluster-name my-cluster --stack-name my-stack --region us-east-1
+
+# Skip tests (faster for repeated runs)
+python demo.py --skip-tests
+
+# Skip sample application deployment
+python demo.py --skip-sample-app
 ```
 
 #### Manual EKS Deployment
@@ -212,11 +279,19 @@ python eks_manager.py generate-connection-info \
 # Build Docker image
 docker build -t jenkins-eks-workshop .
 
-# Run with AWS credentials
+# Run complete demo
 docker run -it --rm \
     -v ~/.aws:/root/.aws:ro \
     -e AWS_PROFILE=default \
-    jenkins-eks-workshop
+    jenkins-eks-workshop \
+    python demo.py
+
+# Run with custom cluster name
+docker run -it --rm \
+    -v ~/.aws:/root/.aws:ro \
+    -e AWS_PROFILE=default \
+    jenkins-eks-workshop \
+    python demo.py --cluster-name my-docker-cluster
 
 # Run specific command
 docker run -it --rm \
@@ -369,7 +444,10 @@ aws iam delete-role --role-name <cluster-name>-ebs-csi-driver-role
 
 ### Demo Scripts
 ```bash
-# Quick cluster deployment
+# Complete workshop demo (recommended)
+python demo.py --cluster-name workshop-demo
+
+# Quick cluster deployment only
 python eks_manager.py deploy --cluster-name workshop-demo --stack-name workshop-demo-stack
 
 # Generate demo connection info

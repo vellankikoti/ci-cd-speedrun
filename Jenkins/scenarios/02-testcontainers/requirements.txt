@@ -1,2 +1,6 @@
-pytest
-requests
+# TestContainers Integration Demo - Standard Library Only
+# This demo uses Python standard library to demonstrate integration testing concepts
+
+# Optional dependencies for enhanced functionality (not required for basic operation):
+# requests>=2.28.0  # For external HTTP requests (alternative to urllib)
+# pytest>=7.0.0     # Alternative test runner (alternative to unittest)

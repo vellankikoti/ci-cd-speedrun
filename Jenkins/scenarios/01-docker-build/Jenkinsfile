@@ -235,12 +235,41 @@ pipeline {
                             }
 
                             echo "Container started with ID: ${CONTAINER_ID}"
-                            echo "Waiting for application to start..."
-                            sleep 8
 
-                            # Test health endpoint (optional - don't fail pipeline if this fails)
-                            echo "Testing health endpoint..."
-                            curl -f http://localhost:${TEST_PORT}/health && echo "✅ Health check passed" || echo "⚠️ Health check skipped"
+                            # Wait for container to be fully ready
+                            echo "Waiting for application to start..."
+                            sleep 3
+
+                            # Check if container is still running
+                            if docker ps --filter "id=${CONTAINER_ID}" --format "{{.ID}}" | grep -q "${CONTAINER_ID}"; then
+                                echo "Container is running, waiting for application startup..."
+                                sleep 10
+
+                                # Test health endpoint with retries
+                                echo "Testing health endpoint on port ${TEST_PORT}..."
+                                HEALTH_SUCCESS=false
+                                for i in 1 2 3 4 5; do
+                                    echo "Health check attempt ${i}/5..."
+                                    if curl -f -m 5 http://localhost:${TEST_PORT}/health 2>/dev/null; then
+                                        echo "✅ Health check passed on attempt ${i}"
+                                        HEALTH_SUCCESS=true
+                                        break
+                                    else
+                                        echo "❌ Health check attempt ${i} failed, retrying in 3 seconds..."
+                                        sleep 3
+                                    fi
+                                done
+
+                                if [ "${HEALTH_SUCCESS}" = "true" ]; then
+                                    echo "✅ Container health check successful"
+                                else
+                                    echo "⚠️ Health check failed after 5 attempts, checking container logs..."
+                                    docker logs ${CONTAINER_ID} --tail 10
+                                fi
+                            else
+                                echo "❌ Container exited unexpectedly, checking logs..."
+                                docker logs ${CONTAINER_ID}
+                            fi
 
                             # Always clean up our container
                             echo "Cleaning up test container..."

@@ -122,15 +122,15 @@ The Docker build supports several build arguments:
 
 ### Pipeline Stages
 
-1. **Checkout** - Fetch source code
-2. **Validate** - Verify application structure
-3. **Install Dependencies** - Install Python packages
-4. **Test** - Run automated tests with reporting
-5. **Build Docker Image** - Create containerized application
-6. **Test Docker Image** - Validate container functionality
-7. **Security Scan** - Check for vulnerabilities
-8. **Deploy** - Deploy to target environment
-9. **Push to Registry** - Push image to container registry
+1. **Checkout** - Fetch source code from GitHub repository
+2. **Validate** - Verify application structure and Python syntax
+3. **Install Dependencies** - Install Python packages and validate setup
+4. **Test** - Run automated tests with coverage and HTML reporting
+5. **Build Docker Image** - Create production-ready containerized application
+6. **Test Docker Image** - Validate container functionality with smart port handling
+7. **Security Scan** - Basic security checks and image analysis
+8. **Deploy** - Generate deployment configurations for target environment
+9. **Push to Registry** - Optional registry push with configurable settings
 
 ### Pipeline Parameters
 
@@ -138,27 +138,42 @@ The Docker build supports several build arguments:
 - **RUN_TESTS** - Enable/disable test execution
 - **PUSH_TO_REGISTRY** - Enable/disable registry push
 
-### Local Jenkins Execution
+### Quick Jenkins Setup (Workshop-Ready)
 
-To run the pipeline locally:
+**One-time setup (5 minutes):**
 
-1. **Start Jenkins:**
+1. **Build custom Jenkins image:**
    ```bash
-   docker run -d --name jenkins-workshop \
+   cd Jenkins
+   docker build -t jenkins-workshop:custom .
+   ```
+
+2. **Start Jenkins with all plugins:**
+   ```bash
+   docker run -d --name jenkins-workshop --restart=unless-stopped \
+     --privileged \
      -p 8080:8080 -p 50000:50000 \
      -v jenkins_home:/var/jenkins_home \
      -v /var/run/docker.sock:/var/run/docker.sock \
-     jenkins/jenkins:lts
+     -v "$(pwd)/../":/workspace \
+     jenkins-workshop:custom
+
+   # Fix Docker permissions
+   docker exec -u root jenkins-workshop chown root:docker /var/run/docker.sock
+   docker exec -u root jenkins-workshop chmod 666 /var/run/docker.sock
    ```
 
-2. **Create a new job:**
-   - Go to http://localhost:8080
-   - Create "New Item" → "Pipeline"
-   - Point to this directory's Jenkinsfile
+3. **Access Jenkins:**
+   - Open http://localhost:8080
+   - Login: **admin/admin** (pre-configured)
+   - ✅ Jenkins ready with 146+ plugins!
 
-3. **Run the pipeline:**
-   - Click "Build Now"
-   - Monitor the build progress
+4. **Create pipeline job:**
+   - Click "New Item" → Name: `01-docker-build` → "Pipeline"
+   - Pipeline Definition: "Pipeline script from SCM"
+   - SCM: Git → Repository: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
+   - Script Path: `Jenkins/scenarios/01-docker-build/Jenkinsfile`
+   - Save and **Build Now**!
 
 ## 🏭 Production Jenkins Job Setup
 
@@ -210,19 +225,23 @@ python3 setup-jenkins-complete.py setup
 2. **Click "Build Now"**
 3. **Monitor the pipeline execution**
 
-### Pipeline Stages Overview
+### Pipeline Features
 
-The Jenkinsfile includes these production-ready stages:
+**✅ Production-Ready Features:**
+- **Smart Port Handling** - Automatically finds available ports (6000+ range) to avoid conflicts
+- **Comprehensive Testing** - 13 automated tests with HTML and coverage reports
+- **Docker Integration** - Full Docker-in-Docker support with proper permissions
+- **Error Resilience** - Pipeline continues gracefully even if container tests encounter port conflicts
+- **Multi-Environment** - Support for development, staging, and production environments
+- **Security Scanning** - Basic Docker image security analysis
+- **Deployment Configs** - Auto-generated environment-specific deployment files
+- **Build Parameters** - Configurable test execution and registry push options
 
-1. **Checkout Code** - Fetches source code from GitHub
-2. **Build Docker Image** - Creates production-ready Docker image
-3. **Run Unit and Integration Tests** - Executes comprehensive test suite
-4. **Security Scan** - Scans Docker image for vulnerabilities
-5. **Push Docker Image** - Pushes to Docker registry (configurable)
-6. **Deploy to Staging** - Deploys to staging environment
-7. **Run Acceptance Tests** - Validates staging deployment
-8. **Approve for Production** - Manual approval gate
-9. **Deploy to Production** - Production deployment
+**🔧 Workshop Optimized:**
+- **Never Fails** - Pipeline designed to always complete successfully for demo purposes
+- **Quick Execution** - Optimized for fast workshop demonstrations
+- **Clear Logging** - Detailed output for educational purposes
+- **Graceful Fallbacks** - Handles common workshop environment issues automatically
 
 ### Monitoring and Debugging
 
@@ -401,12 +420,15 @@ The application includes performance tests:
 
 This scenario is successful when:
 - ✅ Application runs locally without errors
-- ✅ All tests pass with good coverage
-- ✅ Docker image builds successfully
-- ✅ Container runs and responds to health checks
-- ✅ Jenkins pipeline executes all stages
+- ✅ All 13 tests pass with comprehensive coverage
+- ✅ Docker image builds successfully with proper tagging
+- ✅ Container runs and responds to health checks (with smart port handling)
+- ✅ Jenkins pipeline executes all 9 stages without failures
+- ✅ Test reports (HTML, coverage, JUnit) are published correctly
 - ✅ API endpoints return expected responses
-- ✅ Web interface displays correctly
+- ✅ Docker container tests complete successfully (handles port conflicts gracefully)
+- ✅ Security scan provides basic image analysis
+- ✅ Deployment configurations are generated for target environment
 
 ## 📚 Next Steps
 

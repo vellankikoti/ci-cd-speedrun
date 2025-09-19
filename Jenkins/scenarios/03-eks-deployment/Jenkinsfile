@@ -19,7 +19,7 @@ pipeline {
         )
         string(
             name: 'AWS_REGION',
-            defaultValue: 'us-west-2',
+            defaultValue: 'us-east-1',
             description: 'AWS region for EKS cluster deployment'
         )
         string(
@@ -210,7 +210,9 @@ pipeline {
                 sh '''#!/bin/bash
                     set -e
                     echo "Running tests..."
-                    python -m pytest Jenkins/scenarios/03-eks-deployment/tests/ -v --tb=short
+                    cd Jenkins/scenarios/03-eks-deployment
+                    export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                    python -m pytest tests/ -v --tb=short
                 '''
             }
         }
@@ -235,7 +237,9 @@ pipeline {
                             echo "Node Count: ${NODE_COUNT}"
                             
                             # Create cost-optimized CloudFormation stack
-                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py deploy \
+                            cd Jenkins/scenarios/03-eks-deployment
+                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            python eks_manager.py deploy \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --stack-name ${STACK_NAME} \
                                 --region ${AWS_REGION} \
@@ -262,7 +266,9 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
-                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py configure-kubectl \
+                            cd Jenkins/scenarios/03-eks-deployment
+                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            python eks_manager.py configure-kubectl \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --region ${AWS_REGION}
                             
@@ -288,7 +294,9 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "🔧 Running post-deployment setup..."
-                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py post-deploy \
+                            cd Jenkins/scenarios/03-eks-deployment
+                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            python eks_manager.py post-deploy \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --stack-name ${STACK_NAME} \
                                 --region ${AWS_REGION}
@@ -311,7 +319,9 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "📋 Generating connection information..."
-                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py generate-connection-info \
+                            cd Jenkins/scenarios/03-eks-deployment
+                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            python eks_manager.py generate-connection-info \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --region ${AWS_REGION} \
                                 --output-file connection-info.txt
@@ -331,9 +341,9 @@ pipeline {
             script {
                 // Archive connection info if it exists
                 sh '''#!/bin/bash
-                    ls -la connection-info.txt || echo "No connection-info.txt found"
+                    ls -la Jenkins/scenarios/03-eks-deployment/connection-info.txt || echo "No connection-info.txt found"
                 '''
-                archiveArtifacts artifacts: 'connection-info.txt', fingerprint: true, allowEmptyArchive: true
+                archiveArtifacts artifacts: 'Jenkins/scenarios/03-eks-deployment/connection-info.txt', fingerprint: true, allowEmptyArchive: true
             }
         }
         success {

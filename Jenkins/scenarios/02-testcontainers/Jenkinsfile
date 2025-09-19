@@ -255,7 +255,7 @@ print(f'✅ Database health check: {health}')
             post {
                 always {
                     // Publish test results
-                    publishTestResults testResultsPattern: 'test-reports/testcontainers-junit.xml', allowEmptyResults: true
+                    junit testResults: 'test-reports/testcontainers-junit.xml', allowEmptyResults: true
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -299,7 +299,7 @@ print(f'✅ Database health check: {health}')
             post {
                 always {
                     // Publish performance test results
-                    publishTestResults testResultsPattern: 'test-reports/performance-junit.xml', allowEmptyResults: true
+                    junit testResults: 'test-reports/performance-junit.xml', allowEmptyResults: true
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,

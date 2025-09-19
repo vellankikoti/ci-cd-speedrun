@@ -72,91 +72,93 @@ class TestEKSManager:
         
         assert result is False
     
-    @mock.patch('eks_manager.EKSManager.eks_client')
     @mock.patch('eks_manager.EKSManager.get_account_id')
-    def test_generate_connection_info_success(self, mock_get_account, mock_eks_client):
+    def test_generate_connection_info_success(self, mock_get_account):
         """Test successful connection info generation."""
-        # Mock cluster info
-        mock_eks_client.describe_cluster.return_value = {
-            'cluster': {
-                'name': 'test-cluster',
-                'endpoint': 'https://test-cluster.eks.us-west-2.amazonaws.com',
-                'version': '1.30',
-                'status': 'ACTIVE'
+        # Mock the eks_client attribute
+        with mock.patch.object(self.eks_manager, 'eks_client') as mock_eks_client:
+            mock_eks_client.describe_cluster.return_value = {
+                'cluster': {
+                    'name': 'test-cluster',
+                    'endpoint': 'https://test-cluster.eks.us-west-2.amazonaws.com',
+                    'version': '1.30',
+                    'status': 'ACTIVE'
+                }
             }
-        }
-        mock_get_account.return_value = '123456789012'
-        
-        result = self.eks_manager.generate_connection_info('test-cluster', 'test-info.txt')
-        
-        assert result is True
+            mock_get_account.return_value = '123456789012'
+            
+            result = self.eks_manager.generate_connection_info('test-cluster', 'test-info.txt')
+            
+            assert result is True
     
-    @mock.patch('eks_manager.EKSManager.eks_client')
-    def test_generate_connection_info_failure(self, mock_eks_client):
+    def test_generate_connection_info_failure(self):
         """Test connection info generation failure."""
-        mock_eks_client.describe_cluster.side_effect = Exception("Cluster not found")
-        
-        result = self.eks_manager.generate_connection_info('test-cluster', 'test-info.txt')
-        
-        assert result is False
+        with mock.patch.object(self.eks_manager, 'eks_client') as mock_eks_client:
+            mock_eks_client.describe_cluster.side_effect = Exception("Cluster not found")
+            
+            result = self.eks_manager.generate_connection_info('test-cluster', 'test-info.txt')
+            
+            assert result is False
     
-    @mock.patch('eks_manager.EKSManager.cf_client')
-    def test_get_stack_outputs_success(self, mock_cf_client):
+    def test_get_stack_outputs_success(self):
         """Test successful stack outputs retrieval."""
-        mock_cf_client.describe_stacks.return_value = {
-            'Stacks': [{
-                'Outputs': [
-                    {'OutputKey': 'ClusterName', 'OutputValue': 'test-cluster'},
-                    {'OutputKey': 'VpcId', 'OutputValue': 'vpc-12345'}
-                ]
-            }]
-        }
-        
-        outputs = self.eks_manager._get_stack_outputs('test-stack')
-        
-        assert outputs['ClusterName'] == 'test-cluster'
-        assert outputs['VpcId'] == 'vpc-12345'
+        with mock.patch.object(self.eks_manager, 'cf_client') as mock_cf_client:
+            mock_cf_client.describe_stacks.return_value = {
+                'Stacks': [{
+                    'Outputs': [
+                        {'OutputKey': 'ClusterName', 'OutputValue': 'test-cluster'},
+                        {'OutputKey': 'VpcId', 'OutputValue': 'vpc-12345'}
+                    ]
+                }]
+            }
+            
+            outputs = self.eks_manager._get_stack_outputs('test-stack')
+            
+            assert outputs['ClusterName'] == 'test-cluster'
+            assert outputs['VpcId'] == 'vpc-12345'
     
-    @mock.patch('eks_manager.EKSManager.cf_client')
-    def test_get_stack_outputs_failure(self, mock_cf_client):
+    def test_get_stack_outputs_failure(self):
         """Test stack outputs retrieval failure."""
-        mock_cf_client.describe_stacks.side_effect = Exception("Stack not found")
-        
-        outputs = self.eks_manager._get_stack_outputs('test-stack')
-        
-        assert outputs == {}
+        with mock.patch.object(self.eks_manager, 'cf_client') as mock_cf_client:
+            mock_cf_client.describe_stacks.side_effect = Exception("Stack not found")
+            
+            outputs = self.eks_manager._get_stack_outputs('test-stack')
+            
+            assert outputs == {}
     
-    @mock.patch('eks_manager.EKSManager.iam_client')
-    @mock.patch('eks_manager.EKSManager.eks_client')
     @mock.patch('eks_manager.subprocess.run')
-    def test_install_ebs_csi_driver_success(self, mock_subprocess, mock_eks_client, mock_iam_client):
+    def test_install_ebs_csi_driver_success(self, mock_subprocess):
         """Test successful EBS CSI Driver installation."""
-        # Mock cluster info
-        mock_eks_client.describe_cluster.return_value = {
-            'cluster': {
-                'identity': {
-                    'oidc': {
-                        'issuer': 'https://oidc.eks.us-west-2.amazonaws.com/id/12345'
+        # Mock the AWS clients
+        with mock.patch.object(self.eks_manager, 'eks_client') as mock_eks_client, \
+             mock.patch.object(self.eks_manager, 'iam_client') as mock_iam_client:
+            
+            # Mock cluster info
+            mock_eks_client.describe_cluster.return_value = {
+                'cluster': {
+                    'identity': {
+                        'oidc': {
+                            'issuer': 'https://oidc.eks.us-west-2.amazonaws.com/id/12345'
+                        }
                     }
                 }
             }
-        }
-        
-        # Mock role doesn't exist
-        mock_iam_client.get_role.side_effect = mock_iam_client.exceptions.NoSuchEntityException(
-            {'Error': {'Code': 'NoSuchEntity'}}, 'get_role'
-        )
-        
-        # Mock successful role creation
-        mock_iam_client.create_role.return_value = {}
-        mock_iam_client.attach_role_policy.return_value = {}
-        
-        # Mock successful addon update
-        mock_eks_client.update_addon.return_value = {}
-        
-        result = self.eks_manager._install_ebs_csi_driver('test-cluster')
-        
-        assert result is True
+            
+            # Mock role doesn't exist
+            mock_iam_client.get_role.side_effect = mock_iam_client.exceptions.NoSuchEntityException(
+                {'Error': {'Code': 'NoSuchEntity'}}, 'get_role'
+            )
+            
+            # Mock successful role creation
+            mock_iam_client.create_role.return_value = {}
+            mock_iam_client.attach_role_policy.return_value = {}
+            
+            # Mock successful addon update
+            mock_eks_client.update_addon.return_value = {}
+            
+            result = self.eks_manager._install_ebs_csi_driver('test-cluster')
+            
+            assert result is True
     
     @mock.patch('eks_manager.subprocess.run')
     def test_install_metrics_server_success(self, mock_subprocess):

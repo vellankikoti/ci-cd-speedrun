@@ -254,8 +254,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 1025
           ToPort: 65535
-          SourceSecurityGroupId: !Ref ClusterSecurityGroup
-          Description: Node to cluster communication
+          SourceSecurityGroupId: !Ref NodeSecurityGroup
+          Description: Node to node communication
       Tags:
         - Key: Name
           Value: !Sub "${ClusterName}-node-sg"
@@ -395,8 +395,8 @@ Resources:
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
-                "{{EKSOidcProvider}}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
-                "{{EKSOidcProvider}}:aud": "sts.amazonaws.com"
+                !Sub "${EKSOidcProvider}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+                !Sub "${EKSOidcProvider}:aud": "sts.amazonaws.com"
       Policies:
         - PolicyName: AWSLoadBalancerControllerIAMPolicy
           PolicyDocument:

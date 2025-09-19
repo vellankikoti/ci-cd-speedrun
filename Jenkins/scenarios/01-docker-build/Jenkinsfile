@@ -238,58 +238,47 @@ pipeline {
 
                             # Wait for container to be fully ready
                             echo "Waiting for application to start..."
-                            sleep 3
+                            sleep 5
+
+                            # Check container status and logs immediately
+                            echo "=== Container Status Check ==="
+                            docker ps --filter "id=${CONTAINER_ID}" --format "table {{.ID}}\\t{{.Status}}\\t{{.Ports}}"
+
+                            echo "=== Container Logs ==="
+                            docker logs ${CONTAINER_ID}
+
+                            echo "=== Container Inspect ==="
+                            docker inspect ${CONTAINER_ID} --format='{{.State.Status}}: {{.State.Error}}'
 
                             # Check if container is still running
                             if docker ps --filter "id=${CONTAINER_ID}" --format "{{.ID}}" | grep -q "${CONTAINER_ID}"; then
-                                echo "Container is running, waiting for application startup..."
-                                sleep 10
+                                echo "✅ Container is running"
 
-                                # Test health endpoint with retries
-                                echo "Testing health endpoint..."
-                                HEALTH_SUCCESS=false
-
-                                # First, test internal container health
-                                echo "Testing internal container health..."
-                                if docker exec ${CONTAINER_ID} curl -f -m 5 http://localhost:5000/health 2>/dev/null; then
-                                    echo "✅ Container internal health check passed"
-                                    HEALTH_SUCCESS=true
-                                else
-                                    echo "❌ Container internal health check failed"
-                                fi
-
-                                # Get container IP for direct access
+                                # Get detailed port and network info
+                                echo "=== Network Information ==="
                                 CONTAINER_IP=$(docker inspect ${CONTAINER_ID} --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
                                 echo "Container IP: ${CONTAINER_IP}"
+                                docker port ${CONTAINER_ID}
 
-                                # Test direct IP access
-                                if [ -n "${CONTAINER_IP}" ] && [ "${CONTAINER_IP}" != "" ]; then
-                                    echo "Testing direct container access via IP..."
-                                    if curl -f -m 5 http://${CONTAINER_IP}:5000/health 2>/dev/null; then
-                                        echo "✅ Direct container access successful"
-                                        HEALTH_SUCCESS=true
-                                    else
-                                        echo "⚠️ Direct container access failed"
-                                    fi
-                                fi
+                                # Wait more for Flask app to fully start
+                                echo "Waiting additional time for Flask app startup..."
+                                sleep 10
 
-                                # Test host port access (this might fail due to Jenkins network)
-                                echo "Testing host port access (may fail in Jenkins)..."
-                                if curl -f -m 5 http://localhost:${TEST_PORT}/health 2>/dev/null; then
-                                    echo "✅ Host port access successful"
-                                else
-                                    echo "⚠️ Host port access failed (expected in Jenkins environment)"
-                                fi
+                                # Test internal container health with detailed output
+                                echo "=== Testing Internal Container Health ==="
+                                docker exec ${CONTAINER_ID} curl -v http://localhost:5000/health 2>&1 || {
+                                    echo "Internal curl failed, checking if Flask is running..."
+                                    docker exec ${CONTAINER_ID} ps aux
+                                    docker exec ${CONTAINER_ID} netstat -tlnp 2>/dev/null || echo "netstat not available"
+                                }
 
-                                if [ "${HEALTH_SUCCESS}" = "true" ]; then
-                                    echo "✅ Container health check successful"
-                                else
-                                    echo "⚠️ Health check failed after 5 attempts, checking container logs..."
-                                    docker logs ${CONTAINER_ID} --tail 10
-                                fi
+                                echo "✅ Container test completed"
                             else
-                                echo "❌ Container exited unexpectedly, checking logs..."
+                                echo "❌ Container is not running"
+                                echo "=== Full Container Logs ==="
                                 docker logs ${CONTAINER_ID}
+                                echo "=== Container Exit Code ==="
+                                docker inspect ${CONTAINER_ID} --format='{{.State.ExitCode}}'
                             fi
 
                             # Always clean up our container

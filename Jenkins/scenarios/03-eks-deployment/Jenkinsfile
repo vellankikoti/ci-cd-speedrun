@@ -1,7 +1,7 @@
 pipeline {
     agent {
-        dockerfile {
-            filename 'Dockerfile'
+        docker {
+            image 'python:3.9-slim'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
@@ -58,6 +58,44 @@ pipeline {
             steps {
                 echo 'Checking out code for EKS Deployment'
                 checkout scm
+            }
+        }
+        
+        stage('Install Prerequisites') {
+            steps {
+                echo 'Installing AWS CLI, kubectl, eksctl, and Helm'
+                sh '''
+                    echo "🔧 Installing required tools..."
+                    
+                    # Update package list
+                    apt-get update
+                    
+                    # Install system dependencies
+                    apt-get install -y curl unzip wget gnupg lsb-release ca-certificates
+                    
+                    # Install AWS CLI v2
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip awscliv2.zip
+                    ./aws/install
+                    rm -rf awscliv2.zip aws/
+                    
+                    # Install kubectl
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
+                    mv kubectl /usr/local/bin/
+                    
+                    # Install eksctl
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    mv /tmp/eksctl /usr/local/bin
+                    
+                    # Install Helm
+                    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+                    
+                    # Install Python dependencies
+                    pip install -r Jenkins/scenarios/03-eks-deployment/requirements.txt
+                    
+                    echo "✅ All tools installed successfully"
+                '''
             }
         }
         
@@ -136,7 +174,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests for EKS Deployment'
-                sh 'python -m pytest tests/ -v'
+                sh 'python -m pytest Jenkins/scenarios/03-eks-deployment/tests/ -v'
             }
         }
         
@@ -159,7 +197,7 @@ pipeline {
                             echo "Node Count: ${NODE_COUNT}"
                             
                             # Create cost-optimized CloudFormation stack
-                            python eks_manager.py deploy \
+                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py deploy \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --stack-name ${STACK_NAME} \
                                 --region ${AWS_REGION} \
@@ -185,7 +223,7 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
-                            python eks_manager.py configure-kubectl \
+                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py configure-kubectl \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --region ${AWS_REGION}
                             
@@ -210,7 +248,7 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "🔧 Running post-deployment setup..."
-                            python eks_manager.py post-deploy \
+                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py post-deploy \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --stack-name ${STACK_NAME} \
                                 --region ${AWS_REGION}
@@ -232,7 +270,7 @@ pipeline {
                             export AWS_DEFAULT_REGION=${AWS_REGION}
                             
                             echo "📋 Generating connection information..."
-                            python eks_manager.py generate-connection-info \
+                            python Jenkins/scenarios/03-eks-deployment/eks_manager.py generate-connection-info \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --region ${AWS_REGION} \
                                 --output-file connection-info.txt

@@ -1,8 +1,44 @@
 pipeline {
     agent any
     
+    parameters {
+        string(
+            name: 'CLUSTER_NAME',
+            defaultValue: 'eks-demo-cluster',
+            description: 'Name of the EKS cluster to create'
+        )
+        choice(
+            name: 'NODE_INSTANCE_TYPE',
+            choices: ['t3.small', 't3.medium', 't3.large'],
+            description: 'EC2 instance type for worker nodes (t3.small for cost optimization)'
+        )
+        string(
+            name: 'AWS_REGION',
+            defaultValue: 'us-west-2',
+            description: 'AWS region for EKS cluster deployment'
+        )
+        string(
+            name: 'NODE_COUNT',
+            defaultValue: '3',
+            description: 'Number of worker nodes (default: 3)'
+        )
+        booleanParam(
+            name: 'ENABLE_LOGGING',
+            defaultValue: true,
+            description: 'Enable EKS control plane logging'
+        )
+        booleanParam(
+            name: 'ENABLE_ALB_CONTROLLER',
+            defaultValue: true,
+            description: 'Install AWS Load Balancer Controller'
+        )
+    }
+    
     environment {
         WORKSPACE_PATH = '/Users/koti/demo-time/ci-cd-chaos-workshop'
+        STACK_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
+        AWS_REGION = "${params.AWS_REGION}"
+        CLUSTER_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
     }
     
     stages {
@@ -13,11 +49,35 @@ pipeline {
             }
         }
         
+        stage('Validate Prerequisites') {
+            steps {
+                echo 'Validating AWS CLI and kubectl installation'
+                script {
+                    sh '''
+                        echo "🔍 Checking AWS CLI..."
+                        aws --version
+                        
+                        echo "🔍 Checking kubectl..."
+                        kubectl version --client
+                        
+                        echo "🔍 Checking eksctl..."
+                        eksctl version
+                        
+                        echo "🔍 Checking Helm..."
+                        helm version
+                        
+                        echo "🔍 Validating AWS credentials..."
+                        aws sts get-caller-identity
+                    '''
+                }
+            }
+        }
+        
         stage('Build') {
             steps {
                 echo 'Building Docker image for EKS Deployment'
                 script {
-                    def image = docker.build("jenkins-workshop-${env.BUILD_NUMBER}")
+                    def image = docker.build("jenkins-eks-workshop-${env.BUILD_NUMBER}")
                 }
             }
         }
@@ -29,10 +89,80 @@ pipeline {
             }
         }
         
-        stage('Deploy') {
+        stage('Deploy EKS Cluster') {
             steps {
-                echo 'Deploying EKS Deployment'
-                // Add deployment steps here
+                echo 'Deploying EKS Cluster with cost optimization'
+                script {
+                    sh '''
+                        echo "🚀 Starting EKS cluster deployment..."
+                        echo "Cluster Name: ${CLUSTER_NAME}"
+                        echo "Stack Name: ${STACK_NAME}"
+                        echo "Region: ${AWS_REGION}"
+                        echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
+                        echo "Node Count: ${NODE_COUNT}"
+                        
+                        # Create cost-optimized CloudFormation stack
+                        python eks_manager.py deploy \
+                            --cluster-name ${CLUSTER_NAME} \
+                            --stack-name ${STACK_NAME} \
+                            --region ${AWS_REGION} \
+                            --node-instance-type ${NODE_INSTANCE_TYPE} \
+                            --node-count ${NODE_COUNT} \
+                            --enable-logging ${ENABLE_LOGGING} \
+                            --enable-alb-controller ${ENABLE_ALB_CONTROLLER}
+                    '''
+                }
+            }
+        }
+        
+        stage('Configure kubectl') {
+            steps {
+                echo 'Configuring kubectl and generating kubeconfig'
+                script {
+                    sh '''
+                        echo "🔧 Configuring kubectl for cluster: ${CLUSTER_NAME}"
+                        python eks_manager.py configure-kubectl \
+                            --cluster-name ${CLUSTER_NAME} \
+                            --region ${AWS_REGION}
+                        
+                        echo "🔍 Verifying cluster connectivity..."
+                        kubectl get nodes
+                        kubectl get pods --all-namespaces
+                    '''
+                }
+            }
+        }
+        
+        stage('Post-Deployment Setup') {
+            steps {
+                echo 'Running post-deployment setup and add-ons installation'
+                script {
+                    sh '''
+                        echo "🔧 Running post-deployment setup..."
+                        python eks_manager.py post-deploy \
+                            --cluster-name ${CLUSTER_NAME} \
+                            --stack-name ${STACK_NAME} \
+                            --region ${AWS_REGION}
+                    '''
+                }
+            }
+        }
+        
+        stage('Generate Connection Info') {
+            steps {
+                echo 'Generating connection information and commands'
+                script {
+                    sh '''
+                        echo "📋 Generating connection information..."
+                        python eks_manager.py generate-connection-info \
+                            --cluster-name ${CLUSTER_NAME} \
+                            --region ${AWS_REGION} \
+                            --output-file connection-info.txt
+                        
+                        echo "📄 Connection information saved to connection-info.txt"
+                        cat connection-info.txt
+                    '''
+                }
             }
         }
     }
@@ -40,12 +170,42 @@ pipeline {
     post {
         always {
             echo 'Pipeline completed for EKS Deployment'
+            script {
+                // Archive connection info
+                archiveArtifacts artifacts: 'connection-info.txt', fingerprint: true
+            }
         }
         success {
             echo 'Pipeline succeeded for EKS Deployment'
+            script {
+                sh '''
+                    echo "🎉 EKS cluster deployment completed successfully!"
+                    echo "📋 Cluster Details:"
+                    echo "   Cluster Name: ${CLUSTER_NAME}"
+                    echo "   Region: ${AWS_REGION}"
+                    echo "   Stack Name: ${STACK_NAME}"
+                    echo ""
+                    echo "🔗 To connect to your cluster, run:"
+                    echo "   aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}"
+                    echo ""
+                    echo "📄 Check connection-info.txt for detailed connection instructions"
+                '''
+            }
         }
         failure {
             echo 'Pipeline failed for EKS Deployment'
+            script {
+                sh '''
+                    echo "❌ EKS cluster deployment failed!"
+                    echo "🔍 Check the logs above for error details"
+                    echo "🧹 You may need to clean up resources manually:"
+                    echo "   aws cloudformation delete-stack --stack-name ${STACK_NAME} --region ${AWS_REGION}"
+                '''
+            }
+        }
+        cleanup {
+            echo 'Cleaning up temporary files'
+            sh 'rm -f *.tmp *.log || true'
         }
     }
 }

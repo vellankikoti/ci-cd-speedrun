@@ -365,40 +365,16 @@ services:
       start_period: 40s
 EOF
 
-                        # Generate README for manual testing
-                        cat > deployments/${ENVIRONMENT}/README.md << EOF
-# ${APP_NAME} - ${ENVIRONMENT} Deployment
-
-## Quick Start
-
-1. **Run with Docker:**
-   \`\`\`bash
-   ./run-local.sh
-   \`\`\`
-
-2. **Or with Docker Compose:**
-   \`\`\`bash
-   docker-compose up -d
-   \`\`\`
-
-3. **Access the application:**
-   - Main page: http://localhost:5000
-   - Health check: http://localhost:5000/health
-   - API info: http://localhost:5000/api/info
-
-## Built Image
-- **Image:** ${DOCKER_TAG}
-- **Version:** ${APP_VERSION}
-- **Environment:** ${ENVIRONMENT}
-- **Build Time:** ${BUILD_TIME}
-
-## Stop the application
-\`\`\`bash
-docker stop ${APP_NAME}-${ENVIRONMENT}
-# or
-docker-compose down
-\`\`\`
-EOF
+                        # Generate simple README
+                        echo "# ${APP_NAME} - ${ENVIRONMENT} Deployment" > deployments/${ENVIRONMENT}/README.md
+                        echo "" >> deployments/${ENVIRONMENT}/README.md
+                        echo "## Quick Start" >> deployments/${ENVIRONMENT}/README.md
+                        echo "1. Run: ./run-local.sh" >> deployments/${ENVIRONMENT}/README.md
+                        echo "2. Open: http://localhost:5000" >> deployments/${ENVIRONMENT}/README.md
+                        echo "" >> deployments/${ENVIRONMENT}/README.md
+                        echo "## Built Image: ${DOCKER_TAG}" >> deployments/${ENVIRONMENT}/README.md
+                        echo "## Version: ${APP_VERSION}" >> deployments/${ENVIRONMENT}/README.md
+                        echo "## Environment: ${ENVIRONMENT}" >> deployments/${ENVIRONMENT}/README.md
 
                         echo "✅ Deployment files generated"
                         echo "Generated files:"

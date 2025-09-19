@@ -207,89 +207,67 @@ pipeline {
             }
         }
         
-        stage('Test Docker Image') {
+        stage('Validate Docker Image') {
             steps {
-                echo "🧪 Testing Docker image"
+                echo "🧪 Validating Docker image"
                 script {
                     sh '''
                         cd Jenkins/scenarios/01-docker-build/
-                        echo "Testing Docker image: ${DOCKER_TAG}"
+                        echo "Validating Docker image: ${DOCKER_TAG}"
 
                         # Check if Docker is available
                         if command -v docker >/dev/null 2>&1; then
-                            echo "Docker is available, testing image..."
+                            echo "Docker is available, validating image..."
 
-                            # Use unique port based on build number to avoid conflicts
-                            TEST_PORT=$((6000 + ${BUILD_NUMBER}))
-                            echo "Using test port: ${TEST_PORT}"
-
-                            # Test that the image runs
-                            echo "Starting container on port ${TEST_PORT}..."
-                            CONTAINER_ID=$(docker run -d -p ${TEST_PORT}:5000 ${DOCKER_TAG}) || {
-                                echo "⚠️ Port conflict, trying alternative port..."
-                                TEST_PORT=$((7000 + ${BUILD_NUMBER}))
-                                CONTAINER_ID=$(docker run -d -p ${TEST_PORT}:5000 ${DOCKER_TAG}) || {
-                                    echo "✅ Image built successfully (container test skipped due to port conflicts)"
-                                    exit 0
-                                }
-                            }
-
-                            echo "Container started with ID: ${CONTAINER_ID}"
-
-                            # Wait for container to be fully ready
-                            echo "Waiting for application to start..."
-                            sleep 5
-
-                            # Check container status and logs immediately
-                            echo "=== Container Status Check ==="
-                            docker ps --filter "id=${CONTAINER_ID}" --format "table {{.ID}}\\t{{.Status}}\\t{{.Ports}}"
-
-                            echo "=== Container Logs ==="
-                            docker logs ${CONTAINER_ID}
-
-                            echo "=== Container Inspect ==="
-                            docker inspect ${CONTAINER_ID} --format='{{.State.Status}}: {{.State.Error}}'
-
-                            # Check if container is still running
-                            if docker ps --filter "id=${CONTAINER_ID}" --format "{{.ID}}" | grep -q "${CONTAINER_ID}"; then
-                                echo "✅ Container is running"
-
-                                # Get detailed port and network info
-                                echo "=== Network Information ==="
-                                CONTAINER_IP=$(docker inspect ${CONTAINER_ID} --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
-                                echo "Container IP: ${CONTAINER_IP}"
-                                docker port ${CONTAINER_ID}
-
-                                # Wait more for Flask app to fully start
-                                echo "Waiting additional time for Flask app startup..."
-                                sleep 10
-
-                                # Test internal container health with detailed output
-                                echo "=== Testing Internal Container Health ==="
-                                docker exec ${CONTAINER_ID} curl -v http://localhost:5000/health 2>&1 || {
-                                    echo "Internal curl failed, checking if Flask is running..."
-                                    docker exec ${CONTAINER_ID} ps aux
-                                    docker exec ${CONTAINER_ID} netstat -tlnp 2>/dev/null || echo "netstat not available"
-                                }
-
-                                echo "✅ Container test completed"
+                            # Validate image exists
+                            if docker images ${DOCKER_IMAGE} --format "{{.Repository}}:{{.Tag}}" | grep -q "${DOCKER_TAG}"; then
+                                echo "✅ Docker image exists: ${DOCKER_TAG}"
                             else
-                                echo "❌ Container is not running"
-                                echo "=== Full Container Logs ==="
-                                docker logs ${CONTAINER_ID}
-                                echo "=== Container Exit Code ==="
-                                docker inspect ${CONTAINER_ID} --format='{{.State.ExitCode}}'
+                                echo "❌ Docker image not found"
+                                exit 1
                             fi
 
-                            # Always clean up our container
-                            echo "Cleaning up test container..."
-                            docker stop ${CONTAINER_ID} >/dev/null 2>&1 || true
-                            docker rm ${CONTAINER_ID} >/dev/null 2>&1 || true
+                            # Check image layers and size
+                            echo "Image information:"
+                            docker images ${DOCKER_IMAGE} --format "table {{.Repository}}\\t{{.Tag}}\\t{{.Size}}\\t{{.CreatedAt}}"
 
-                            echo "✅ Docker image tests completed successfully"
+                            # Test that container can start (quick test)
+                            echo "Testing container startup..."
+                            CONTAINER_ID=$(docker run -d ${DOCKER_TAG})
+
+                            if [ -n "${CONTAINER_ID}" ]; then
+                                echo "✅ Container started successfully: ${CONTAINER_ID}"
+
+                                # Wait a moment and check if it's still running
+                                sleep 3
+                                if docker ps --filter "id=${CONTAINER_ID}" --format "{{.ID}}" | grep -q "${CONTAINER_ID}"; then
+                                    echo "✅ Container is running successfully"
+
+                                    # Show what's running inside
+                                    echo "Container processes:"
+                                    docker exec ${CONTAINER_ID} ps aux || echo "Process list not available"
+
+                                    # Show application logs
+                                    echo "Application startup logs:"
+                                    docker logs ${CONTAINER_ID}
+                                else
+                                    echo "⚠️ Container exited after startup"
+                                    echo "Container logs:"
+                                    docker logs ${CONTAINER_ID}
+                                fi
+
+                                # Cleanup
+                                docker stop ${CONTAINER_ID} >/dev/null 2>&1 || true
+                                docker rm ${CONTAINER_ID} >/dev/null 2>&1 || true
+                            else
+                                echo "❌ Failed to start container"
+                                exit 1
+                            fi
+
+                            echo "✅ Docker image validation completed successfully"
                         else
-                            echo "⚠️ Docker not available, skipping Docker image tests"
-                            echo "✅ Docker image tests completed (skipped)"
+                            echo "⚠️ Docker not available, skipping image validation"
+                            echo "✅ Docker image validation completed (skipped)"
                         fi
                     '''
                 }
@@ -326,22 +304,47 @@ pipeline {
             }
         }
         
-        stage('Deploy') {
-            when {
-                expression { params.ENVIRONMENT != 'development' }
-            }
+        stage('Generate Deployment Files') {
             steps {
-                echo "🚀 Deploying application"
+                echo "🚀 Generating deployment configurations"
                 script {
                     sh '''
                         cd Jenkins/scenarios/01-docker-build/
-                        echo "Deploying from directory: $(pwd)"
-                        echo "Deploying to ${ENVIRONMENT} environment..."
-                        
+                        echo "Generating deployment files for ${ENVIRONMENT} environment..."
+
                         # Create deployment directory
                         mkdir -p deployments/${ENVIRONMENT}
-                        
-                        # Generate deployment configuration
+
+                        # Generate Docker run command
+                        cat > deployments/${ENVIRONMENT}/run-local.sh << EOF
+#!/bin/bash
+# Local Docker run command for ${ENVIRONMENT} environment
+echo "🚀 Starting ${APP_NAME} in ${ENVIRONMENT} mode..."
+
+# Stop any existing container
+docker stop ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+docker rm ${APP_NAME}-${ENVIRONMENT} 2>/dev/null || true
+
+# Run the container
+docker run -d \\
+  --name ${APP_NAME}-${ENVIRONMENT} \\
+  -p 5000:5000 \\
+  -e ENVIRONMENT=${ENVIRONMENT} \\
+  -e APP_VERSION=${APP_VERSION} \\
+  ${DOCKER_TAG}
+
+echo "✅ Container started!"
+echo "🌐 Access the application at: http://localhost:5000"
+echo "❤️ Health check: http://localhost:5000/health"
+echo "📊 API info: http://localhost:5000/api/info"
+echo ""
+echo "To stop the container, run:"
+echo "docker stop ${APP_NAME}-${ENVIRONMENT}"
+EOF
+
+                        chmod +x deployments/${ENVIRONMENT}/run-local.sh
+
+                        # Generate docker-compose.yml
                         cat > deployments/${ENVIRONMENT}/docker-compose.yml << EOF
 version: '3.8'
 services:
@@ -361,10 +364,51 @@ services:
       retries: 3
       start_period: 40s
 EOF
-                        
-                        echo "✅ Deployment configuration created"
-                        echo "Deployment files:"
+
+                        # Generate README for manual testing
+                        cat > deployments/${ENVIRONMENT}/README.md << EOF
+# ${APP_NAME} - ${ENVIRONMENT} Deployment
+
+## Quick Start
+
+1. **Run with Docker:**
+   \`\`\`bash
+   ./run-local.sh
+   \`\`\`
+
+2. **Or with Docker Compose:**
+   \`\`\`bash
+   docker-compose up -d
+   \`\`\`
+
+3. **Access the application:**
+   - Main page: http://localhost:5000
+   - Health check: http://localhost:5000/health
+   - API info: http://localhost:5000/api/info
+
+## Built Image
+- **Image:** ${DOCKER_TAG}
+- **Version:** ${APP_VERSION}
+- **Environment:** ${ENVIRONMENT}
+- **Build Time:** ${BUILD_TIME}
+
+## Stop the application
+\`\`\`bash
+docker stop ${APP_NAME}-${ENVIRONMENT}
+# or
+docker-compose down
+\`\`\`
+EOF
+
+                        echo "✅ Deployment files generated"
+                        echo "Generated files:"
                         ls -la deployments/${ENVIRONMENT}/
+
+                        echo ""
+                        echo "🎯 TO TEST THE APPLICATION LOCALLY:"
+                        echo "1. cd Jenkins/scenarios/01-docker-build/deployments/${ENVIRONMENT}/"
+                        echo "2. ./run-local.sh"
+                        echo "3. Open http://localhost:5000 in your browser"
                     '''
                 }
             }

@@ -309,6 +309,7 @@ pipeline {
                             
                             # Deploy using eksctl for simplicity and reliability
                             echo "Deploying EKS cluster using eksctl..."
+                            
                             eksctl create cluster \\
                                 --name ${CLUSTER_NAME} \\
                                 --region ${AWS_REGION} \\
@@ -319,8 +320,6 @@ pipeline {
                                 --nodes-max 5 \\
                                 --managed \\
                                 --with-oidc \\
-                                --ssh-access \\
-                                --ssh-public-key default \\
                                 --full-ecr-access \\
                                 --zones ${AWS_REGION}a,${AWS_REGION}b \\
                                 --timeout=60m \\
@@ -473,6 +472,10 @@ kubectl get services
 kubectl delete deployment nginx
 kubectl delete service nginx
 
+## Note: SSH Access
+# SSH access to worker nodes is not enabled for this workshop demo
+# Use kubectl commands to interact with the cluster instead
+
 ## Troubleshooting
 # Check cluster status
 aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --query cluster.status
@@ -541,6 +544,10 @@ EOF
             echo 'Cleaning up temporary files'
             sh '''#!/bin/bash
                 rm -f *.tmp *.log iam_policy.json || true
+                # Clean up SSH key pairs if they exist
+                if [ -f "${CLUSTER_NAME}-key.pem" ]; then
+                    rm -f ${CLUSTER_NAME}-key.pem
+                fi
             '''
         }
     }

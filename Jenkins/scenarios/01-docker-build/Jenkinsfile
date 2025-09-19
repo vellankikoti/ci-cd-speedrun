@@ -141,13 +141,13 @@ pipeline {
             }
             post {
                 always {
-                    // Publish test results
-                    junit 'test-reports/junit.xml'
+                    // Publish test results from the correct directory
+                    junit 'Jenkins/scenarios/01-docker-build/test-reports/junit.xml'
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'test-reports',
+                        reportDir: 'Jenkins/scenarios/01-docker-build/test-reports',
                         reportFiles: 'report.html',
                         reportName: 'Test Report'
                     ])
@@ -155,7 +155,7 @@ pipeline {
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'coverage-reports',
+                        reportDir: 'Jenkins/scenarios/01-docker-build/coverage-reports',
                         reportFiles: 'index.html',
                         reportName: 'Coverage Report'
                     ])

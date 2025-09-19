@@ -1,0 +1,20 @@
+# Docker Build Pipeline Demo - Requirements
+# Core web framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Testing framework
+pytest==7.4.2
+pytest-cov==4.1.0
+pytest-html==3.2.0
+
+# HTTP client for testing
+requests==2.31.0
+
+# Utilities
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# Development tools
+black==23.7.0
+flake8==6.0.0

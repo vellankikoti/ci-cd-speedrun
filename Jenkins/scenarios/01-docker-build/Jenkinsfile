@@ -1,0 +1,365 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Application configuration
+        APP_NAME = 'docker-build-demo'
+        APP_VERSION = "${BUILD_NUMBER}"
+        DOCKER_IMAGE = "jenkins-workshop/${APP_NAME}"
+        DOCKER_TAG = "${DOCKER_IMAGE}:${BUILD_NUMBER}"
+        DOCKER_LATEST = "${DOCKER_IMAGE}:latest"
+        
+        // Build configuration
+        BUILD_TIME = "${new Date().format('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')}"
+        ENVIRONMENT = "${params.ENVIRONMENT ?: 'development'}"
+        
+        // Test configuration
+        PYTHON_VERSION = '3.11'
+        TEST_REPORT_DIR = 'test-reports'
+        COVERAGE_REPORT_DIR = 'coverage-reports'
+    }
+    
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['development', 'staging', 'production'],
+            description: 'Target environment'
+        )
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: true,
+            description: 'Run automated tests'
+        )
+        booleanParam(
+            name: 'PUSH_TO_REGISTRY',
+            defaultValue: false,
+            description: 'Push image to registry'
+        )
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "🔍 Checking out code for ${APP_NAME}"
+                script {
+                    // Checkout the current workspace
+                    checkout scm
+                    
+                    // Display repository information
+                    sh '''
+                        echo "Repository: $(git remote get-url origin 2>/dev/null || echo 'Local workspace')"
+                        echo "Branch: $(git branch --show-current 2>/dev/null || echo 'Unknown')"
+                        echo "Commit: $(git rev-parse HEAD 2>/dev/null || echo 'Unknown')"
+                        echo "Working directory: $(pwd)"
+                        echo "Contents:"
+                        ls -la
+                    '''
+                }
+            }
+        }
+        
+        stage('Validate') {
+            steps {
+                echo "🔍 Validating application structure"
+                script {
+                    // Check if required files exist
+                    def requiredFiles = ['app.py', 'requirements.txt', 'Dockerfile', 'tests/test_app.py']
+                    for (file in requiredFiles) {
+                        if (!fileExists(file)) {
+                            error "Required file missing: ${file}"
+                        }
+                        echo "✅ Found: ${file}"
+                    }
+                    
+                    // Validate Python syntax
+                    sh '''
+                        echo "Validating Python syntax..."
+                        python3 -m py_compile app.py
+                        python3 -m py_compile tests/test_app.py
+                        echo "✅ Python syntax validation passed"
+                    '''
+                }
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                echo "📦 Installing Python dependencies"
+                script {
+                    sh '''
+                        echo "Installing dependencies..."
+                        pip3 install -r requirements.txt
+                        echo "✅ Dependencies installed successfully"
+                        
+                        echo "Installed packages:"
+                        pip3 list
+                    '''
+                }
+            }
+        }
+        
+        stage('Test') {
+            when {
+                expression { params.RUN_TESTS == true }
+            }
+            steps {
+                echo "🧪 Running automated tests"
+                script {
+                    sh '''
+                        echo "Running tests with pytest..."
+                        mkdir -p ${TEST_REPORT_DIR} ${COVERAGE_REPORT_DIR}
+                        
+                        # Run tests with coverage and HTML report
+                        python3 -m pytest tests/ \
+                            --verbose \
+                            --html=${TEST_REPORT_DIR}/report.html \
+                            --self-contained-html \
+                            --cov=app \
+                            --cov-report=html:${COVERAGE_REPORT_DIR} \
+                            --cov-report=xml:${COVERAGE_REPORT_DIR}/coverage.xml \
+                            --junitxml=${TEST_REPORT_DIR}/junit.xml
+                        
+                        echo "✅ Tests completed successfully"
+                    '''
+                }
+            }
+            post {
+                always {
+                    // Publish test results
+                    publishTestResults testResultsPattern: 'test-reports/junit.xml'
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'test-reports',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report'
+                    ])
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage-reports',
+                        reportFiles: 'index.html',
+                        reportName: 'Coverage Report'
+                    ])
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo "🐳 Building Docker image"
+                script {
+                    sh '''
+                        echo "Building Docker image: ${DOCKER_TAG}"
+                        echo "Build arguments:"
+                        echo "  APP_VERSION: ${APP_VERSION}"
+                        echo "  BUILD_TIME: ${BUILD_TIME}"
+                        echo "  ENVIRONMENT: ${ENVIRONMENT}"
+                        
+                        # Build the Docker image with build arguments
+                        docker build \
+                            --build-arg APP_VERSION=${APP_VERSION} \
+                            --build-arg BUILD_TIME="${BUILD_TIME}" \
+                            --build-arg ENVIRONMENT=${ENVIRONMENT} \
+                            -t ${DOCKER_TAG} \
+                            -t ${DOCKER_LATEST} \
+                            .
+                        
+                        echo "✅ Docker image built successfully"
+                        
+                        # Show image information
+                        echo "Image details:"
+                        docker images ${DOCKER_IMAGE}
+                        
+                        # Show image layers
+                        echo "Image layers:"
+                        docker history ${DOCKER_TAG}
+                    '''
+                }
+            }
+        }
+        
+        stage('Test Docker Image') {
+            steps {
+                echo "🧪 Testing Docker image"
+                script {
+                    sh '''
+                        echo "Testing Docker image: ${DOCKER_TAG}"
+                        
+                        # Test that the image runs
+                        echo "Starting container..."
+                        CONTAINER_ID=$(docker run -d -p 5000:5000 ${DOCKER_TAG})
+                        echo "Container ID: ${CONTAINER_ID}"
+                        
+                        # Wait for application to start
+                        echo "Waiting for application to start..."
+                        sleep 10
+                        
+                        # Test health endpoint
+                        echo "Testing health endpoint..."
+                        curl -f http://localhost:5000/health || {
+                            echo "❌ Health check failed"
+                            docker logs ${CONTAINER_ID}
+                            exit 1
+                        }
+                        
+                        # Test API endpoints
+                        echo "Testing API endpoints..."
+                        curl -f http://localhost:5000/api/info || {
+                            echo "❌ API info endpoint failed"
+                            docker logs ${CONTAINER_ID}
+                            exit 1
+                        }
+                        
+                        # Test main page
+                        echo "Testing main page..."
+                        curl -f http://localhost:5000/ || {
+                            echo "❌ Main page failed"
+                            docker logs ${CONTAINER_ID}
+                            exit 1
+                        }
+                        
+                        # Stop container
+                        echo "Stopping container..."
+                        docker stop ${CONTAINER_ID}
+                        docker rm ${CONTAINER_ID}
+                        
+                        echo "✅ Docker image tests passed"
+                    '''
+                }
+            }
+        }
+        
+        stage('Security Scan') {
+            steps {
+                echo "🔒 Running security scan"
+                script {
+                    sh '''
+                        echo "Running security scan on Docker image..."
+                        
+                        # Check for known vulnerabilities (if docker scan is available)
+                        if command -v docker scan >/dev/null 2>&1; then
+                            echo "Running Docker security scan..."
+                            docker scan ${DOCKER_TAG} || echo "⚠️ Security scan completed with warnings"
+                        else
+                            echo "⚠️ Docker security scan not available, skipping..."
+                        fi
+                        
+                        # Check image size
+                        echo "Image size analysis:"
+                        docker images ${DOCKER_IMAGE} --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+                        
+                        echo "✅ Security scan completed"
+                    '''
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            when {
+                expression { params.ENVIRONMENT != 'development' }
+            }
+            steps {
+                echo "🚀 Deploying application"
+                script {
+                    sh '''
+                        echo "Deploying to ${ENVIRONMENT} environment..."
+                        
+                        # Create deployment directory
+                        mkdir -p deployments/${ENVIRONMENT}
+                        
+                        # Generate deployment configuration
+                        cat > deployments/${ENVIRONMENT}/docker-compose.yml << EOF
+version: '3.8'
+services:
+  ${APP_NAME}:
+    image: ${DOCKER_TAG}
+    container_name: ${APP_NAME}-${ENVIRONMENT}
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT}
+      - APP_VERSION=${APP_VERSION}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+EOF
+                        
+                        echo "✅ Deployment configuration created"
+                        echo "Deployment files:"
+                        ls -la deployments/${ENVIRONMENT}/
+                    '''
+                }
+            }
+        }
+        
+        stage('Push to Registry') {
+            when {
+                expression { params.PUSH_TO_REGISTRY == true }
+            }
+            steps {
+                echo "📤 Pushing image to registry"
+                script {
+                    sh '''
+                        echo "Pushing image to registry..."
+                        # Note: In a real scenario, you would push to a registry like Docker Hub, ECR, etc.
+                        echo "Registry push would happen here"
+                        echo "Image: ${DOCKER_TAG}"
+                        echo "Latest: ${DOCKER_LATEST}"
+                        echo "✅ Image ready for registry push"
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "🧹 Cleaning up workspace"
+            script {
+                sh '''
+                    echo "Cleaning up Docker images..."
+                    # Remove dangling images
+                    docker image prune -f || true
+                    
+                    echo "Workspace cleanup completed"
+                '''
+            }
+        }
+        
+        success {
+            echo "✅ Pipeline completed successfully!"
+            script {
+                sh '''
+                    echo "🎉 Build Summary:"
+                    echo "  Application: ${APP_NAME}"
+                    echo "  Version: ${APP_VERSION}"
+                    echo "  Environment: ${ENVIRONMENT}"
+                    echo "  Docker Image: ${DOCKER_TAG}"
+                    echo "  Build Time: ${BUILD_TIME}"
+                '''
+            }
+        }
+        
+        failure {
+            echo "❌ Pipeline failed!"
+            script {
+                sh '''
+                    echo "🔍 Debug Information:"
+                    echo "  Last 50 lines of build log:"
+                    tail -50 /var/log/jenkins/jenkins.log 2>/dev/null || echo "Log not available"
+                '''
+            }
+        }
+        
+        unstable {
+            echo "⚠️ Pipeline completed with warnings"
+        }
+    }
+}

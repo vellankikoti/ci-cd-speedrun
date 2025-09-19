@@ -142,7 +142,7 @@ pipeline {
             post {
                 always {
                     // Publish test results
-                    publishTestResults testResultsPattern: 'test-reports/junit.xml'
+                    junit 'test-reports/junit.xml'
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,

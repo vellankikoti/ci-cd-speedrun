@@ -33,12 +33,20 @@ docker run -d \
   -v jenkins_home:/var/jenkins_home \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$(pwd)/../":/workspace \
+  --privileged \
   jenkins-workshop:custom
+
+# (Optional) Fix Docker permissions inside container (run after container starts)
+docker exec -u root jenkins-workshop chown root:docker /var/run/docker.sock
+docker exec -u root jenkins-workshop chmod 666 /var/run/docker.sock
 ```
 
 ### Step 3: Wait for Jenkins to Start
 
 ```bash
+# Wait 2 minutes for Jenkins to fully start
+sleep 120
+
 # Check status (wait until it returns 200)
 curl -u admin:admin -s -o /dev/null -w "%{http_code}" http://localhost:8080
 
@@ -53,6 +61,24 @@ docker logs jenkins-workshop --tail 5
    - **Username**: `admin`
    - **Password**: `admin`
 3. ✅ You should see the Jenkins dashboard with all features available
+
+### ✅ Critical Success Verification
+
+```bash
+# Test Python3 works
+docker exec jenkins-workshop python3 --version
+# Should return: Python 3.11.2
+
+# Test pip works
+docker exec jenkins-workshop pip3 install requests
+# Should install successfully without errors
+
+# Test Docker works
+docker exec jenkins-workshop docker ps
+# Should show running containers without permission errors
+```
+
+**Your Jenkins is now production-ready for the workshop!** 🎉
 
 ---
 

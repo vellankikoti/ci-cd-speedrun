@@ -239,14 +239,27 @@ pipeline {
                             # Create cost-optimized CloudFormation stack
                             cd Jenkins/scenarios/03-eks-deployment
                             export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            
+                            # Convert boolean parameters to proper format
+                            ENABLE_LOGGING_FLAG=""
+                            ENABLE_ALB_FLAG=""
+                            
+                            if [ "${ENABLE_LOGGING}" = "true" ]; then
+                                ENABLE_LOGGING_FLAG="--enable-logging"
+                            fi
+                            
+                            if [ "${ENABLE_ALB_CONTROLLER}" = "true" ]; then
+                                ENABLE_ALB_FLAG="--enable-alb-controller"
+                            fi
+                            
                             python eks_manager.py deploy \
                                 --cluster-name ${CLUSTER_NAME} \
                                 --stack-name ${STACK_NAME} \
                                 --region ${AWS_REGION} \
                                 --node-instance-type ${NODE_INSTANCE_TYPE} \
                                 --node-count ${NODE_COUNT} \
-                                --enable-logging ${ENABLE_LOGGING} \
-                                --enable-alb-controller ${ENABLE_ALB_CONTROLLER}
+                                ${ENABLE_LOGGING_FLAG} \
+                                ${ENABLE_ALB_FLAG}
                         '''
                     }
                 }

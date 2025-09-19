@@ -67,8 +67,7 @@ pipeline {
         stage('Install Prerequisites') {
             steps {
                 echo 'Installing AWS CLI, kubectl, eksctl, and Helm'
-                sh '''
-                    #!/bin/bash
+                sh '''#!/bin/bash
                     set -e
                     echo "🔧 Installing required tools..."
                     
@@ -141,8 +140,7 @@ pipeline {
                     }
                     
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             echo "🔧 Configuring AWS credentials..."
                             
@@ -162,7 +160,8 @@ pipeline {
                             
                             echo "✅ AWS credentials configured successfully"
                             echo "   Region: ${AWS_REGION}"
-                            echo "   Access Key: ${AWS_ACCESS_KEY_ID:0:8}..."
+                            # Use printf instead of bash substring to avoid substitution issues
+                            printf "   Access Key: %.8s...\n" "${AWS_ACCESS_KEY_ID}"
                         '''
                     }
                 }
@@ -174,8 +173,7 @@ pipeline {
                 echo 'Validating AWS CLI and kubectl installation'
                 script {
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -209,8 +207,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests for EKS Deployment'
-                sh '''
-                    #!/bin/bash
+                sh '''#!/bin/bash
                     set -e
                     echo "Running tests..."
                     python -m pytest Jenkins/scenarios/03-eks-deployment/tests/ -v --tb=short
@@ -223,8 +220,7 @@ pipeline {
                 echo 'Deploying EKS Cluster with cost optimization'
                 script {
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -258,8 +254,7 @@ pipeline {
                 echo 'Configuring kubectl and generating kubeconfig'
                 script {
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -285,8 +280,7 @@ pipeline {
                 echo 'Running post-deployment setup and add-ons installation'
                 script {
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -309,8 +303,7 @@ pipeline {
                 echo 'Generating connection information and commands'
                 script {
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                            #!/bin/bash
+                        sh '''#!/bin/bash
                             set -e
                             # Set AWS credentials
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -337,15 +330,16 @@ pipeline {
             echo 'Pipeline completed for EKS Deployment'
             script {
                 // Archive connection info if it exists
-                sh '#!/bin/bash\nls -la connection-info.txt || echo "No connection-info.txt found"'
+                sh '''#!/bin/bash
+                    ls -la connection-info.txt || echo "No connection-info.txt found"
+                '''
                 archiveArtifacts artifacts: 'connection-info.txt', fingerprint: true, allowEmptyArchive: true
             }
         }
         success {
             echo 'Pipeline succeeded for EKS Deployment'
             script {
-                sh '''
-                    #!/bin/bash
+                sh '''#!/bin/bash
                     echo "🎉 EKS cluster deployment completed successfully!"
                     echo "📋 Cluster Details:"
                     echo "   Cluster Name: ${CLUSTER_NAME}"
@@ -362,8 +356,7 @@ pipeline {
         failure {
             echo 'Pipeline failed for EKS Deployment'
             script {
-                sh '''
-                    #!/bin/bash
+                sh '''#!/bin/bash
                     echo "❌ EKS cluster deployment failed!"
                     echo "🔍 Check the logs above for error details"
                     echo "🧹 You may need to clean up resources manually:"
@@ -373,7 +366,9 @@ pipeline {
         }
         cleanup {
             echo 'Cleaning up temporary files'
-            sh '#!/bin/bash\nrm -f *.tmp *.log || true'
+            sh '''#!/bin/bash
+                rm -f *.tmp *.log || true
+            '''
         }
     }
 }

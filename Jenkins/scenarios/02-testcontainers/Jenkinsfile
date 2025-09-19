@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+    
+    environment {
+        WORKSPACE_PATH = '/Users/koti/demo-time/ci-cd-chaos-workshop'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code for TestContainers Integration'
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo 'Building Docker image for TestContainers Integration'
+                script {
+                    def image = docker.build("jenkins-workshop-${env.BUILD_NUMBER}")
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                echo 'Running tests for TestContainers Integration'
+                sh 'python -m pytest tests/ -v'
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                echo 'Deploying TestContainers Integration'
+                // Add deployment steps here
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Pipeline completed for TestContainers Integration'
+        }
+        success {
+            echo 'Pipeline succeeded for TestContainers Integration'
+        }
+        failure {
+            echo 'Pipeline failed for TestContainers Integration'
+        }
+    }
+}

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_HOST = os.getenv("REDIS_HOST", "db-container")
 
 # Initialize Redis connection with error handling
 try:

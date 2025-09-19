@@ -1,0 +1,36 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+.env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Log Files
+*.log
+setup_log_*.txt
+workshop_progress.log
+
+# Test Results
+test-results/
+*.html
+*.json
+
+# Temporary Files
+*.tmp
+*.temp

@@ -1,5 +1,0 @@
-FROM node:18-alpine
-WORKDIR /app
-RUN npm install -g express
-EXPOSE 3000
-CMD ["node", "-e", "console.log('Node.js app running!')"] 

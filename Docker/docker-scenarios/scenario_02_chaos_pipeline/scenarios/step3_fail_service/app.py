@@ -172,7 +172,7 @@ def list_sessions():
             "count": len(sessions),
             "storage_method": storage_method
         })
-except Exception as e:
+    except Exception as e:
         return jsonify({
             "status": "error",
             "error": str(e),

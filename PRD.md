@@ -251,25 +251,6 @@ By the end, participants should:
 ✅ >90% attendees complete the pipeline  
 ✅ >80% pass the final quiz  
 ✅ Positive emotional feedback: “I feel capable!”  
-✅ Certificates downloaded  
 ✅ Attendees share the experience on social media
 
 ---
-
-# ✅ Conclusion
-
-This PRD fully defines:
-- Title & abstract
-- Narrative & emotional journey
-- Technical steps & phases
-- Repo structure
-- MkDocs layout
-- Storytelling integration
-
-Any future LLM prompt referring to:
-> “Be in context of my CI/CD Chaos Workshop”
-
-…should automatically load this blueprint.
-
----
-

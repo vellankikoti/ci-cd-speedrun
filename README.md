@@ -165,33 +165,55 @@ Kubernetes/kubernetes-scenarios/
 
 ---
 
-## 🚀 **Quick Start Guide**
+## 🚀 **Universal Quick Start Guide**
 
 ### **Prerequisites**
 ```bash
-# Required Software
-- Python 3.10+
-- Docker Desktop
+# Required Software (works on Windows, macOS, Linux, WSL2, Cloud)
+- Python 3.7+
+- Docker Desktop or Docker Engine
 - Git
 - kubectl (for Kubernetes scenarios)
-- minikube or EKS cluster
+- Any Kubernetes cluster (minikube, Docker Desktop, EKS, GKE, AKS)
 ```
 
-### **Workshop Setup**
+### **🎯 One-Click Workshop Setup**
 ```bash
 # Clone the repository
 git clone https://github.com/vellankikoti/ci-cd-chaos-workshop.git
 cd ci-cd-chaos-workshop
 
-# Set up Python environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 🚀 UNIVERSAL SETUP - Works Everywhere!
 
-# Install dependencies
-pip install -r Testcontainers/requirements.txt
+# For TestContainers scenarios:
+cd testcontainers
+python3 setup.py || python setup.py
+
+# For Jenkins scenarios:
+cd ../Jenkins
+python3 universal-setup.py || python universal-setup.py
+
+# For Kubernetes scenarios:
+cd ../Kubernetes
+python3 universal-setup.py || python universal-setup.py
+
+# Start documentation (optional):
 pip install mkdocs mkdocs-material
+mkdocs serve
+```
 
-# Start the workshop
+### **🎯 Alternative: Quick Start Any Component**
+```bash
+# TestContainers only:
+cd testcontainers && python3 workshop.py
+
+# Jenkins only:
+cd Jenkins && python3 universal-setup.py
+
+# Kubernetes only:
+cd Kubernetes && python3 universal-setup.py
+
+# Documentation only:
 mkdocs serve
 ```
 

@@ -1,1 +1,0 @@
-# Utils module for Enterprise Docker Analyzer 

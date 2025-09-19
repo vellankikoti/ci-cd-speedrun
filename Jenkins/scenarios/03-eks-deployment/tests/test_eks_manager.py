@@ -4,6 +4,7 @@ Test suite for EKS Manager
 """
 
 import pytest
+import subprocess
 import unittest.mock as mock
 from eks_manager import EKSManager
 

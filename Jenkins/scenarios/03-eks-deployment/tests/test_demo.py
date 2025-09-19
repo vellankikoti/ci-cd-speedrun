@@ -20,7 +20,7 @@ class TestEKSDemo:
         demo = EKSDemo()
         assert demo.cluster_name.startswith('workshop-demo-')
         assert demo.stack_name.startswith('workshop-demo-stack-')
-        assert demo.region == 'us-west-2'  # default region
+        assert demo.region == 'us-east-1'  # default region
     
     def test_init_with_custom_params(self):
         """Test EKSDemo initialization with custom parameters."""

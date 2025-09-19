@@ -229,7 +229,7 @@ class JenkinsSetup:
         if not success:
             self.print_warning(f"Volume might already exist: {error}")
         
-        # Build Jenkins command
+        # Build Jenkins command with full configuration
         jenkins_cmd = f"""
         docker run -d --name {self.jenkins_container_name} \
             -p {self.jenkins_port}:8080 \
@@ -237,8 +237,14 @@ class JenkinsSetup:
             -v {self.jenkins_home_volume}:/var/jenkins_home \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v {self.workspace_root}:/workspace \
-            -e JAVA_OPTS="-Djenkins.install.runSetupWizard=false" \
-            -e JENKINS_OPTS="--httpPort=8080" \
+            -e JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Djava.awt.headless=true -Xmx2048m -Xms1024m" \
+            -e JENKINS_OPTS="--httpPort=8080 --prefix=/jenkins" \
+            -e JENKINS_SLAVE_AGENT_PORT=50000 \
+            -e JENKINS_UC=https://updates.jenkins.io \
+            -e JENKINS_UC_DOWNLOAD=https://updates.jenkins.io/download \
+            -e JENKINS_UC_EXPERIMENTAL=https://updates.jenkins.io/experimental \
+            -e JENKINS_INCREMENTALS_REPO_MIRROR=https://repo.jenkins-ci.org/incrementals \
+            -e JENKINS_PLUGIN_INFO=https://updates.jenkins.io/plugin-versions.json \
             jenkins/jenkins:lts
         """
         
@@ -282,20 +288,198 @@ class JenkinsSetup:
             self.print_warning("Could not retrieve Jenkins password")
             return None
 
+    def configure_jenkins_security(self) -> bool:
+        """Configure Jenkins security settings for full interface"""
+        self.print_step("Jenkins Security", "Configuring security settings")
+        
+        # Wait a bit for Jenkins to be fully ready
+        time.sleep(10)
+        
+        # Create security configuration
+        security_config = """<?xml version='1.0' encoding='UTF-8'?>
+<hudson>
+  <disabledAdministrativeMonitors>
+    <string>hudson.diagnosis.ReverseProxySetupMonitor</string>
+  </disabledAdministrativeMonitors>
+  <version>2.401.3</version>
+  <numExecutors>2</numExecutors>
+  <mode>NORMAL</mode>
+  <useSecurity>true</useSecurity>
+  <authorizationStrategy class="hudson.security.AuthorizationStrategy$Unsecured"/>
+  <securityRealm class="hudson.security.SecurityRealm$None"/>
+  <disableRememberMe>false</disableRememberMe>
+  <projectNamingStrategy class="jenkins.model.ProjectNamingStrategy$DefaultProjectNamingStrategy"/>
+  <workspaceDir class="hudson.slaves.WorkspaceList$Default"/>
+  <buildsDir class="hudson.slaves.WorkspaceList$Default"/>
+  <markupFormatter class="hudson.markup.RawHtmlMarkupFormatter" plugin="antisamy-markup-formatter@2.7">
+    <disableSyntaxHighlighting>false</disableSyntaxHighlighting>
+  </markupFormatter>
+  <jdks/>
+  <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+  <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
+  <clouds/>
+  <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
+  <views>
+    <hudson.model.AllView>
+      <owner class="hudson" reference="../../.."/>
+      <name>all</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+    </hudson.model.AllView>
+  </views>
+  <primaryView>all</primaryView>
+  <slaveAgentPort>50000</slaveAgentPort>
+  <disabledAgentProtocols>
+    <string>JNLP-connect</string>
+    <string>JNLP2-connect</string>
+  </disabledAgentProtocols>
+  <label></label>
+  <nodeProperties/>
+  <globalNodeProperties/>
+  <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
+  <views>
+    <hudson.model.AllView>
+      <owner class="hudson" reference="../../.."/>
+      <name>all</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+    </hudson.model.AllView>
+  </views>
+  <primaryView>all</primaryView>
+  <slaveAgentPort>50000</slaveAgentPort>
+  <disabledAgentProtocols>
+    <string>JNLP-connect</string>
+    <string>JNLP2-connect</string>
+  </disabledAgentProtocols>
+  <label></label>
+  <nodeProperties/>
+  <globalNodeProperties/>
+</hudson>"""
+        
+        # Write security configuration
+        success, output, error = self.run_command(
+            f"docker exec {self.jenkins_container_name} sh -c 'echo \"{security_config}\" > /var/jenkins_home/config.xml'",
+            timeout=30
+        )
+        
+        if success:
+            self.print_success("Jenkins security configured")
+            return True
+        else:
+            self.print_warning(f"Failed to configure security: {error}")
+            return False
+
     def install_jenkins_plugins(self) -> bool:
         """Install required Jenkins plugins"""
         self.print_step("Jenkins Plugins", "Installing required plugins")
         
         plugins = [
+            # Core Pipeline Plugins
             "workflow-aggregator",
+            "workflow-job",
+            "workflow-cps",
+            "workflow-basic-steps",
+            "workflow-durable-task-step",
+            "workflow-multibranch",
+            "workflow-scm-step",
+            "workflow-step-api",
+            "workflow-support",
+            "workflow-api",
+            "workflow-cps-global-lib",
+            
+            # Pipeline UI and Visualization
+            "pipeline-stage-view",
+            "pipeline-graph-analysis",
+            "pipeline-rest-api",
+            "pipeline-stage-tags-metadata",
+            "pipeline-milestone-step",
+            "pipeline-input-step",
+            "pipeline-build-step",
+            "pipeline-utility-steps",
+            "pipeline-model-api",
+            "pipeline-model-definition",
+            "pipeline-model-extensions",
+            "pipeline-stage-step",
+            
+            # Docker Integration
             "docker-workflow",
             "docker-plugin",
+            
+            # Git Integration
             "git",
-            "pipeline-stage-view",
-            "htmlpublisher",
+            "github",
+            "github-branch-source",
+            "github-api",
+            "github-oauth",
+            "github-pr-coverage-status",
+            "github-scm-trait-notification-context",
+            "pipeline-github-lib",
+            
+            # Testing and Reporting
             "junit",
             "coverage",
-            "blueocean"
+            "htmlpublisher",
+            
+            # UI and Experience
+            "blueocean",
+            "ace-editor",
+            "jquery-detached",
+            "handlebars",
+            "momentjs",
+            "bootstrap5-api",
+            "echarts-api",
+            "font-awesome-api",
+            
+            # Security and Authentication
+            "matrix-auth",
+            "role-strategy",
+            "credentials",
+            "credentials-binding",
+            "ssh-credentials",
+            "plain-credentials",
+            "script-security",
+            "antisamy-markup-formatter",
+            
+            # Build Tools
+            "ant",
+            "gradle",
+            "maven-plugin",
+            
+            # Utilities
+            "timestamper",
+            "ws-cleanup",
+            "build-timeout",
+            "durable-task",
+            "mailer",
+            "display-url-api",
+            "token-macro",
+            "build-trigger-badge",
+            "external-monitor-job",
+            
+            # Core APIs
+            "scm-api",
+            "structs",
+            "snakeyaml-api",
+            "jackson2-api",
+            "apache-httpcomponents-client-4-api",
+            "trilead-api",
+            
+            # Agent Management
+            "jdk-tool",
+            "command-launcher",
+            "slave-setup",
+            "windows-slave-installer",
+            "ssh-slaves",
+            "resource-disposer",
+            
+            # Authentication
+            "ldap",
+            "pam-auth",
+            
+            # Project Types
+            "matrix-project"
         ]
         
         for plugin in plugins:
@@ -590,6 +774,10 @@ python test-jenkins-pipeline.py
             self.results.append(SetupResult("jenkins_startup", result, "Jenkins startup"))
             if not result:
                 return False
+            
+            # Configure Jenkins security
+            result = self.configure_jenkins_security()
+            self.results.append(SetupResult("jenkins_security", result, "Jenkins security configuration"))
             
             # Install plugins
             result = self.install_jenkins_plugins()

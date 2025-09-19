@@ -1,25 +1,30 @@
-# EKS Deployment
+#!/usr/bin/env python3
+"""
+📝 Add Jenkins Job Creation to All Scenarios
+Adds comprehensive Jenkins job creation instructions to all scenario README files
+"""
 
-Deploy applications to AWS EKS
+import os
+from pathlib import Path
 
-## Overview
-
-This scenario demonstrates deploy applications to aws eks in a Jenkins pipeline.
-
-## Files
-
-- `Jenkinsfile` - Jenkins pipeline definition
-- `Dockerfile` - Docker container definition
-- `requirements.txt` - Python dependencies
-- `tests/` - Test files directory
-
-## Usage
-
-1. Create a new Jenkins job
-2. Point to this directory as the source
-3. Run the pipeline
-
-
+def add_jenkins_section(readme_path: Path, scenario_name: str) -> bool:
+    """Add Jenkins job creation section to a README file"""
+    
+    if not readme_path.exists():
+        print(f"❌ README not found: {readme_path}")
+        return False
+    
+    # Read current content
+    with open(readme_path, 'r') as f:
+        content = f.read()
+    
+    # Check if Jenkins section already exists
+    if "## 🏭 Production Jenkins Job Setup" in content:
+        print(f"✅ Jenkins section already exists in {readme_path}")
+        return True
+    
+    # Create the Jenkins section
+    jenkins_section = f"""
 
 ## 🏭 Production Jenkins Job Setup
 
@@ -38,7 +43,7 @@ python3 setup-jenkins-complete.py setup
 # Complete the setup wizard
 
 # 4. Run the pre-configured workshop job
-# Click "🎓 Workshop - 05 Eks Deployment" → "Build Now"
+# Click "🎓 Workshop - {scenario_name}" → "Build Now"
 ```
 
 ### Manual Jenkins Job Creation (Production Mode)
@@ -46,17 +51,17 @@ python3 setup-jenkins-complete.py setup
 #### Step 1: Create New Pipeline Job
 1. **Access Jenkins** at `http://localhost:8080`
 2. **Click "New Item"**
-3. **Enter job name**: `05 Eks Deployment - Production`
+3. **Enter job name**: `{scenario_name} - Production`
 4. **Select "Pipeline"** and click "OK"
 
 #### Step 2: Configure Pipeline
-1. **Description**: "Complete 05 eks deployment pipeline with testing and deployment"
+1. **Description**: "Complete {scenario_name.lower()} pipeline with testing and deployment"
 2. **Pipeline section**:
    - **Definition**: "Pipeline script from SCM"
    - **SCM**: "Git"
    - **Repository URL**: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
    - **Branches to build**: `*/main` (or your preferred branch)
-   - **Script Path**: `Jenkins/scenarios/05-eks-deployment/Jenkinsfile`
+   - **Script Path**: `Jenkins/scenarios/{scenario_name.lower().replace(' ', '-')}/Jenkinsfile`
 
 #### Step 3: Configure Build Triggers (Optional)
 - **GitHub hook trigger for GITScm polling** (if using webhooks)
@@ -139,18 +144,61 @@ Configure these in Jenkins → Manage Jenkins → Configure System → Global Pr
 3. **Select events**: "Just the push event"
 4. **Test webhook** to ensure connectivity
 
+"""
+    
+    # Add the section before the last section or at the end
+    if "## Testing" in content:
+        # Insert before Testing section
+        new_content = content.replace("## Testing", jenkins_section + "\n## Testing")
+    elif "## Docker" in content:
+        # Insert before Docker section
+        new_content = content.replace("## Docker", jenkins_section + "\n## Docker")
+    else:
+        # Add at the end
+        new_content = content + jenkins_section
+    
+    # Write updated content
+    with open(readme_path, 'w') as f:
+        f.write(new_content)
+    
+    print(f"✅ Updated {readme_path}")
+    return True
 
-## Testing
+def main():
+    """Add Jenkins section to all scenario README files"""
+    print("📝 Adding Jenkins Job Creation to All Scenarios")
+    print("=" * 60)
+    
+    scenarios_dir = Path(__file__).parent / "scenarios"
+    
+    if not scenarios_dir.exists():
+        print(f"❌ Scenarios directory not found: {scenarios_dir}")
+        return False
+    
+    updated_count = 0
+    total_count = 0
+    
+    # Find all scenario directories
+    for scenario_dir in scenarios_dir.iterdir():
+        if scenario_dir.is_dir() and not scenario_dir.name.startswith("SCENARIO_"):
+            total_count += 1
+            readme_path = scenario_dir / "README.md"
+            scenario_name = scenario_dir.name.replace("-", " ").replace("_", " ").title()
+            
+            if add_jenkins_section(readme_path, scenario_name):
+                updated_count += 1
+    
+    print(f"\n📊 Summary:")
+    print(f"Total scenarios: {total_count}")
+    print(f"Updated: {updated_count}")
+    print(f"Failed: {total_count - updated_count}")
+    
+    if updated_count == total_count:
+        print("🎉 All scenario README files updated successfully!")
+        return True
+    else:
+        print("⚠️ Some scenario README files could not be updated")
+        return False
 
-Run tests locally:
-```bash
-python -m pytest tests/ -v
-```
-
-## Docker
-
-Build and run locally:
-```bash
-docker build -t 05-eks-deployment .
-docker run 05-eks-deployment
-```
+if __name__ == "__main__":
+    main()

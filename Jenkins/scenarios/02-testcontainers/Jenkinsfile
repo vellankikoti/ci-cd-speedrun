@@ -10,7 +10,7 @@ pipeline {
         DOCKER_LATEST = "${DOCKER_IMAGE}:latest"
 
         // Build configuration
-        BUILD_TIME = "${new Date().format('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')}"
+        BUILD_TIME = "${new Date().format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'')}"
         ENVIRONMENT = "${params.ENVIRONMENT ?: 'development'}"
 
         // Test configuration

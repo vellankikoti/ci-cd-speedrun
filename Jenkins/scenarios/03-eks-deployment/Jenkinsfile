@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        dockerfile {
+            filename 'Dockerfile'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
     
     parameters {
         string(

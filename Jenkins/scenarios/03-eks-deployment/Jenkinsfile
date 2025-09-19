@@ -242,9 +242,7 @@ pipeline {
                             
                             # Find the CloudFormation template
                             TEMPLATE_FILE=""
-                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml" ]; then
-                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml"
-                            elif [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
+                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
                                 TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml"
                             else
                                 echo "No CloudFormation template found, skipping validation..."

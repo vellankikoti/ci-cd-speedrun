@@ -36,7 +36,7 @@ pipeline {
             name: 'AWS_CREDENTIALS',
             credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
             defaultValue: '',
-            description: 'AWS Access Key ID and Secret Access Key (Username=Access Key, Password=Secret Key)'
+            description: 'AWS Access Key ID and Secret Access Key (Username=Access Key, Password=Secret Key) - REQUIRED'
         )
     }
     
@@ -60,6 +60,11 @@ pipeline {
             steps {
                 echo 'Configuring AWS credentials and environment'
                 script {
+                    // Check if credentials are provided
+                    if (!params.AWS_CREDENTIALS || params.AWS_CREDENTIALS == '') {
+                        error("❌ AWS_CREDENTIALS parameter is required but not provided. Please select AWS credentials in the job parameters.")
+                    }
+                    
                     withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                             echo "🔧 Configuring AWS credentials..."

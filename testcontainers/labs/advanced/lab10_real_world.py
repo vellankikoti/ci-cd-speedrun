@@ -1,636 +1,667 @@
 #!/usr/bin/env python3
 """
-Lab 10: Real-World Scenarios (Simple Version)
-=============================================
+Lab 10: Real-World Scenarios - Working Examples
+===============================================
 
-Apply everything you've learned to test real-world applications
-including e-commerce systems, monitoring, and production patterns.
+Learn real-world TestContainers scenarios including production-like
+testing, monitoring, and deployment patterns.
 """
 
 import os
+import sys
 import time
+import threading
+import json
+from pathlib import Path
+
+# Python version check
+if sys.version_info < (3, 10):
+    print("❌ Python 3.10 or higher is required")
+    sys.exit(1)
+
+# Add current directory to Python path for imports
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
 
 # Configure TestContainers to use local Docker
 os.environ["TESTCONTAINERS_CLOUD_ENABLED"] = "false"
-os.environ["DOCKER_HOST"] = "unix:///var/run/docker.sock"
 
-import json
-import uuid
-from datetime import datetime, timedelta
-import random
+# Platform-specific Docker host configuration
+if sys.platform == "win32":
+    os.environ["DOCKER_HOST"] = "tcp://localhost:2375"
+else:
+    os.environ["DOCKER_HOST"] = "unix:///var/run/docker.sock"
+
+def check_dependencies():
+    """Check if all required packages are installed"""
+    required_packages = {
+        'testcontainers': 'testcontainers',
+        'psycopg2': 'psycopg2-binary',
+        'redis': 'redis'
+    }
+    
+    missing_packages = []
+    
+    for package, pip_name in required_packages.items():
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(pip_name)
+    
+    if missing_packages:
+        print("❌ Missing required packages:")
+        for package in missing_packages:
+            print(f"   - {package}")
+        print("\n💡 Install with:")
+        print(f"   pip install {' '.join(missing_packages)}")
+        return False
+    
+    return True
+
+def check_docker():
+    """Check if Docker is available and running"""
+    import subprocess
+    try:
+        # Check if docker command exists
+        subprocess.run(["docker", "--version"], capture_output=True, check=True)
+        
+        # Check if Docker daemon is running
+        result = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+        if result.returncode == 0:
+            return True
+        
+        # If docker ps fails, try docker info as fallback
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True)
+        return result.returncode == 0
+        
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
 
 try:
     from testcontainers.postgres import PostgresContainer
-    from testcontainers.mysql import MySqlContainer
     from testcontainers.redis import RedisContainer
-    from testcontainers.mongodb import MongoDbContainer
     import psycopg2
-    import pymysql
     import redis
-    import pymongo
 except ImportError as e:
-    print(f"❌ Missing required packages: {e}")
-    print("Please run: python3 setup.py from testcontainers directory")
-    exit(1)
+    print(f"❌ Missing packages: {e}")
+    print("Run: pip install testcontainers psycopg2-binary redis")
+    sys.exit(1)
 
-def print_header():
-    """Print lab header"""
-    print("""
-╔══════════════════════════════════════════════════════════════════╗
-║               🌍 LAB 10: REAL-WORLD SCENARIOS 🌍               ║
-║                                                                  ║
-║  Test complete applications with realistic data and scenarios.   ║
-║  This is your final challenge - production-ready testing!       ║
-╚══════════════════════════════════════════════════════════════════╝
-""")
-
-def demo_ecommerce_system():
-    """Demo complete e-commerce system testing"""
-    print("\n🛒 E-Commerce System Testing")
-    print("=" * 50)
-
+def demo_ecommerce_platform():
+    """Complete e-commerce platform simulation"""
+    print("\n🛒 E-commerce Platform Demo...")
+    
     with PostgresContainer("postgres:15-alpine") as postgres, \
-         MySqlContainer("mysql:8.0") as mysql, \
-         RedisContainer("redis:7-alpine") as redis_container, \
-         MongoDbContainer("mongo:7.0") as mongo:
-
-        print("✅ All e-commerce services started")
-
-        # Setup User Service (PostgreSQL)
-        user_conn = psycopg2.connect(
+         RedisContainer("redis:7-alpine") as redis_container:
+        
+        print(f"✅ PostgreSQL Ready: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis Ready: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
+        
+        # Setup database
+        conn = psycopg2.connect(
             host=postgres.get_container_host_ip(),
             port=postgres.get_exposed_port(5432),
             user=postgres.username,
             password=postgres.password,
             database=postgres.dbname
         )
-
-        user_cursor = user_conn.cursor()
-        user_cursor.execute("""
-            CREATE TABLE users (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                first_name VARCHAR(100),
-                last_name VARCHAR(100),
-                address TEXT,
-                phone VARCHAR(20),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                is_active BOOLEAN DEFAULT true
-            )
-        """)
-
-        user_cursor.execute("""
-            CREATE TABLE user_sessions (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
-                session_token VARCHAR(255) UNIQUE,
-                expires_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        user_conn.commit()
-
-        # Setup Product Service (MySQL)
-        product_conn = pymysql.connect(
-            host=mysql.get_container_host_ip(),
-            port=mysql.get_exposed_port(3306),
-            user=mysql.username,
-            password=mysql.password,
-            database=mysql.dbname
-        )
-
-        product_cursor = product_conn.cursor()
-        product_cursor.execute("""
-            CREATE TABLE products (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                description TEXT,
-                price DECIMAL(10,2) NOT NULL,
-                stock_quantity INT DEFAULT 0,
-                category_id INT,
-                sku VARCHAR(100) UNIQUE,
-                is_active BOOLEAN DEFAULT true,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        product_cursor.execute("""
-            CREATE TABLE categories (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                description TEXT,
-                parent_id INT
-            )
-        """)
-
-        product_cursor.execute("""
-            CREATE TABLE orders (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                order_number VARCHAR(50) UNIQUE,
-                total_amount DECIMAL(10,2) NOT NULL,
-                status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-                shipping_address TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        product_cursor.execute("""
-            CREATE TABLE order_items (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                order_id INT REFERENCES orders(id),
-                product_id INT,
-                quantity INT NOT NULL,
-                unit_price DECIMAL(10,2) NOT NULL,
-                total_price DECIMAL(10,2) NOT NULL
-            )
-        """)
-        product_conn.commit()
-
-        # Setup Cache Service (Redis)
-        cache_client = redis.Redis(
+        
+        r = redis.Redis(
             host=redis_container.get_container_host_ip(),
             port=redis_container.get_exposed_port(6379),
             decode_responses=True
         )
-
-        # Setup Analytics Service (MongoDB)
-        mongo_client = pymongo.MongoClient(mongo.get_connection_url())
-        analytics_db = mongo_client.ecommerce_analytics
-
-        print("📊 All databases initialized")
-
-        # Seed data
-        print("\n🌱 Seeding test data...")
-
-        # Categories
-        categories = [
-            ("Electronics", "Electronic devices and gadgets"),
-            ("Computers", "Laptops, desktops, and accessories"),
-            ("Mobile", "Smartphones and accessories"),
-            ("Home", "Home and garden items")
-        ]
-
-        category_ids = {}
-        for name, desc in categories:
-            product_cursor.execute("INSERT INTO categories (name, description) VALUES (%s, %s)", (name, desc))
-            category_ids[name] = product_cursor.lastrowid
-        product_conn.commit()
-
+        
+        cursor = conn.cursor()
+        
+        # Create e-commerce schema
+        cursor.execute("""
+            CREATE TABLE customers (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE products (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                price DECIMAL(10,2) NOT NULL,
+                stock INTEGER NOT NULL DEFAULT 0,
+                category VARCHAR(50) NOT NULL
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE orders (
+                id SERIAL PRIMARY KEY,
+                customer_id INTEGER REFERENCES customers(id),
+                total DECIMAL(10,2) NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE order_items (
+                id SERIAL PRIMARY KEY,
+                order_id INTEGER REFERENCES orders(id),
+                product_id INTEGER REFERENCES products(id),
+                quantity INTEGER NOT NULL,
+                price DECIMAL(10,2) NOT NULL
+            )
+        """)
+        
+        print("📊 E-commerce Schema Created: customers, products, orders, order_items")
+        
+        # Insert real e-commerce data
+        print("📝 Creating E-commerce Data:")
+        
         # Products
         products = [
-            ("MacBook Pro 16\"", "High-performance laptop for professionals", 2499.99, 10, "Electronics", "MBP16-001"),
-            ("iPhone 15 Pro", "Latest smartphone with advanced features", 999.99, 25, "Mobile", "IP15P-001"),
-            ("Wireless Mouse", "Ergonomic wireless mouse", 49.99, 100, "Computers", "WM-001"),
-            ("USB-C Hub", "7-in-1 USB-C connectivity hub", 79.99, 50, "Computers", "USBCH-001"),
-            ("Smart Home Speaker", "Voice-controlled smart speaker", 129.99, 30, "Home", "SHS-001")
+            ("MacBook Pro", 2499.99, 10, "Electronics"),
+            ("iPhone", 999.99, 25, "Electronics"),
+            ("iPad", 599.99, 15, "Electronics"),
+            ("Coffee Mug", 12.99, 100, "Home"),
+            ("Python Book", 49.99, 50, "Books")
         ]
-
-        product_ids = {}
-        for name, desc, price, stock, category, sku in products:
-            product_cursor.execute("""
-                INSERT INTO products (name, description, price, stock_quantity, category_id, sku)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (name, desc, price, stock, category_ids[category], sku))
-            product_ids[name] = product_cursor.lastrowid
-        product_conn.commit()
-
-        # Users
-        users = [
-            ("alice@example.com", "Alice", "Johnson", "123 Main St, City, State", "+1-555-0101"),
-            ("bob@example.com", "Bob", "Smith", "456 Oak Ave, City, State", "+1-555-0102"),
-            ("carol@example.com", "Carol", "Davis", "789 Pine Rd, City, State", "+1-555-0103"),
-            ("david@example.com", "David", "Wilson", "321 Elm St, City, State", "+1-555-0104")
+        
+        for name, price, stock, category in products:
+            cursor.execute(
+                "INSERT INTO products (name, price, stock, category) VALUES (%s, %s, %s, %s)",
+                (name, price, stock, category)
+            )
+            print(f"   + {name}: ${price} (Stock: {stock}, Category: {category})")
+        
+        # Customers
+        customers = [
+            ("alice@example.com", "Alice Johnson"),
+            ("bob@example.com", "Bob Smith"),
+            ("carol@example.com", "Carol Davis")
         ]
-
-        user_ids = {}
-        for email, first, last, address, phone in users:
-            user_cursor.execute("""
-                INSERT INTO users (email, first_name, last_name, address, phone)
-                VALUES (%s, %s, %s, %s, %s) RETURNING id
-            """, (email, first, last, address, phone))
-            user_ids[email] = user_cursor.fetchone()[0]
-        user_conn.commit()
-
-        print(f"   📦 Created {len(products)} products in {len(categories)} categories")
-        print(f"   👥 Created {len(users)} user accounts")
-
-        # Simulate real e-commerce workflows
-        print("\n🛍️ Simulating e-commerce workflows...")
-
-        def create_user_session(user_id):
-            """Create user session"""
-            session_token = str(uuid.uuid4())
-            expires_at = datetime.now() + timedelta(hours=24)
-
-            user_cursor.execute("""
-                INSERT INTO user_sessions (user_id, session_token, expires_at)
-                VALUES (%s, %s, %s)
-            """, (user_id, session_token, expires_at))
-            user_conn.commit()
-
-            # Cache session in Redis
-            cache_client.setex(f"session:{session_token}", 86400, json.dumps({
-                "user_id": user_id,
-                "created_at": datetime.now().isoformat()
-            }))
-
-            return session_token
-
-        def add_to_cart(session_token, product_id, quantity):
-            """Add item to shopping cart"""
-            cart_key = f"cart:{session_token}"
-            cache_client.hset(cart_key, str(product_id), quantity)
-            cache_client.expire(cart_key, 3600)  # 1 hour expiry
-
-        def create_order(session_token):
-            """Create order from cart"""
-            cart_key = f"cart:{session_token}"
-            cart_items = cache_client.hgetall(cart_key)
-
-            if not cart_items:
-                return None
-
-            # Get user from session
-            session_data = cache_client.get(f"session:{session_token}")
-            if not session_data:
-                return None
-
-            session_info = json.loads(session_data)
-            user_id = session_info["user_id"]
-
-            # Get user details
-            user_cursor.execute("SELECT first_name, last_name, address FROM users WHERE id = %s", (user_id,))
-            user_data = user_cursor.fetchone()
-
-            # Calculate total
-            total_amount = 0
-            order_items = []
-
-            for product_id, quantity in cart_items.items():
-                product_cursor.execute("SELECT name, price FROM products WHERE id = %s", (int(product_id),))
-                product_data = product_cursor.fetchone()
-
-                if product_data:
-                    name, price = product_data
-                    quantity = int(quantity)
-                    item_total = float(price) * quantity
-                    total_amount += item_total
-
-                    order_items.append({
-                        "product_id": int(product_id),
-                        "name": name,
-                        "quantity": quantity,
-                        "unit_price": float(price),
-                        "total_price": item_total
-                    })
-
-            # Create order
-            order_number = f"ORD-{int(time.time())}-{random.randint(1000, 9999)}"
-
-            product_cursor.execute("""
-                INSERT INTO orders (user_id, order_number, total_amount, shipping_address)
-                VALUES (%s, %s, %s, %s)
-            """, (user_id, order_number, total_amount, user_data[2]))
-            order_id = product_cursor.lastrowid
-
-            # Add order items
-            for item in order_items:
-                product_cursor.execute("""
-                    INSERT INTO order_items (order_id, product_id, quantity, unit_price, total_price)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (order_id, item["product_id"], item["quantity"], item["unit_price"], item["total_price"]))
-
-            product_conn.commit()
-
-            # Clear cart
-            cache_client.delete(cart_key)
-
-            # Log analytics
-            analytics_db.order_events.insert_one({
-                "event_type": "order_created",
-                "order_id": order_id,
-                "order_number": order_number,
-                "user_id": user_id,
-                "total_amount": total_amount,
-                "items_count": len(order_items),
-                "timestamp": datetime.now()
-            })
-
-            return {
-                "order_id": order_id,
-                "order_number": order_number,
-                "total_amount": total_amount,
-                "items": order_items
-            }
-
-        # Simulate user journeys
-        print("   🛒 Simulating user shopping journeys...")
-
-        # Alice's journey
-        alice_session = create_user_session(user_ids["alice@example.com"])
-        add_to_cart(alice_session, product_ids["MacBook Pro 16\""], 1)
-        add_to_cart(alice_session, product_ids["Wireless Mouse"], 1)
-        alice_order = create_order(alice_session)
-        print(f"   ✅ Alice's order: {alice_order['order_number']} - ${alice_order['total_amount']}")
-
-        # Bob's journey
-        bob_session = create_user_session(user_ids["bob@example.com"])
-        add_to_cart(bob_session, product_ids["iPhone 15 Pro"], 1)
-        add_to_cart(bob_session, product_ids["USB-C Hub"], 1)
-        bob_order = create_order(bob_session)
-        print(f"   ✅ Bob's order: {bob_order['order_number']} - ${bob_order['total_amount']}")
-
-        # Carol's journey
-        carol_session = create_user_session(user_ids["carol@example.com"])
-        add_to_cart(carol_session, product_ids["Smart Home Speaker"], 2)
-        carol_order = create_order(carol_session)
-        print(f"   ✅ Carol's order: {carol_order['order_number']} - ${carol_order['total_amount']}")
-
-        # Analytics and reporting
-        print("\n📊 Running analytics and reports...")
-
-        # Order statistics
-        product_cursor.execute("""
-            SELECT COUNT(*) as total_orders, SUM(total_amount) as total_revenue
-            FROM orders
-        """)
-        order_stats = product_cursor.fetchone()
-        print(f"   📈 Total orders: {order_stats[0]}, Revenue: ${order_stats[1]}")
-
-        # Top products
-        product_cursor.execute("""
-            SELECT p.name, SUM(oi.quantity) as total_sold
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            GROUP BY p.name
-            ORDER BY total_sold DESC
+        
+        for email, name in customers:
+            cursor.execute(
+                "INSERT INTO customers (email, name) VALUES (%s, %s)",
+                (email, name)
+            )
+            print(f"   + {name} ({email})")
+        
+        conn.commit()
+        
+        # Simulate real e-commerce operations
+        print(f"\n🛒 Simulating E-commerce Operations:")
+        
+        # Customer 1 places order
+        print(f"   👤 Alice places order:")
+        cursor.execute("SELECT id FROM customers WHERE email = 'alice@example.com'")
+        alice_id = cursor.fetchone()[0]
+        
+        cursor.execute("""
+            INSERT INTO orders (customer_id, total) 
+            VALUES (%s, %s) RETURNING id
+        """, (alice_id, 2499.99))
+        order_id = cursor.fetchone()[0]
+        
+        cursor.execute("""
+            INSERT INTO order_items (order_id, product_id, quantity, price)
+            VALUES (%s, %s, %s, %s)
+        """, (order_id, 1, 1, 2499.99))  # MacBook Pro
+        
+        print(f"      📦 Order {order_id}: MacBook Pro x1 - $2499.99")
+        
+        # Customer 2 places order
+        print(f"   👤 Bob places order:")
+        cursor.execute("SELECT id FROM customers WHERE email = 'bob@example.com'")
+        bob_id = cursor.fetchone()[0]
+        
+        cursor.execute("""
+            INSERT INTO orders (customer_id, total) 
+            VALUES (%s, %s) RETURNING id
+        """, (bob_id, 1062.98))
+        order_id = cursor.fetchone()[0]
+        
+        cursor.execute("""
+            INSERT INTO order_items (order_id, product_id, quantity, price)
+            VALUES (%s, %s, %s, %s)
+        """, (order_id, 2, 1, 999.99))  # iPhone
+        
+        cursor.execute("""
+            INSERT INTO order_items (order_id, product_id, quantity, price)
+            VALUES (%s, %s, %s, %s)
+        """, (order_id, 4, 2, 12.99))  # Coffee Mug x2
+        
+        print(f"      📦 Order {order_id}: iPhone x1 + Coffee Mug x2 - $1062.98")
+        
+        conn.commit()
+        
+        # Cache popular products in Redis
+        print(f"\n💾 Caching Popular Products:")
+        cursor.execute("""
+            SELECT p.name, p.price, p.stock, p.category
+            FROM products p
+            ORDER BY p.price DESC
             LIMIT 3
         """)
-        top_products = product_cursor.fetchall()
-        print(f"   🏆 Top products:")
-        for product, sold in top_products:
-            print(f"     {product}: {sold} sold")
-
-        # Cache statistics
-        session_keys = cache_client.keys("session:*")
-        cart_keys = cache_client.keys("cart:*")
-        print(f"   💾 Cache: {len(session_keys)} active sessions, {len(cart_keys)} active carts")
-
-        # MongoDB analytics
-        total_events = analytics_db.order_events.count_documents({})
-        print(f"   📊 Analytics: {total_events} events logged")
-
-        # Clean up connections
-        user_cursor.close()
-        user_conn.close()
-        product_cursor.close()
-        product_conn.close()
-        mongo_client.close()
-
-        print("✅ E-commerce system testing completed!")
+        
+        popular_products = cursor.fetchall()
+        for name, price, stock, category in popular_products:
+            product_data = {
+                "name": name,
+                "price": float(price),
+                "stock": stock,
+                "category": category
+            }
+            r.setex(f"product:{name}", 300, json.dumps(product_data))
+            print(f"   💾 Cached: {name} - ${price} (TTL: 300s)")
+        
+        # Generate real-time analytics
+        print(f"\n📊 Real-time Analytics:")
+        
+        # Order summary
+        cursor.execute("""
+            SELECT COUNT(*) as total_orders, 
+                   SUM(total) as total_revenue,
+                   AVG(total) as avg_order_value
+            FROM orders
+        """)
+        
+        order_stats = cursor.fetchone()
+        print(f"   📦 Orders: {order_stats[0]} total, ${order_stats[1]:.2f} revenue, ${order_stats[2]:.2f} avg")
+        
+        # Product performance
+        cursor.execute("""
+            SELECT p.name, SUM(oi.quantity) as total_sold,
+                   SUM(oi.quantity * oi.price) as total_revenue
+            FROM products p
+            JOIN order_items oi ON p.id = oi.product_id
+            GROUP BY p.id, p.name
+            ORDER BY total_sold DESC
+        """)
+        
+        product_performance = cursor.fetchall()
+        print(f"   📈 Product Performance:")
+        for name, sold, revenue in product_performance:
+            print(f"      {name}: {sold} sold, ${revenue:.2f} revenue")
+        
+        # Customer analysis
+        cursor.execute("""
+            SELECT c.name, c.email, COUNT(o.id) as order_count,
+                   COALESCE(SUM(o.total), 0) as total_spent
+            FROM customers c
+            LEFT JOIN orders o ON c.id = o.customer_id
+            GROUP BY c.id, c.name, c.email
+            ORDER BY total_spent DESC
+        """)
+        
+        customer_analysis = cursor.fetchall()
+        print(f"   👥 Customer Analysis:")
+        for name, email, orders, spent in customer_analysis:
+            print(f"      {name}: {orders} orders, ${spent:.2f} spent")
+        
+        cursor.close()
+        conn.close()
 
 def demo_monitoring_system():
-    """Demo application monitoring and metrics"""
-    print("\n📊 Monitoring System Demo")
-    print("=" * 50)
-
+    """Production monitoring system simulation"""
+    print("\n📊 Monitoring System Demo...")
+    
     with PostgresContainer("postgres:15-alpine") as postgres, \
          RedisContainer("redis:7-alpine") as redis_container:
-
-        print("✅ Monitoring infrastructure started")
-
-        # Metrics Database
-        metrics_conn = psycopg2.connect(
+        
+        print(f"✅ PostgreSQL Ready: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis Ready: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
+        
+        # Setup monitoring database
+        conn = psycopg2.connect(
             host=postgres.get_container_host_ip(),
             port=postgres.get_exposed_port(5432),
             user=postgres.username,
             password=postgres.password,
             database=postgres.dbname
         )
-
-        metrics_cursor = metrics_conn.cursor()
-        metrics_cursor.execute("""
-            CREATE TABLE system_metrics (
+        
+        r = redis.Redis(
+            host=redis_container.get_container_host_ip(),
+            port=redis_container.get_exposed_port(6379),
+            decode_responses=True
+        )
+        
+        cursor = conn.cursor()
+        
+        # Create monitoring schema
+        cursor.execute("""
+            CREATE TABLE metrics (
                 id SERIAL PRIMARY KEY,
-                metric_name VARCHAR(100),
-                metric_value DECIMAL(10,4),
-                metric_unit VARCHAR(20),
-                service_name VARCHAR(50),
+                service_name VARCHAR(50) NOT NULL,
+                metric_name VARCHAR(100) NOT NULL,
+                value DECIMAL(10,2) NOT NULL,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-
-        metrics_cursor.execute("""
+        
+        cursor.execute("""
             CREATE TABLE alerts (
                 id SERIAL PRIMARY KEY,
-                alert_name VARCHAR(100),
-                severity VARCHAR(20),
-                message TEXT,
-                service_name VARCHAR(50),
-                is_resolved BOOLEAN DEFAULT false,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                resolved_at TIMESTAMP
+                service_name VARCHAR(50) NOT NULL,
+                alert_type VARCHAR(50) NOT NULL,
+                message TEXT NOT NULL,
+                severity VARCHAR(20) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        metrics_conn.commit()
+        
+        print("📊 Monitoring Schema Created: metrics, alerts")
+        
+        # Simulate real monitoring data
+        print("📝 Generating Monitoring Data:")
+        
+        # Generate metrics for different services
+        services = ["user-service", "order-service", "payment-service", "notification-service"]
+        metrics = ["cpu_usage", "memory_usage", "response_time", "error_rate", "throughput"]
+        
+        for service in services:
+            for metric in metrics:
+                # Generate realistic metric values
+                if metric == "cpu_usage":
+                    value = 45.5 + (hash(service) % 30)  # 45-75%
+                elif metric == "memory_usage":
+                    value = 60.2 + (hash(service) % 25)  # 60-85%
+                elif metric == "response_time":
+                    value = 120.5 + (hash(service) % 200)  # 120-320ms
+                elif metric == "error_rate":
+                    value = 0.5 + (hash(service) % 5)  # 0.5-5.5%
+                else:  # throughput
+                    value = 1000 + (hash(service) % 2000)  # 1000-3000 req/s
+                
+                cursor.execute("""
+                    INSERT INTO metrics (service_name, metric_name, value)
+                    VALUES (%s, %s, %s)
+                """, (service, metric, value))
+                
+                print(f"   + {service}: {metric} = {value:.2f}")
+        
+        conn.commit()
+        
+        # Generate alerts for critical metrics
+        print(f"\n🚨 Generating Alerts:")
+        
+        # Check for critical metrics
+        cursor.execute("""
+            SELECT service_name, metric_name, value
+            FROM metrics
+            WHERE (metric_name = 'cpu_usage' AND value > 80) OR
+                  (metric_name = 'memory_usage' AND value > 85) OR
+                  (metric_name = 'response_time' AND value > 500) OR
+                  (metric_name = 'error_rate' AND value > 5)
+        """)
+        
+        critical_metrics = cursor.fetchall()
+        for service, metric, value in critical_metrics:
+            severity = "HIGH" if value > 90 else "MEDIUM"
+            message = f"{metric} is {value:.2f} for {service}"
+            
+            cursor.execute("""
+                INSERT INTO alerts (service_name, alert_type, message, severity)
+                VALUES (%s, %s, %s, %s)
+            """, (service, metric, message, severity))
+            
+            print(f"   🚨 {severity}: {message}")
+        
+        conn.commit()
+        
+        # Store real-time metrics in Redis
+        print(f"\n💾 Storing Real-time Metrics in Redis:")
+        
+        cursor.execute("""
+            SELECT service_name, metric_name, value, timestamp
+            FROM metrics
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """)
+        
+        recent_metrics = cursor.fetchall()
+        for service, metric, value, timestamp in recent_metrics:
+            metric_data = {
+                "service": service,
+                "metric": metric,
+                "value": float(value),
+                "timestamp": timestamp.isoformat()
+            }
+            r.setex(f"metric:{service}:{metric}", 60, json.dumps(metric_data))
+            print(f"   💾 Cached: {service}:{metric} = {value:.2f}")
+        
+        # Generate monitoring dashboard data
+        print(f"\n📊 Monitoring Dashboard:")
+        
+        # Service health summary
+        cursor.execute("""
+            SELECT service_name, 
+                   AVG(CASE WHEN metric_name = 'cpu_usage' THEN value END) as avg_cpu,
+                   AVG(CASE WHEN metric_name = 'memory_usage' THEN value END) as avg_memory,
+                   AVG(CASE WHEN metric_name = 'response_time' THEN value END) as avg_response_time
+            FROM metrics
+            GROUP BY service_name
+            ORDER BY service_name
+        """)
+        
+        service_health = cursor.fetchall()
+        print(f"   🏥 Service Health Summary:")
+        for service, cpu, memory, response_time in service_health:
+            health_status = "✅ Healthy" if cpu < 70 and memory < 80 and response_time < 300 else "⚠️ Warning"
+            print(f"      {service}: {health_status}")
+            print(f"         CPU: {cpu:.1f}%, Memory: {memory:.1f}%, Response: {response_time:.1f}ms")
+        
+        # Alert summary
+        cursor.execute("""
+            SELECT severity, COUNT(*) as count
+            FROM alerts
+            GROUP BY severity
+            ORDER BY severity
+        """)
+        
+        alert_summary = cursor.fetchall()
+        print(f"   🚨 Alert Summary:")
+        for severity, count in alert_summary:
+            print(f"      {severity}: {count} alerts")
+        
+        cursor.close()
+        conn.close()
 
-        # Metrics Cache
-        metrics_cache = redis.Redis(
+def demo_deployment_pipeline():
+    """Deployment pipeline simulation"""
+    print("\n🚀 Deployment Pipeline Demo...")
+    
+    with PostgresContainer("postgres:15-alpine") as postgres, \
+         RedisContainer("redis:7-alpine") as redis_container:
+        
+        print(f"✅ PostgreSQL Ready: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis Ready: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
+        
+        # Setup deployment tracking
+        conn = psycopg2.connect(
+            host=postgres.get_container_host_ip(),
+            port=postgres.get_exposed_port(5432),
+            user=postgres.username,
+            password=postgres.password,
+            database=postgres.dbname
+        )
+        
+        r = redis.Redis(
             host=redis_container.get_container_host_ip(),
             port=redis_container.get_exposed_port(6379),
             decode_responses=True
         )
-
-        print("📊 Monitoring system initialized")
-
-        class MonitoringSystem:
-            def __init__(self, db_conn, cache_client):
-                self.conn = db_conn
-                self.cursor = db_conn.cursor()
-                self.cache = cache_client
-
-            def record_metric(self, name, value, unit, service):
-                """Record a system metric"""
-                self.cursor.execute("""
-                    INSERT INTO system_metrics (metric_name, metric_value, metric_unit, service_name)
+        
+        cursor = conn.cursor()
+        
+        # Create deployment schema
+        cursor.execute("""
+            CREATE TABLE deployments (
+                id SERIAL PRIMARY KEY,
+                service_name VARCHAR(50) NOT NULL,
+                version VARCHAR(20) NOT NULL,
+                environment VARCHAR(20) NOT NULL,
+                status VARCHAR(20) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE deployment_tests (
+                id SERIAL PRIMARY KEY,
+                deployment_id INTEGER REFERENCES deployments(id),
+                test_name VARCHAR(100) NOT NULL,
+                status VARCHAR(20) NOT NULL,
+                duration INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        print("📊 Deployment Schema Created: deployments, deployment_tests")
+        
+        # Simulate deployment pipeline
+        print("🚀 Simulating Deployment Pipeline:")
+        
+        # Deploy services
+        services = [
+            ("user-service", "v1.2.3", "staging"),
+            ("order-service", "v2.1.0", "staging"),
+            ("payment-service", "v1.5.2", "staging"),
+            ("notification-service", "v1.0.1", "staging")
+        ]
+        
+        for service, version, environment in services:
+            cursor.execute("""
+                INSERT INTO deployments (service_name, version, environment, status)
+                VALUES (%s, %s, %s, %s) RETURNING id
+            """, (service, version, environment, "deploying"))
+            
+            deployment_id = cursor.fetchone()[0]
+            print(f"   🚀 Deploying {service} {version} to {environment}")
+            
+            # Run deployment tests
+            tests = [
+                ("unit_tests", "passed", 45),
+                ("integration_tests", "passed", 120),
+                ("performance_tests", "passed", 300),
+                ("security_tests", "passed", 90)
+            ]
+            
+            for test_name, status, duration in tests:
+                cursor.execute("""
+                    INSERT INTO deployment_tests (deployment_id, test_name, status, duration)
                     VALUES (%s, %s, %s, %s)
-                """, (name, value, unit, service))
-                self.conn.commit()
-
-                # Cache latest value
-                cache_key = f"metric:{service}:{name}"
-                self.cache.setex(cache_key, 300, str(value))
-
-            def create_alert(self, name, severity, message, service):
-                """Create system alert"""
-                self.cursor.execute("""
-                    INSERT INTO alerts (alert_name, severity, message, service_name)
-                    VALUES (%s, %s, %s, %s) RETURNING id
-                """, (name, severity, message, service))
-                alert_id = self.cursor.fetchone()[0]
-                self.conn.commit()
-
-                # Cache active alert
-                alert_key = f"alert:{alert_id}"
-                self.cache.setex(alert_key, 3600, json.dumps({
-                    "name": name,
-                    "severity": severity,
-                    "message": message,
-                    "service": service
-                }))
-
-                return alert_id
-
-            def get_service_health(self, service):
-                """Get service health metrics"""
-                # Get latest metrics from cache
-                cpu_usage = self.cache.get(f"metric:{service}:cpu_usage")
-                memory_usage = self.cache.get(f"metric:{service}:memory_usage")
-                response_time = self.cache.get(f"metric:{service}:response_time")
-
-                # Check for active alerts
-                alert_keys = self.cache.keys(f"alert:*")
-                active_alerts = 0
-                for key in alert_keys:
-                    alert_data = self.cache.get(key)
-                    if alert_data:
-                        alert = json.loads(alert_data)
-                        if alert["service"] == service:
-                            active_alerts += 1
-
-                return {
-                    "service": service,
-                    "cpu_usage": float(cpu_usage) if cpu_usage else None,
-                    "memory_usage": float(memory_usage) if memory_usage else None,
-                    "response_time": float(response_time) if response_time else None,
-                    "active_alerts": active_alerts,
-                    "status": "degraded" if active_alerts > 0 else "healthy"
-                }
-
-        # Test monitoring system
-        monitor = MonitoringSystem(metrics_conn, metrics_cache)
-
-        print("\n🔍 Simulating system monitoring...")
-
-        # Simulate metrics collection
-        services = ["web_server", "database", "cache", "api_gateway"]
-
-        for i in range(10):
-            for service in services:
-                # Generate realistic metrics
-                cpu_usage = random.uniform(10, 85)
-                memory_usage = random.uniform(20, 75)
-                response_time = random.uniform(50, 500)
-
-                monitor.record_metric("cpu_usage", cpu_usage, "percent", service)
-                monitor.record_metric("memory_usage", memory_usage, "percent", service)
-                monitor.record_metric("response_time", response_time, "milliseconds", service)
-
-                # Create alerts for high usage
-                if cpu_usage > 80:
-                    monitor.create_alert(
-                        "High CPU Usage",
-                        "warning",
-                        f"CPU usage is {cpu_usage:.1f}%",
-                        service
-                    )
-
-                if memory_usage > 70:
-                    monitor.create_alert(
-                        "High Memory Usage",
-                        "warning",
-                        f"Memory usage is {memory_usage:.1f}%",
-                        service
-                    )
-
-                if response_time > 400:
-                    monitor.create_alert(
-                        "Slow Response Time",
-                        "critical",
-                        f"Response time is {response_time:.0f}ms",
-                        service
-                    )
-
-            time.sleep(0.1)  # Simulate time passing
-
-        print("   📊 Collected 10 rounds of metrics from 4 services")
-
-        # Generate monitoring reports
-        print("\n📋 Monitoring Reports:")
-
-        for service in services:
-            health = monitor.get_service_health(service)
-            print(f"   🖥️ {service}:")
-            print(f"     Status: {health['status']}")
-            if health['cpu_usage']:
-                print(f"     CPU: {health['cpu_usage']:.1f}%")
-            if health['memory_usage']:
-                print(f"     Memory: {health['memory_usage']:.1f}%")
-            if health['response_time']:
-                print(f"     Response Time: {health['response_time']:.0f}ms")
-            print(f"     Active Alerts: {health['active_alerts']}")
-
-        # Overall system statistics
-        metrics_cursor.execute("""
-            SELECT service_name, AVG(metric_value) as avg_cpu
-            FROM system_metrics
-            WHERE metric_name = 'cpu_usage'
-            GROUP BY service_name
+                """, (deployment_id, test_name, status, duration))
+                
+                print(f"      ✅ {test_name}: {status} ({duration}s)")
+            
+            # Update deployment status
+            cursor.execute("""
+                UPDATE deployments SET status = 'deployed' WHERE id = %s
+            """, (deployment_id,))
+            
+            print(f"   ✅ {service} {version} deployed successfully")
+        
+        conn.commit()
+        
+        # Store deployment status in Redis
+        print(f"\n💾 Storing Deployment Status in Redis:")
+        
+        cursor.execute("""
+            SELECT service_name, version, environment, status, created_at
+            FROM deployments
+            ORDER BY created_at DESC
         """)
-        cpu_averages = metrics_cursor.fetchall()
-
-        print(f"\n📊 System Overview:")
-        for service, avg_cpu in cpu_averages:
-            print(f"   {service}: Avg CPU {avg_cpu:.1f}%")
-
-        # Alert summary
-        metrics_cursor.execute("""
-            SELECT severity, COUNT(*) as alert_count
-            FROM alerts
-            GROUP BY severity
+        
+        deployments = cursor.fetchall()
+        for service, version, env, status, created_at in deployments:
+            deployment_data = {
+                "service": service,
+                "version": version,
+                "environment": env,
+                "status": status,
+                "deployed_at": created_at.isoformat()
+            }
+            r.setex(f"deployment:{service}", 3600, json.dumps(deployment_data))
+            print(f"   💾 Cached: {service} {version} ({status})")
+        
+        # Generate deployment report
+        print(f"\n📊 Deployment Report:")
+        
+        # Deployment summary
+        cursor.execute("""
+            SELECT environment, COUNT(*) as total_deployments,
+                   SUM(CASE WHEN status = 'deployed' THEN 1 ELSE 0 END) as successful_deployments
+            FROM deployments
+            GROUP BY environment
         """)
-        alert_summary = metrics_cursor.fetchall()
-
-        print(f"   🚨 Alerts Generated:")
-        for severity, count in alert_summary:
-            print(f"     {severity}: {count} alerts")
-
-        metrics_cursor.close()
-        metrics_conn.close()
-
-        print("✅ Monitoring system demo completed!")
+        
+        deployment_summary = cursor.fetchall()
+        print(f"   📈 Deployment Summary:")
+        for env, total, successful in deployment_summary:
+            success_rate = (successful / total) * 100 if total > 0 else 0
+            print(f"      {env}: {successful}/{total} deployments ({success_rate:.1f}% success rate)")
+        
+        # Test performance
+        cursor.execute("""
+            SELECT test_name, 
+                   AVG(duration) as avg_duration,
+                   COUNT(*) as total_runs,
+                   SUM(CASE WHEN status = 'passed' THEN 1 ELSE 0 END) as passed_runs
+            FROM deployment_tests
+            GROUP BY test_name
+            ORDER BY avg_duration DESC
+        """)
+        
+        test_performance = cursor.fetchall()
+        print(f"   🧪 Test Performance:")
+        for test_name, avg_duration, total_runs, passed_runs in test_performance:
+            pass_rate = (passed_runs / total_runs) * 100 if total_runs > 0 else 0
+            print(f"      {test_name}: {avg_duration:.1f}s avg, {passed_runs}/{total_runs} passed ({pass_rate:.1f}%)")
+        
+        cursor.close()
+        conn.close()
 
 def main():
-    """Run Lab 10"""
-    print_header()
-
+    """Run Lab 10 - Real-World Scenarios"""
+    print("🚀 LAB 10: Real-World Scenarios - Working Examples")
+    print("=" * 60)
+    print("✨ Master real-world TestContainers scenarios!")
+    
+    # Check dependencies
+    if not check_dependencies():
+        sys.exit(1)
+    
+    # Check Docker
+    if not check_docker():
+        print("❌ Docker is not running or not available")
+        print("💡 Please start Docker Desktop or Docker Engine")
+        sys.exit(1)
+    
     try:
-        demo_ecommerce_system()
-        time.sleep(2)
-
+        demo_ecommerce_platform()
         demo_monitoring_system()
-
-        print("\n" + "=" * 60)
-        print("🎉 LAB 10 COMPLETED!")
-        print("=" * 60)
-        print("\nCongratulations! You've completed the final lab!")
-        print("\nWhat you mastered:")
-        print("✅ Complete e-commerce system testing")
-        print("✅ Multi-service integration patterns")
-        print("✅ Real-world data scenarios")
-        print("✅ System monitoring and alerting")
-        print("✅ Production-ready testing strategies")
-
-        print("\n🏆 You are now a TestContainers Expert!")
-        print("🚀 Ready to test any application with confidence!")
-
-        return True
-
+        demo_deployment_pipeline()
+        
+        print("\n✅ Lab 10 completed successfully!")
+        print("Key concepts learned:")
+        print("• Complete e-commerce platform simulation")
+        print("• Production monitoring and alerting systems")
+        print("• Deployment pipeline and testing automation")
+        print("• Real-world data patterns and analytics")
+        print("• Production-ready TestContainers scenarios")
+        print("\n🎉 Congratulations! You've mastered TestContainers!")
+        print("💪 You're now ready for production testing challenges!")
+        
     except Exception as e:
-        print(f"\n❌ Lab failed: {e}")
-        print("Make sure Docker is running and try again.")
+        print(f"❌ Lab failed: {e}")
+        print("💡 Make sure Docker is running and try again")
         return False
+    
+    return True
 
 if __name__ == "__main__":
     main()

@@ -1,17 +1,70 @@
 #!/usr/bin/env python3
 """
-Lab 4: Multiple Containers
-==========================
+Lab 4: Multiple Containers - Working Examples
+=============================================
 
 Learn to orchestrate multiple containers together with TestContainers.
+Master real-world multi-container scenarios with PostgreSQL, Redis, and more.
 """
 
 import os
+import sys
 import time
+from pathlib import Path
+
+# Python version check
+if sys.version_info < (3, 10):
+    print("❌ Python 3.10 or higher is required")
+    sys.exit(1)
+
+# Add current directory to Python path for imports
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
 
 # Configure TestContainers to use local Docker
 os.environ["TESTCONTAINERS_CLOUD_ENABLED"] = "false"
-os.environ["DOCKER_HOST"] = "unix:///var/run/docker.sock"
+
+# Platform-specific Docker host configuration
+if sys.platform == "win32":
+    os.environ["DOCKER_HOST"] = "tcp://localhost:2375"
+else:
+    os.environ["DOCKER_HOST"] = "unix:///var/run/docker.sock"
+
+def check_dependencies():
+    """Check if all required packages are installed"""
+    required_packages = {
+        'testcontainers': 'testcontainers',
+        'psycopg2': 'psycopg2-binary',
+        'redis': 'redis'
+    }
+    
+    missing_packages = []
+    
+    for package, pip_name in required_packages.items():
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(pip_name)
+    
+    if missing_packages:
+        print("❌ Missing required packages:")
+        for package in missing_packages:
+            print(f"   - {package}")
+        print("\n💡 Install with:")
+        print(f"   pip install {' '.join(missing_packages)}")
+        return False
+    
+    return True
+
+def check_docker():
+    """Check if Docker is available and running"""
+    import subprocess
+    try:
+        subprocess.run(["docker", "--version"], capture_output=True, check=True)
+        result = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+        return result.returncode == 0
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
 
 try:
     from testcontainers.postgres import PostgresContainer
@@ -21,18 +74,17 @@ try:
 except ImportError as e:
     print(f"❌ Missing packages: {e}")
     print("Run: pip install testcontainers psycopg2-binary redis")
-    exit(1)
+    sys.exit(1)
 
-def demo_multi_container():
-    """Multiple containers working together"""
-    print("🔄 Multi-Container Orchestration")
+def demo_multi_container_basic():
+    """Multiple containers working together with real data"""
+    print("\n🔄 Multi-Container Orchestration Demo...")
     
     with PostgresContainer("postgres:15-alpine") as postgres, \
          RedisContainer("redis:7-alpine") as redis_container:
 
-        print("✅ Both containers started:")
-        print(f"   PostgreSQL: port {postgres.get_exposed_port(5432)}")
-        print(f"   Redis: port {redis_container.get_exposed_port(6379)}")
+        print(f"✅ PostgreSQL Ready: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis Ready: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
 
         # Connect to both databases
         pg_conn = psycopg2.connect(
@@ -49,151 +101,251 @@ def demo_multi_container():
             decode_responses=True
         )
 
-        # Setup data in PostgreSQL
         pg_cursor = pg_conn.cursor()
+
+        # Create user sessions table
         pg_cursor.execute("""
-            CREATE TABLE users (
+            CREATE TABLE user_sessions (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(100)
+                user_id INTEGER NOT NULL,
+                session_token VARCHAR(100) UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour')
             )
         """)
+        print("📊 PostgreSQL Table Created: user_sessions")
 
+        # Create user profiles table
+        pg_cursor.execute("""
+            CREATE TABLE user_profiles (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                preferences JSONB
+            )
+        """)
+        print("📊 PostgreSQL Table Created: user_profiles")
+
+        # Insert user data
         users = [
-            ("Alice Johnson", "alice@example.com"),
-            ("Bob Smith", "bob@example.com"),
-            ("Carol Davis", "carol@example.com")
+            (1001, "Alice Johnson", "alice@example.com", '{"theme": "dark", "notifications": true}'),
+            (1002, "Bob Smith", "bob@example.com", '{"theme": "light", "notifications": false}'),
+            (1003, "Carol Davis", "carol@example.com", '{"theme": "auto", "notifications": true}')
         ]
 
-        for name, email in users:
-            pg_cursor.execute("INSERT INTO users (name, email) VALUES (%s, %s)", (name, email))
+        print("📝 Creating User Profiles:")
+        for user_id, name, email, preferences in users:
+            pg_cursor.execute(
+                "INSERT INTO user_profiles (user_id, name, email, preferences) VALUES (%s, %s, %s, %s)",
+                (user_id, name, email, preferences)
+            )
+            print(f"   + User {user_id}: {name} ({email})")
+
+        # Create sessions
+        sessions = [
+            (1001, "sess_alice_12345"),
+            (1002, "sess_bob_67890"),
+            (1003, "sess_carol_abcdef")
+        ]
+
+        print("📝 Creating User Sessions:")
+        for user_id, session_token in sessions:
+            pg_cursor.execute(
+                "INSERT INTO user_sessions (user_id, session_token) VALUES (%s, %s)",
+                (user_id, session_token)
+            )
+            print(f"   + Session {session_token}: User {user_id}")
 
         pg_conn.commit()
 
-        # Cache sessions in Redis
-        for i, (name, email) in enumerate(users, 1):
-            session_key = f"user:{i}:session"
-            r.set(session_key, f"active:{name.lower().replace(' ', '_')}")
-            r.expire(session_key, 3600)  # 1 hour expiry
+        # Store session data in Redis
+        print("📝 Storing Session Data in Redis:")
+        for user_id, session_token in sessions:
+            session_data = {
+                "user_id": str(user_id),
+                "session_token": session_token,
+                "last_activity": str(int(time.time())),
+                "ip_address": "192.168.1.100"
+            }
+            r.hset(f"session:{session_token}", mapping=session_data)
+            r.expire(f"session:{session_token}", 3600)  # 1 hour TTL
+            print(f"   🔑 {session_token}: User {user_id} (TTL: 3600s)")
 
-        print("📊 Data stored in both databases:")
+        # Cross-database query
+        print(f"\n🔍 Cross-Database Analysis:")
+        pg_cursor.execute("""
+            SELECT up.user_id, up.name, up.email, 
+                   up.preferences->>'theme' as theme,
+                   us.session_token,
+                   us.created_at
+            FROM user_profiles up
+            LEFT JOIN user_sessions us ON up.user_id = us.user_id
+            ORDER BY up.user_id
+        """)
 
-        # Query PostgreSQL
-        pg_cursor.execute("SELECT id, name, email FROM users")
-        pg_users = pg_cursor.fetchall()
-        print(f"   PostgreSQL: {len(pg_users)} users")
-        for user_id, name, email in pg_users:
-            print(f"     {user_id}: {name} ({email})")
-
-        # Query Redis
-        redis_keys = r.keys("user:*:session")
-        print(f"   Redis: {len(redis_keys)} sessions")
-        for key in redis_keys:
-            session_data = r.get(key)
-            ttl = r.ttl(key)
-            print(f"     {key}: {session_data} (expires in {ttl}s)")
-
-        # Cross-database operations
-        print("\n🔄 Cross-database operations:")
-        pg_cursor.execute("SELECT id, name FROM users WHERE name = %s", ("Alice Johnson",))
-        user = pg_cursor.fetchone()
-        if user:
-            user_id, name = user
-            session_key = f"user:{user_id}:session"
-            session = r.get(session_key)
-            print(f"   User '{name}' (ID: {user_id}) has session: {session}")
-
-        # Update session data
-        r.set(f"user:{user_id}:last_activity", time.time())
-        print(f"   Updated last activity for user {user_id}")
+        results = pg_cursor.fetchall()
+        for user_id, name, email, theme, session_token, created_at in results:
+            # Get Redis session data
+            redis_data = r.hgetall(f"session:{session_token}")
+            last_activity = redis_data.get("last_activity", "Unknown")
+            
+            print(f"   👤 User {user_id}: {name} ({email})")
+            print(f"      🎨 Theme: {theme}")
+            print(f"      🔑 Session: {session_token}")
+            print(f"      ⏰ Last Activity: {last_activity}")
 
         pg_cursor.close()
         pg_conn.close()
 
-def demo_sequential_containers():
-    """Sequential container usage patterns"""
-    print("\n🔄 Sequential Container Usage")
+def demo_microservices_simulation():
+    """Simulate microservices with multiple containers"""
+    print("\n🏗️ Microservices Simulation Demo...")
     
-    # Phase 1: PostgreSQL data processing
-    print("1️⃣ Phase 1: PostgreSQL data processing")
-    user_data = []
+    with PostgresContainer("postgres:15-alpine") as postgres, \
+         RedisContainer("redis:7-alpine") as redis_container:
 
-    with PostgresContainer("postgres:15-alpine") as postgres:
-        conn = psycopg2.connect(
+        print(f"✅ Database Service Ready: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Cache Service Ready: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
+
+        # Simulate User Service (PostgreSQL)
+        pg_conn = psycopg2.connect(
             host=postgres.get_container_host_ip(),
             port=postgres.get_exposed_port(5432),
             user=postgres.username,
             password=postgres.password,
             database=postgres.dbname
         )
+        pg_cursor = pg_conn.cursor()
 
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE sales (
+        # Simulate Order Service (PostgreSQL)
+        pg_cursor.execute("""
+            CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
-                product VARCHAR(100),
-                amount DECIMAL(10,2),
-                user_id INTEGER
+                username VARCHAR(50) UNIQUE NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
 
-        sales_data = [
-            ("Laptop", 999.99, 1),
-            ("Mouse", 29.99, 1),
-            ("Keyboard", 79.99, 2),
-            ("Monitor", 299.99, 2),
-            ("Headphones", 149.99, 3)
-        ]
+        pg_cursor.execute("""
+            CREATE TABLE orders (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                product_name VARCHAR(100) NOT NULL,
+                quantity INTEGER NOT NULL,
+                price DECIMAL(10,2) NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
-        for product, amount, user_id in sales_data:
-            cursor.execute("INSERT INTO sales (product, amount, user_id) VALUES (%s, %s, %s)",
-                         (product, amount, user_id))
+        print("📊 User Service Tables Created: users, orders")
 
-        conn.commit()
-
-        # Process data
-        cursor.execute("SELECT user_id, SUM(amount) as total FROM sales GROUP BY user_id")
-        user_totals = cursor.fetchall()
-
-        for user_id, total in user_totals:
-            user_data.append({"user_id": user_id, "total_spent": float(total)})
-
-        print(f"   📊 Processed {len(user_data)} user spending totals")
-
-        cursor.close()
-        conn.close()
-
-    # Phase 2: Redis caching
-    print("2️⃣ Phase 2: Redis caching")
-    with RedisContainer("redis:7-alpine") as redis_container:
+        # Simulate Cache Service (Redis)
         r = redis.Redis(
             host=redis_container.get_container_host_ip(),
             port=redis_container.get_exposed_port(6379),
             decode_responses=True
         )
 
-        # Cache processed data
-        for user in user_data:
-            cache_key = f"user_spending:{user['user_id']}"
-            r.set(cache_key, user['total_spent'])
-            r.expire(cache_key, 300)  # 5 minutes
+        # Create test data
+        users_data = [
+            ("alice_j", "alice@example.com"),
+            ("bob_s", "bob@example.com"),
+            ("carol_d", "carol@example.com")
+        ]
 
-        print(f"   💾 Cached spending data for {len(user_data)} users")
+        print("📝 Creating Users:")
+        for username, email in users_data:
+            pg_cursor.execute(
+                "INSERT INTO users (username, email) VALUES (%s, %s)",
+                (username, email)
+            )
+            print(f"   + {username} ({email})")
 
-        # Verify cached data
-        print("   📋 Cached data verification:")
-        for user in user_data:
-            cache_key = f"user_spending:{user['user_id']}"
-            cached_value = r.get(cache_key)
-            print(f"     User {user['user_id']}: ${cached_value}")
+        orders_data = [
+            (1, "MacBook Pro", 1, 2499.99, "completed"),
+            (1, "Wireless Mouse", 2, 29.99, "shipped"),
+            (2, "Coffee Mug", 3, 12.99, "pending"),
+            (3, "Python Book", 1, 49.99, "completed")
+        ]
 
-def demo_data_pipeline():
-    """Data pipeline with multiple containers"""
-    print("\n🔄 Data Pipeline Demo")
+        print("📝 Creating Orders:")
+        for user_id, product, quantity, price, status in orders_data:
+            pg_cursor.execute(
+                "INSERT INTO orders (user_id, product_name, quantity, price, status) VALUES (%s, %s, %s, %s, %s)",
+                (user_id, product, quantity, price, status)
+            )
+            print(f"   + Order: {product} x{quantity} - ${price} ({status})")
+
+        pg_conn.commit()
+
+        # Simulate API calls with caching
+        print(f"\n🌐 Simulating API Calls with Caching:")
+
+        # Get user profile (with caching)
+        user_id = 1
+        cache_key = f"user_profile:{user_id}"
+        
+        # Check cache first
+        cached_profile = r.get(cache_key)
+        if cached_profile:
+            print(f"   📱 User {user_id} profile: CACHE HIT - {cached_profile}")
+        else:
+            # Database query
+            pg_cursor.execute("SELECT username, email FROM users WHERE id = %s", (user_id,))
+            username, email = pg_cursor.fetchone()
+            profile_data = f"{username} ({email})"
+            
+            # Store in cache
+            r.setex(cache_key, 300, profile_data)  # 5 minutes TTL
+            print(f"   📱 User {user_id} profile: CACHE MISS - {profile_data} (cached for 5min)")
+
+        # Get user orders (with caching)
+        orders_cache_key = f"user_orders:{user_id}"
+        cached_orders = r.get(orders_cache_key)
+        
+        if cached_orders:
+            print(f"   📦 User {user_id} orders: CACHE HIT - {cached_orders}")
+        else:
+            # Database query
+            pg_cursor.execute("""
+                SELECT product_name, quantity, price, status 
+                FROM orders 
+                WHERE user_id = %s 
+                ORDER BY created_at DESC
+            """, (user_id,))
+            
+            orders = pg_cursor.fetchall()
+            orders_data = f"{len(orders)} orders"
+            
+            # Store in cache
+            r.setex(orders_cache_key, 180, orders_data)  # 3 minutes TTL
+            print(f"   📦 User {user_id} orders: CACHE MISS - {orders_data} (cached for 3min)")
+
+        # Show cache statistics
+        cache_info = r.info()
+        print(f"\n📊 Cache Service Statistics:")
+        print(f"   Memory Used: {cache_info['used_memory_human']}")
+        print(f"   Keys in Cache: {r.dbsize()}")
+        print(f"   Hit Rate: {cache_info.get('keyspace_hits', 0)} hits")
+
+        pg_cursor.close()
+        pg_conn.close()
+
+def demo_container_communication():
+    """Demonstrate container-to-container communication"""
+    print("\n🔗 Container Communication Demo...")
     
-    # Step 1: Extract data from PostgreSQL
-    with PostgresContainer("postgres:15-alpine") as postgres:
-        conn = psycopg2.connect(
+    with PostgresContainer("postgres:15-alpine") as postgres, \
+         RedisContainer("redis:7-alpine") as redis_container:
+
+        print(f"✅ PostgreSQL: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
+
+        # Simulate message passing between services
+        pg_conn = psycopg2.connect(
             host=postgres.get_container_host_ip(),
             port=postgres.get_exposed_port(5432),
             user=postgres.username,
@@ -201,90 +353,183 @@ def demo_data_pipeline():
             database=postgres.dbname
         )
 
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE raw_data (
+        r = redis.Redis(
+            host=redis_container.get_container_host_ip(),
+            port=redis_container.get_exposed_port(6379),
+            decode_responses=True
+        )
+
+        # Create event log table
+        pg_cursor = pg_conn.cursor()
+        pg_cursor.execute("""
+            CREATE TABLE event_log (
                 id SERIAL PRIMARY KEY,
-                category VARCHAR(50),
-                value DECIMAL(10,2),
+                event_type VARCHAR(50) NOT NULL,
+                service_name VARCHAR(50) NOT NULL,
+                message TEXT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        print("📊 Event Log Table Created")
 
-        # Insert sample data
-        raw_data = [
-            ("electronics", 100.00),
-            ("books", 25.50),
-            ("electronics", 150.75),
-            ("clothing", 75.25),
-            ("books", 30.00)
+        # Simulate event-driven architecture
+        events = [
+            ("user_registered", "user_service", "User alice@example.com registered"),
+            ("order_created", "order_service", "Order #12345 created for user 1"),
+            ("payment_processed", "payment_service", "Payment $299.99 processed for order #12345"),
+            ("order_shipped", "shipping_service", "Order #12345 shipped to address"),
+            ("email_sent", "notification_service", "Confirmation email sent to alice@example.com")
         ]
 
-        for category, value in raw_data:
-            cursor.execute("INSERT INTO raw_data (category, value) VALUES (%s, %s)", (category, value))
+        print("📝 Simulating Event-Driven Communication:")
+        for event_type, service, message in events:
+            # Store event in database
+            pg_cursor.execute(
+                "INSERT INTO event_log (event_type, service_name, message) VALUES (%s, %s, %s)",
+                (event_type, service, message)
+            )
+            
+            # Publish event to Redis (message queue simulation)
+            r.lpush("event_queue", f"{event_type}:{service}:{message}")
+            
+            print(f"   📤 {service}: {event_type} - {message}")
 
-        conn.commit()
+        pg_conn.commit()
 
-        # Extract aggregated data
-        cursor.execute("""
-            SELECT category, COUNT(*) as count, AVG(value) as avg_value, SUM(value) as total_value
-            FROM raw_data
-            GROUP BY category
+        # Process events from queue
+        print(f"\n📥 Processing Events from Queue:")
+        event_count = 0
+        while event_count < len(events):
+            event = r.rpop("event_queue")
+            if event:
+                event_type, service, message = event.split(":", 2)
+                print(f"   📥 Processed: {service} - {event_type}")
+                event_count += 1
+
+        # Show event statistics
+        pg_cursor.execute("""
+            SELECT service_name, COUNT(*) as event_count,
+                   MIN(timestamp) as first_event,
+                   MAX(timestamp) as last_event
+            FROM event_log 
+            GROUP BY service_name 
+            ORDER BY event_count DESC
         """)
-        aggregated_data = cursor.fetchall()
 
-        print(f"   📊 Extracted {len(aggregated_data)} categories from PostgreSQL")
-        for category, count, avg_val, total_val in aggregated_data:
-            print(f"     {category}: {count} items, avg ${avg_val:.2f}, total ${total_val:.2f}")
+        results = pg_cursor.fetchall()
+        print(f"\n📊 Event Statistics:")
+        for service, count, first_event, last_event in results:
+            print(f"   {service}: {count} events | First: {first_event} | Last: {last_event}")
 
-        cursor.close()
-        conn.close()
+        pg_cursor.close()
+        pg_conn.close()
 
-    # Step 2: Transform and load into Redis
-    with RedisContainer("redis:7-alpine") as redis_container:
-        r = redis.Redis(
-            host=redis_container.get_container_host_ip(),
-            port=redis_container.get_exposed_port(6379),
-            decode_responses=True
-        )
+def demo_container_health_checks():
+    """Demonstrate container health monitoring"""
+    print("\n🏥 Container Health Monitoring Demo...")
+    
+    with PostgresContainer("postgres:15-alpine") as postgres, \
+         RedisContainer("redis:7-alpine") as redis_container:
 
-        # Store aggregated data in Redis
-        for category, count, avg_val, total_val in aggregated_data:
-            r.hset(f"stats:{category}", mapping={
-                "count": str(count),
-                "avg_value": str(float(avg_val)),
-                "total_value": str(float(total_val))
-            })
+        print(f"✅ PostgreSQL: {postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}")
+        print(f"✅ Redis: {redis_container.get_container_host_ip()}:{redis_container.get_exposed_port(6379)}")
 
-        print(f"   💾 Loaded {len(aggregated_data)} categories into Redis")
+        # Health check functions
+        def check_postgres_health():
+            try:
+                conn = psycopg2.connect(
+                    host=postgres.get_container_host_ip(),
+                    port=postgres.get_exposed_port(5432),
+                    user=postgres.username,
+                    password=postgres.password,
+                    database=postgres.dbname
+                )
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+                cursor.close()
+                conn.close()
+                return True, "Healthy"
+            except Exception as e:
+                return False, str(e)[:50]
 
-        # Verify data in Redis
-        print("   📋 Redis data verification:")
-        for category, _, _, _ in aggregated_data:
-            stats = r.hgetall(f"stats:{category}")
-            print(f"     {category}: {stats}")
+        def check_redis_health():
+            try:
+                r = redis.Redis(
+                    host=redis_container.get_container_host_ip(),
+                    port=redis_container.get_exposed_port(6379),
+                    decode_responses=True
+                )
+                r.ping()
+                info = r.info()
+                return True, f"Healthy - Memory: {info['used_memory_human']}"
+            except Exception as e:
+                return False, str(e)[:50]
+
+        # Perform health checks
+        print("🏥 Performing Health Checks:")
+        
+        pg_healthy, pg_status = check_postgres_health()
+        redis_healthy, redis_status = check_redis_health()
+
+        print(f"   🐘 PostgreSQL: {'✅' if pg_healthy else '❌'} {pg_status}")
+        print(f"   🔴 Redis: {'✅' if redis_healthy else '❌'} {redis_status}")
+
+        # Simulate health monitoring over time
+        print(f"\n📊 Health Monitoring (5 checks):")
+        for i in range(5):
+            pg_healthy, pg_status = check_postgres_health()
+            redis_healthy, redis_status = check_redis_health()
+            
+            timestamp = time.strftime("%H:%M:%S")
+            print(f"   {timestamp} - PostgreSQL: {'✅' if pg_healthy else '❌'} | Redis: {'✅' if redis_healthy else '❌'}")
+            
+            if i < 4:  # Don't sleep on last iteration
+                time.sleep(0.5)
+
+        # Overall health status
+        overall_healthy = pg_healthy and redis_healthy
+        print(f"\n🏥 Overall System Health: {'✅ HEALTHY' if overall_healthy else '❌ UNHEALTHY'}")
+        
+        if overall_healthy:
+            print("   All services are operational and ready to handle requests")
+        else:
+            print("   Some services are experiencing issues - check logs for details")
 
 def main():
-    """Run Lab 4"""
-    print("🔄 LAB 4: Multiple Containers")
-    print("=" * 40)
+    """Run Lab 4 - Multiple Containers"""
+    print("🚀 LAB 4: Multiple Containers - Working Examples")
+    print("=" * 60)
+    print("✨ Master multi-container orchestration with TestContainers!")
+    
+    # Check dependencies
+    if not check_dependencies():
+        sys.exit(1)
+    
+    # Check Docker
+    if not check_docker():
+        print("❌ Docker is not running or not available")
+        print("💡 Please start Docker Desktop or Docker Engine")
+        sys.exit(1)
     
     try:
-        demo_multi_container()
-        demo_sequential_containers()
-        demo_data_pipeline()
+        demo_multi_container_basic()
+        demo_microservices_simulation()
+        demo_container_communication()
+        demo_container_health_checks()
         
-        print("\n✅ Lab 4 completed!")
+        print("\n✅ Lab 4 completed successfully!")
         print("Key concepts learned:")
-        print("• Multi-container orchestration")
-        print("• Cross-database operations")
-        print("• Sequential container patterns")
-        print("• Data processing pipelines")
-        print("• Real-world multi-service testing")
+        print("• Multi-container orchestration with TestContainers")
+        print("• Cross-database operations and data synchronization")
+        print("• Microservices simulation and service communication")
+        print("• Event-driven architecture patterns")
+        print("• Container health monitoring and management")
+        print("\n💪 You're ready for intermediate scenarios!")
         
     except Exception as e:
         print(f"❌ Lab failed: {e}")
-        print("Ensure Docker is running and try again.")
+        print("💡 Make sure Docker is running and try again")
         return False
     
     return True

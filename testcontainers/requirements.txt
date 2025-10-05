@@ -1,10 +1,10 @@
-# Enhanced TestContainers Workshop - Essential Dependencies
-# ========================================================
+# TestContainers Workshop - Python 3.10+ Dependencies
+# ===================================================
 
-# Core TestContainers
+# Core TestContainers (latest version)
 testcontainers>=4.0.0
 
-# Database Drivers
+# Database Drivers (Python 3.10+ compatible)
 sqlalchemy>=2.0.0
 redis>=5.0.0
 pymongo>=4.5.0
@@ -23,11 +23,10 @@ requests>=2.31.0
 colorama>=0.4.6
 tabulate>=0.9.0
 
-# Optional: Enhanced features
-# Uncomment if you want additional features
-# matplotlib>=3.7.0  # For performance graphs
-# rich>=13.0.0        # For enhanced terminal output
-# click>=8.1.0        # For CLI enhancements
+# Web Framework
+flask>=2.3.0
 
-flask
-requests
+# Python 3.10+ specific optimizations
+typing-extensions>=4.0.0
+
+cryptography

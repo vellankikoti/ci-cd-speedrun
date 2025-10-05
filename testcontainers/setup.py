@@ -26,15 +26,103 @@ def create_virtual_environment():
     
     if venv_path.exists():
         print("✅ Virtual environment already exists")
-        return True
+        # Check if pip is available in the existing venv
+        if check_pip_in_venv():
+            return True
+        else:
+            print("⚠️  Virtual environment exists but pip is missing, recreating...")
+            import shutil
+            shutil.rmtree(venv_path)
     
     print("📦 Creating virtual environment...")
     try:
-        subprocess.check_call([sys.executable, "-m", "venv", "venv-testcontainers"])
+        # Create venv with ensurepip to guarantee pip is included
+        subprocess.check_call([
+            sys.executable, "-m", "venv", 
+            "--upgrade-deps",  # Upgrade pip and setuptools
+            "venv-testcontainers"
+        ])
         print("✅ Virtual environment created successfully")
-        return True
+        
+        # Verify pip is available
+        if check_pip_in_venv():
+            return True
+        else:
+            print("⚠️  Installing pip manually...")
+            return install_pip_in_venv()
+            
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to create virtual environment: {e}")
+        print("💡 Trying alternative method...")
+        return create_virtual_environment_alternative()
+
+def check_pip_in_venv():
+    """Check if pip is available in the virtual environment"""
+    venv_python = get_venv_python()
+    if not venv_python.exists():
+        return False
+    
+    try:
+        result = subprocess.run([
+            str(venv_python), "-m", "pip", "--version"
+        ], capture_output=True, text=True)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+def install_pip_in_venv():
+    """Install pip in the virtual environment if missing"""
+    venv_python = get_venv_python()
+    if not venv_python.exists():
+        return False
+    
+    print("📦 Installing pip in virtual environment...")
+    try:
+        # Try to install pip using ensurepip
+        subprocess.check_call([
+            str(venv_python), "-m", "ensurepip", "--upgrade"
+        ])
+        print("✅ Pip installed successfully")
+        return True
+    except subprocess.CalledProcessError:
+        try:
+            # Fallback: download and install pip manually
+            import urllib.request
+            import tempfile
+            
+            print("📦 Downloading pip manually...")
+            with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as f:
+                urllib.request.urlretrieve(
+                    "https://bootstrap.pypa.io/get-pip.py", 
+                    f.name
+                )
+                
+                subprocess.check_call([
+                    str(venv_python), f.name
+                ])
+                
+                os.unlink(f.name)
+            print("✅ Pip installed manually")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to install pip: {e}")
+            return False
+
+def create_virtual_environment_alternative():
+    """Alternative method to create virtual environment"""
+    print("📦 Trying alternative venv creation method...")
+    try:
+        # Try using virtualenv if available
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "virtualenv"
+        ])
+        subprocess.check_call([
+            sys.executable, "-m", "virtualenv", "venv-testcontainers"
+        ])
+        print("✅ Virtual environment created with virtualenv")
+        return check_pip_in_venv()
+    except subprocess.CalledProcessError:
+        print("❌ Alternative venv creation also failed")
         return False
 
 def get_venv_python():
@@ -57,8 +145,21 @@ def install_requirements():
         print("❌ Virtual environment Python not found")
         return False
     
+    # Ensure pip is available before installing requirements
+    if not check_pip_in_venv():
+        print("⚠️  Pip not available, installing it first...")
+        if not install_pip_in_venv():
+            print("❌ Cannot install requirements without pip")
+            return False
+    
     print("📦 Installing dependencies in virtual environment...")
     try:
+        # First upgrade pip itself
+        subprocess.check_call([
+            str(venv_python), "-m", "pip", "install", "--upgrade", "pip"
+        ])
+        
+        # Then install requirements
         subprocess.check_call([
             str(venv_python), "-m", "pip", "install", "-r", str(requirements_file), "--upgrade"
         ])
@@ -66,6 +167,41 @@ def install_requirements():
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install dependencies: {e}")
+        print("💡 Trying to install packages individually...")
+        return install_requirements_individually()
+
+def install_requirements_individually():
+    """Install requirements individually as fallback"""
+    venv_python = get_venv_python()
+    requirements_file = Path("requirements.txt")
+    
+    try:
+        with open(requirements_file, 'r') as f:
+            packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        
+        print(f"📦 Installing {len(packages)} packages individually...")
+        failed_packages = []
+        
+        for package in packages:
+            try:
+                print(f"   Installing {package}...")
+                subprocess.check_call([
+                    str(venv_python), "-m", "pip", "install", package
+                ])
+            except subprocess.CalledProcessError:
+                print(f"   ⚠️  Failed to install {package}")
+                failed_packages.append(package)
+        
+        if failed_packages:
+            print(f"⚠️  {len(failed_packages)} packages failed to install: {', '.join(failed_packages)}")
+            print("💡 You can try installing them manually later")
+            return len(failed_packages) < len(packages)  # Success if at least some installed
+        else:
+            print("✅ All packages installed successfully")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Failed to install packages individually: {e}")
         return False
 
 def check_docker():
@@ -107,16 +243,35 @@ def print_activation_instructions():
         print("   PowerShell:")
         print("     venv-testcontainers\\Scripts\\Activate.ps1")
     else:
+        print("   # For bash/zsh:")
         print("   source venv-testcontainers/bin/activate")
+        print("   # Or use the venv python directly:")
+        print("   ./venv-testcontainers/bin/python labs/basics/lab1_postgresql_basics.py")
     
     print("\n2. Run a lab:")
-    print("   python labs/basics/lab1_first_container.py")
-    print("   python3 labs/basics/lab1_first_container.py")
+    print("   python labs/basics/lab1_postgresql_basics.py")
+    print("   python3 labs/basics/lab1_postgresql_basics.py")
+    print("   # Or without activation:")
+    print("   ./venv-testcontainers/bin/python labs/basics/lab1_postgresql_basics.py")
     
     print("\n3. When done, deactivate:")
     print("   deactivate")
     
     print("\n💡 You should see (venv-testcontainers) in your prompt when activated!")
+    print("💡 If activation doesn't work, use the full path to the venv python!")
+
+def install_globally():
+    """Install packages globally as fallback option"""
+    print("🌍 Installing packages globally (fallback option)...")
+    try:
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--user"
+        ])
+        print("✅ Packages installed globally (user install)")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Global installation failed: {e}")
+        return False
 
 def main():
     """Main setup function"""
@@ -128,23 +283,42 @@ def main():
         sys.exit(1)
     
     # Create virtual environment
-    if not create_virtual_environment():
-        sys.exit(1)
+    venv_success = create_virtual_environment()
     
-    # Install requirements
-    if not install_requirements():
-        print("\n⚠️  Setup incomplete, but you can still try manual installation")
-        print("💡 Activate venv and run: pip install -r requirements.txt")
-        return False
+    if venv_success:
+        # Install requirements in venv
+        if not install_requirements():
+            print("\n⚠️  Venv setup incomplete, trying global installation...")
+            if install_globally():
+                print("✅ Global installation successful!")
+                print("\n💡 You can now run labs with: python3 labs/basics/lab1_postgresql_basics.py")
+                return True
+            else:
+                print("\n❌ Both venv and global installation failed")
+                print("💡 Try manual installation: pip install -r requirements.txt")
+                return False
+    else:
+        print("\n⚠️  Virtual environment creation failed, trying global installation...")
+        if install_globally():
+            print("✅ Global installation successful!")
+            print("\n💡 You can now run labs with: python3 labs/basics/lab1_postgresql_basics.py")
+            return True
+        else:
+            print("\n❌ Both venv and global installation failed")
+            print("💡 Try manual installation: pip install -r requirements.txt")
+            return False
     
     # Check Docker
     if not check_docker():
-        print("\n⚠️  Docker not available, but venv setup is complete")
+        print("\n⚠️  Docker not available, but setup is complete")
         print("💡 Start Docker and then run the labs")
         return False
     
     print("\n✅ Setup completed successfully!")
-    print_activation_instructions()
+    if venv_success:
+        print_activation_instructions()
+    else:
+        print("\n💡 Run labs with: python3 labs/basics/lab1_postgresql_basics.py")
     
     return True
 

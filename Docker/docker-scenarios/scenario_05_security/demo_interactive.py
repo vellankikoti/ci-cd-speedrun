@@ -131,8 +131,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building vulnerable container...")
-        success, _ = run_command("docker build -f dockerfiles/vulnerable.Dockerfile -t vulnerable-app .")
+        print_step("Building vulnerable container with Docker BuildKit...")
+        success, _ = run_command("docker buildx build -f dockerfiles/vulnerable.Dockerfile -t vulnerable-app --load .")
         if not success:
             print_error("Failed to build vulnerable container")
             return
@@ -166,8 +166,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building secure container...")
-        success, _ = run_command("docker build -f dockerfiles/secure.Dockerfile -t secure-app .")
+        print_step("Building secure container with Docker BuildKit...")
+        success, _ = run_command("docker buildx build -f dockerfiles/secure.Dockerfile -t secure-app --load .")
         if not success:
             print_error("Failed to build secure container")
             return
@@ -204,7 +204,7 @@ def main():
         print_step("Creating security dashboard...")
         
         # Create the security dashboard
-        success, _ = run_command("docker build -f app/Dockerfile -t security-dashboard app/")
+        success, _ = run_command("docker buildx build -f app/Dockerfile -t security-dashboard --load app/")
         if not success:
             print_error("Failed to build security dashboard")
             return

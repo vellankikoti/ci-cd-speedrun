@@ -92,8 +92,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building bloated image...")
-        if not run_command("docker build -f dockerfiles/bloated.Dockerfile -t bloated-app ."):
+        print_step("Building bloated image with Docker BuildKit...")
+        if not run_command("docker buildx build -f dockerfiles/bloated.Dockerfile -t bloated-app --load ."):
             print_error("Failed to build bloated image")
             return
         
@@ -119,8 +119,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building optimized multi-stage image...")
-        if not run_command("docker build -f dockerfiles/optimized.Dockerfile -t optimization-app ."):
+        print_step("Building optimized multi-stage image with Docker BuildKit...")
+        if not run_command("docker buildx build -f dockerfiles/optimized.Dockerfile -t optimization-app --load ."):
             print_error("Failed to build optimized image")
             return
         

@@ -1,0 +1,4 @@
+flask
+docker
+requests
+psutil

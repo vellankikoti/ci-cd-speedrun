@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Docker Chaos Pipeline Cleanup Script - Python Version
-=====================================================
+Docker Resilience & Recovery Cleanup Script
+===========================================
 
-Clean up all chaos containers, images, and resources
+Clean up all demo containers, images, and resilience resources
 """
 
 import subprocess
@@ -42,28 +42,28 @@ def run_command(cmd, description=""):
 
 def main():
     """Main cleanup function"""
-    print("🧹 Docker Chaos Pipeline Cleanup")
-    print("=" * 40)
+    print("🧹 Docker Resilience & Recovery Cleanup")
+    print("=" * 50)
     
-    print_step("Stopping all demo containers...")
-    for i in range(1, 6):
-        container_name = f"chaos-step{i}"
-        run_command(f"docker stop {container_name}", f"Stopping {container_name}")
-        run_command(f"docker rm {container_name}", f"Removing {container_name}")
+    print_step("Stopping resilience demo containers...")
+    run_command("docker stop fragile-app-demo resilient-app-demo resilience-dashboard", "Stopping containers")
+    
+    print_step("Removing demo containers...")
+    run_command("docker rm fragile-app-demo resilient-app-demo resilience-dashboard", "Removing containers")
     
     print_step("Removing demo images...")
-    for i in range(1, 6):
-        image_name = f"chaos-step{i}"
-        run_command(f"docker rmi {image_name}", f"Removing {image_name} image")
+    run_command("docker rmi fragile-app resilient-app resilience-dashboard", "Removing images")
     
-    print_step("Cleaning up orphaned containers...")
+    print_step("Cleaning up build cache...")
+    run_command("docker builder prune -f", "Removing build cache")
+    
+    print_step("Cleaning up orphaned resources...")
     run_command("docker container prune -f", "Removing orphaned containers")
-    
-    print_step("Cleaning up orphaned images...")
     run_command("docker image prune -f", "Removing orphaned images")
+    run_command("docker volume prune -f", "Removing orphaned volumes")
     
     print_success("Cleanup completed!")
-    print_step("All chaos containers and images removed")
+    print_step("All resilience demo containers, images, and cache removed")
 
 if __name__ == "__main__":
     main()

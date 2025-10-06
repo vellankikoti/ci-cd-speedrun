@@ -94,8 +94,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building app image...")
-        if not run_command("docker build -t demo-app app/"):
+        print_step("Building app image with Docker BuildKit...")
+        if not run_command("docker buildx build -t demo-app --load app/"):
             print_error("Failed to build app image")
             return
         

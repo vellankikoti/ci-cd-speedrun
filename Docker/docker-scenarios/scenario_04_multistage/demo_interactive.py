@@ -151,7 +151,7 @@ def main():
         print_step("Building bloated image (this may take a while)...")
         print_info("Watch the build process - notice all the unnecessary packages being installed!")
         
-        success, _ = run_command("docker build -f dockerfiles/bloated.Dockerfile -t bloated-app .")
+        success, _ = run_command("docker buildx build -f dockerfiles/bloated.Dockerfile -t bloated-app --load .")
         if not success:
             print_error("Failed to build bloated image")
             return
@@ -193,7 +193,7 @@ def main():
         print_step("Building optimized multi-stage image...")
         print_info("Notice the two stages: builder -> production")
         
-        success, _ = run_command("docker build -f dockerfiles/optimized.Dockerfile -t optimized-app .")
+        success, _ = run_command("docker buildx build -f dockerfiles/optimized.Dockerfile -t optimized-app --load .")
         if not success:
             print_error("Failed to build optimized image")
             return
@@ -235,7 +235,7 @@ def main():
         print_step("Creating enhanced comparison app...")
         
         # Create the comparison app
-        success, _ = run_command("docker build -f app/Dockerfile -t comparison-demo app/")
+        success, _ = run_command("docker buildx build -f app/Dockerfile -t comparison-demo --load app/")
         if not success:
             print_error("Failed to build comparison app")
             return

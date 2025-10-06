@@ -92,8 +92,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building vulnerable container...")
-        if not run_command("docker build -f dockerfiles/vulnerable.Dockerfile -t vulnerable-app ."):
+        print_step("Building vulnerable container with Docker BuildKit...")
+        if not run_command("docker buildx build -f dockerfiles/vulnerable.Dockerfile -t vulnerable-app --load ."):
             print_error("Failed to build vulnerable container")
             return
         
@@ -124,8 +124,8 @@ def main():
         print_step("⏳ Pausing for audience to understand...")
         time.sleep(3)
         
-        print_step("Building secure container...")
-        if not run_command("docker build -f dockerfiles/secure.Dockerfile -t secure-app ."):
+        print_step("Building secure container with Docker BuildKit...")
+        if not run_command("docker buildx build -f dockerfiles/secure.Dockerfile -t secure-app --load ."):
             print_error("Failed to build secure container")
             return
         

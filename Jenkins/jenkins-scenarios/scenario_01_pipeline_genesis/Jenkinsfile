@@ -27,14 +27,18 @@ pipeline {
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                sh 'python3 -m pip install -r requirements.txt'
+                dir('Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis') {
+                    sh 'python3 -m pip install -r requirements.txt'
+                }
             }
         }
         
         stage('🧪 Run Tests') {
             steps {
                 echo 'Running tests to ensure everything works...'
-                sh 'python3 -m pytest tests/ -v --tb=short'
+                dir('Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis') {
+                    sh 'python3 -m pytest tests/ -v --tb=short'
+                }
             }
             post {
                 always {
@@ -46,9 +50,11 @@ pipeline {
         stage('🐳 Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                script {
-                    def image = docker.build("pipeline-genesis:${env.BUILD_NUMBER}", "--no-cache .")
-                    echo "Docker image built: ${image.id}"
+                dir('Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis') {
+                    script {
+                        def image = docker.build("pipeline-genesis:${env.BUILD_NUMBER}", "--no-cache .")
+                        echo "Docker image built: ${image.id}"
+                    }
                 }
             }
         }

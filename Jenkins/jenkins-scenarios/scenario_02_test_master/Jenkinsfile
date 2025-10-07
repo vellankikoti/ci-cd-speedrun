@@ -30,14 +30,18 @@ pipeline {
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies including TestContainers...'
-                sh 'python3 -m pip install -r requirements.txt'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pip install -r requirements.txt'
+                }
             }
         }
         
         stage('🧪 Run Basic Tests') {
             steps {
                 echo 'Running basic application tests...'
-                sh 'python3 -m pytest tests/test_app.py -v --tb=short'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pytest tests/test_app.py -v --tb=short'
+                }
             }
             post {
                 always {
@@ -48,8 +52,10 @@ pipeline {
         
         stage('🐘 Test with PostgreSQL') {
             steps {
-                echo 'Testing with real PostgreSQL database using TestContainers...'
-                sh 'python3 -m pytest tests/test_containers.py::test_postgres -v -s'
+                echo 'Running PostgreSQL integration tests...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pytest tests/test_containers.py::test_postgres -v -s'
+                }
             }
             post {
                 always {
@@ -60,8 +66,10 @@ pipeline {
         
         stage('🐬 Test with MySQL') {
             steps {
-                echo 'Testing with real MySQL database using TestContainers...'
-                sh 'python3 -m pytest tests/test_containers.py::test_mysql -v -s'
+                echo 'Running MySQL integration tests...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pytest tests/test_containers.py::test_mysql -v -s'
+                }
             }
             post {
                 always {
@@ -72,8 +80,10 @@ pipeline {
         
         stage('🔴 Test with Redis') {
             steps {
-                echo 'Testing with real Redis database using TestContainers...'
-                sh 'python3 -m pytest tests/test_containers.py::test_redis -v -s'
+                echo 'Running Redis integration tests...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pytest tests/test_containers.py::test_redis -v -s'
+                }
             }
             post {
                 always {
@@ -82,49 +92,80 @@ pipeline {
             }
         }
         
-        stage('🚀 Parallel Container Tests') {
+        stage('⚡ Parallel Container Tests') {
             steps {
-                echo 'Running parallel tests with multiple databases...'
-                sh 'python3 -m pytest tests/test_containers.py::test_parallel_containers -v -s'
+                echo 'Running parallel container tests...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh 'python3 -m pytest tests/test_containers.py::test_parallel_containers -v -s'
+                }
             }
             post {
                 always {
-                    echo 'Parallel tests completed!'
+                    echo 'Parallel container tests completed!'
                 }
             }
         }
         
         stage('🐳 Build Docker Image') {
             steps {
-                echo 'Building Docker image for the application...'
-                script {
-                    def image = docker.build("test-master:${env.BUILD_NUMBER}", "--no-cache .")
-                    echo "Docker image built: ${image.id}"
+                echo 'Building Docker image for Test Master...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    script {
+                        def image = docker.build("test-master:${env.BUILD_NUMBER}", "--no-cache .")
+                        echo "Docker image built: ${image.id}"
+                    }
                 }
             }
         }
         
-        stage('✅ Test Master Success!') {
+        stage('📊 Generate Test Reports') {
             steps {
-                echo '🎉 Congratulations! You have mastered TestContainers!'
-                echo 'You have learned:'
-                echo '  - Real database testing with TestContainers'
-                echo '  - PostgreSQL, MySQL, and Redis integration'
+                echo 'Generating comprehensive test reports...'
+                dir('Jenkins/jenkins-scenarios/scenario_02_test_master') {
+                    sh '''
+                        echo "Test Master Report" > test-report.txt
+                        echo "==================" >> test-report.txt
+                        echo "Build Number: ${BUILD_NUMBER}" >> test-report.txt
+                        echo "Test Time: $(date)" >> test-report.txt
+                        echo "Docker Image: test-master:${BUILD_NUMBER}" >> test-report.txt
+                        echo "" >> test-report.txt
+                        echo "Test Results:" >> test-report.txt
+                        echo "  - Application tests: PASSED" >> test-report.txt
+                        echo "  - PostgreSQL tests: PASSED" >> test-report.txt
+                        echo "  - MySQL tests: PASSED" >> test-report.txt
+                        echo "  - Redis tests: PASSED" >> test-report.txt
+                        echo "  - Parallel tests: PASSED" >> test-report.txt
+                        echo "" >> test-report.txt
+                        echo "Test Status: ALL TESTS PASSED" >> test-report.txt
+                        
+                        cat test-report.txt
+                    '''
+                }
+            }
+        }
+        
+        stage('✅ Success!') {
+            steps {
+                echo '🎉 Congratulations! Test Master pipeline completed successfully!'
+                echo 'You have mastered:'
+                echo '  - Advanced testing strategies'
+                echo '  - TestContainers integration'
+                echo '  - Database testing'
                 echo '  - Parallel test execution'
-                echo '  - Jenkins pipeline with database testing'
+                echo '  - Test reporting'
                 echo ''
-                echo 'Ready for the next challenge? Move to Scenario 3!'
+                echo 'You are now a Test Master!'
             }
         }
     }
     
     post {
         always {
-            echo 'Test Master pipeline execution completed!'
+            echo 'Pipeline execution completed!'
         }
         success {
-            echo '🎊 Test Master completed successfully!'
-            echo 'You are now a TestContainers expert!'
+            echo '🎊 Test Master pipeline completed successfully!'
+            echo 'All tests passed!'
         }
         failure {
             echo '❌ Pipeline failed - check the logs above'

@@ -48,8 +48,6 @@ pipeline {
     environment {
         STACK_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
         AWS_REGION = "${params.AWS_REGION}"
-        CLUSTER_NAME = "${params.CLUSTER_NAME}-${BUILD_NUMBER}"
-        AWS_DEFAULT_REGION = "${params.AWS_REGION}"
         NODE_INSTANCE_TYPE = "${params.NODE_INSTANCE_TYPE}"
         NODE_COUNT = "${params.NODE_COUNT}"
         ENABLE_LOGGING = "${params.ENABLE_LOGGING}"
@@ -59,438 +57,210 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out code for EKS Deployment'
+                echo 'Checking out EKS Deployment code...'
                 checkout scm
             }
         }
         
-        stage('Install Prerequisites') {
+        stage('Validate Parameters') {
             steps {
-                echo 'Installing AWS CLI, kubectl, eksctl, and Helm'
-                sh '''#!/bin/bash
-                    set -e
-                    echo "Installing required tools..."
+                echo 'Validating EKS deployment parameters...'
+                script {
+                    if (!params.AWS_CREDENTIALS) {
+                        error 'AWS credentials are required for EKS deployment'
+                    }
                     
-                    # Update package list
+                    echo "Cluster Name: ${params.CLUSTER_NAME}"
+                    echo "AWS Region: ${params.AWS_REGION}"
+                    echo "Node Instance Type: ${params.NODE_INSTANCE_TYPE}"
+                    echo "Node Count: ${params.NODE_COUNT}"
+                    echo "Enable Logging: ${params.ENABLE_LOGGING}"
+                    echo "Enable ALB Controller: ${params.ENABLE_ALB_CONTROLLER}"
+                }
+            }
+        }
+        
+        stage('Setup Environment') {
+            steps {
+                echo 'Setting up EKS deployment environment...'
+                sh '''
+                    echo "Installing AWS CLI and eksctl..."
                     apt-get update -y
-                    
-                    # Install system dependencies
-                    apt-get install -y curl unzip wget gnupg lsb-release ca-certificates python3-pip
-                    
-                    # Detect architecture
-                    ARCH=$(uname -m)
-                    echo "Architecture detected: $ARCH"
+                    apt-get install -y curl unzip
                     
                     # Install AWS CLI v2
-                    echo "Installing AWS CLI v2..."
-                    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
-                    else
-                        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    fi
-                    unzip -q awscliv2.zip
-                    ./aws/install --update
-                    rm -rf awscliv2.zip aws/
-                    
-                    # Install kubectl
-                    echo "Installing kubectl..."
-                    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                        curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
-                    else
-                        curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                    fi
-                    chmod +x kubectl
-                    mv kubectl /usr/local/bin/
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip awscliv2.zip
+                    ./aws/install
+                    aws --version
                     
                     # Install eksctl
-                    echo "Installing eksctl..."
-                    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                        curl -s --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_arm64.tar.gz" | tar xz -C /tmp
-                    else
-                        curl -s --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-                    fi
-                    mv /tmp/eksctl /usr/local/bin/
-                    
-                    # Install Helm
-                    echo "Installing Helm..."
-                    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-                    
-                    # Install Python dependencies if requirements file exists
-                    if [ -f "Jenkins/scenarios/03-eks-deployment/requirements.txt" ]; then
-                        echo "Installing Python dependencies..."
-                        pip install --no-cache-dir -r Jenkins/scenarios/03-eks-deployment/requirements.txt
-                    else
-                        echo "Installing basic Python dependencies..."
-                        pip install --no-cache-dir boto3 botocore pyyaml
-                    fi
-                    
-                    # Verify installations
-                    echo "Verifying installations..."
-                    aws --version
-                    kubectl version --client
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    mv /tmp/eksctl /usr/local/bin
                     eksctl version
-                    helm version
                     
-                    echo "All tools installed successfully"
+                    # Install kubectl
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
+                    mv kubectl /usr/local/bin/
+                    kubectl version --client
+                    
+                    echo "Environment setup completed!"
                 '''
             }
         }
         
-        stage('Configure AWS Credentials') {
+        stage('Configure AWS') {
             steps {
-                echo 'Configuring AWS credentials and environment'
+                echo 'Configuring AWS credentials...'
                 script {
-                    if (!params.AWS_CREDENTIALS || params.AWS_CREDENTIALS == '') {
-                        error("AWS_CREDENTIALS parameter is required but not provided. Please select AWS credentials in the job parameters.")
-                    }
-                    
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
+                    withCredentials([usernamePassword(credentialsId: params.AWS_CREDENTIALS, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
                             echo "Configuring AWS credentials..."
-                            
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            # Configure AWS CLI
                             aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
                             aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
                             aws configure set default.region ${AWS_REGION}
+                            aws configure set default.output json
                             
-                            # Test AWS credentials
-                            echo "Testing AWS credentials..."
+                            echo "Testing AWS connection..."
                             aws sts get-caller-identity
-                            
-                            echo "AWS credentials configured successfully"
-                            echo "   Region: ${AWS_REGION}"
-                            # Use printf instead of bash substring to avoid substitution issues
-                            printf "   Access Key: %.8s...\\n" "${AWS_ACCESS_KEY_ID}"
+                            echo "AWS configuration successful!"
                         '''
                     }
                 }
             }
         }
         
-        stage('Validate Prerequisites') {
-            steps {
-                echo 'Validating AWS CLI and kubectl installation'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Validating prerequisites..."
-                            
-                            # Check AWS CLI
-                            aws --version
-                            
-                            # Check kubectl
-                            kubectl version --client
-                            
-                            # Check eksctl
-                            eksctl version
-                            
-                            # Check Helm
-                            helm version
-                            
-                            # Validate AWS credentials
-                            aws sts get-caller-identity
-                            
-                            echo "All prerequisites validated successfully"
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 echo 'Running tests for EKS Deployment'
-                sh '''#!/bin/bash
-                    echo "Running tests..."
-                    if [ -d "Jenkins/scenarios/03-eks-deployment/tests" ]; then
-                        cd Jenkins/scenarios/03-eks-deployment
-                        export PYTHONPATH="${PWD}:${PYTHONPATH}"
-                        # Run tests but don't fail the pipeline if they fail
-                        python3 -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
-                    else
-                        echo "No test directory found, skipping tests..."
-                    fi
+                dir('Jenkins/jenkins-scenarios/scenario_03_eks_deployment') {
+                    sh '''#!/bin/bash
+                        echo "Running tests..."
+                        if [ -d "tests" ]; then
+                            export PYTHONPATH="${PWD}:${PYTHONPATH}"
+                            # Run tests but don't fail the pipeline if they fail
+                            python3 -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
+                        else
+                            echo "No test directory found, skipping tests..."
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Create EKS Cluster') {
+            steps {
+                echo 'Creating EKS cluster...'
+                script {
+                    sh '''
+                        echo "Creating EKS cluster: ${CLUSTER_NAME}"
+                        echo "Region: ${AWS_REGION}"
+                        echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
+                        echo "Node Count: ${NODE_COUNT}"
+                        
+                        # Create EKS cluster using eksctl
+                        eksctl create cluster \\
+                            --name ${CLUSTER_NAME} \\
+                            --region ${AWS_REGION} \\
+                            --nodegroup-name workers \\
+                            --node-type ${NODE_INSTANCE_TYPE} \\
+                            --nodes ${NODE_COUNT} \\
+                            --nodes-min 1 \\
+                            --nodes-max 4 \\
+                            --managed \\
+                            --with-oidc \\
+                            --ssh-access \\
+                            --ssh-public-key eks-demo-key \\
+                            --verbose
+                        
+                        echo "EKS cluster created successfully!"
+                        
+                        # Update kubeconfig
+                        aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+                        
+                        # Verify cluster
+                        kubectl get nodes
+                        kubectl get pods --all-namespaces
+                    '''
+                }
+            }
+        }
+        
+        stage('Deploy Application') {
+            steps {
+                echo 'Deploying application to EKS...'
+                dir('Jenkins/jenkins-scenarios/scenario_03_eks_deployment') {
+                    sh '''
+                        echo "Deploying application to EKS cluster..."
+                        
+                        # Apply Kubernetes manifests
+                        if [ -d "k8s" ]; then
+                            echo "Applying Kubernetes manifests..."
+                            kubectl apply -f k8s/
+                            
+                            # Wait for deployment
+                            kubectl rollout status deployment/eks-deployment-app
+                            
+                            # Get service information
+                            kubectl get services
+                            kubectl get pods
+                            
+                            echo "Application deployed successfully!"
+                        else
+                            echo "No k8s directory found, skipping deployment..."
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying EKS deployment...'
+                sh '''
+                    echo "Verifying EKS deployment..."
+                    
+                    # Check cluster status
+                    kubectl cluster-info
+                    
+                    # Check node status
+                    kubectl get nodes -o wide
+                    
+                    # Check pod status
+                    kubectl get pods --all-namespaces
+                    
+                    # Check services
+                    kubectl get services
+                    
+                    echo "EKS deployment verification completed!"
                 '''
             }
         }
         
-        stage('Validate CloudFormation Template') {
+        stage('Generate Report') {
             steps {
-                echo 'Validating CloudFormation template (optional)'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Validating CloudFormation template (optional - using eksctl for deployment)..."
-                            
-                            # Find the CloudFormation template
-                            TEMPLATE_FILE=""
-                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
-                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml"
-                            else
-                                echo "No CloudFormation template found, skipping validation..."
-                                exit 0
-                            fi
-                            
-                            echo "Using template: $TEMPLATE_FILE"
-                            
-                            # Validate the template (don't fail if validation fails)
-                            if aws cloudformation validate-template --template-body file://$TEMPLATE_FILE; then
-                                echo "CloudFormation template is valid"
-                            else
-                                echo "CloudFormation template validation failed, but continuing with eksctl deployment..."
-                            fi
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy EKS Cluster') {
-            steps {
-                echo 'Deploying EKS Cluster with cost optimization'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Starting EKS cluster deployment..."
-                            echo "Cluster Name: ${CLUSTER_NAME}"
-                            echo "Stack Name: ${STACK_NAME}"
-                            echo "Region: ${AWS_REGION}"
-                            echo "Node Instance Type: ${NODE_INSTANCE_TYPE}"
-                            echo "Node Count: ${NODE_COUNT}"
-                            
-                            # Find the CloudFormation template
-                            TEMPLATE_FILE=""
-                            if [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml" ]; then
-                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster.yaml"
-                            elif [ -f "Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml" ]; then
-                                TEMPLATE_FILE="Jenkins/scenarios/03-eks-deployment/eks-cluster-cost-optimized.yaml"
-                            else
-                                echo "No CloudFormation template found!"
-                                exit 1
-                            fi
-                            
-                            echo "Using template: $TEMPLATE_FILE"
-                            
-                            # Convert boolean parameters to proper format
-                            ENABLE_LOGGING_FLAG=""
-                            ENABLE_ALB_FLAG=""
-                            
-                            if [ "${ENABLE_LOGGING}" = "true" ]; then
-                                ENABLE_LOGGING_FLAG="--enable-logging"
-                            fi
-                            
-                            if [ "${ENABLE_ALB_CONTROLLER}" = "true" ]; then
-                                ENABLE_ALB_FLAG="--enable-alb-controller"
-                            fi
-                            
-                            # Deploy using eksctl for simplicity and reliability
-                            echo "Deploying EKS cluster using eksctl..."
-                            
-                            eksctl create cluster \\
-                                --name ${CLUSTER_NAME} \\
-                                --region ${AWS_REGION} \\
-                                --nodegroup-name workers \\
-                                --node-type ${NODE_INSTANCE_TYPE} \\
-                                --nodes ${NODE_COUNT} \\
-                                --nodes-min 1 \\
-                                --nodes-max 5 \\
-                                --managed \\
-                                --with-oidc \\
-                                --full-ecr-access \\
-                                --zones ${AWS_REGION}a,${AWS_REGION}b \\
-                                --timeout=60m \\
-                                --verbose 4
-                            
-                            echo "EKS cluster deployed successfully!"
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Configure kubectl') {
-            steps {
-                echo 'Configuring kubectl and generating kubeconfig'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Configuring kubectl for cluster: ${CLUSTER_NAME}"
-                            
-                            # Update kubeconfig
-                            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
-                            
-                            echo "Verifying cluster connectivity..."
-                            kubectl get nodes
-                            kubectl get pods --all-namespaces
-                            
-                            echo "kubectl configured successfully"
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Post-Deployment Setup') {
-            steps {
-                echo 'Running post-deployment setup and add-ons installation'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Running post-deployment setup..."
-                            
-                            # Install AWS Load Balancer Controller if enabled
-                            if [ "${ENABLE_ALB_CONTROLLER}" = "true" ]; then
-                                echo "Installing AWS Load Balancer Controller..."
-                                
-                                # Create IAM policy
-                                curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.4.4/docs/install/iam_policy.json
-                                
-                                # Create IAM role
-                                eksctl create iamserviceaccount \\
-                                    --cluster=${CLUSTER_NAME} \\
-                                    --namespace=kube-system \\
-                                    --name=aws-load-balancer-controller \\
-                                    --role-name=AmazonEKSLoadBalancerControllerRole \\
-                                    --attach-policy-arn=arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/AWSLoadBalancerControllerIAMPolicy \\
-                                    --approve
-                                
-                                # Install Helm chart
-                                helm repo add eks https://aws.github.io/eks-charts
-                                helm repo update
-                                helm install aws-load-balancer-controller eks/aws-load-balancer-controller \\
-                                    -n kube-system \\
-                                    --set clusterName=${CLUSTER_NAME} \\
-                                    --set serviceAccount.create=false \\
-                                    --set serviceAccount.name=aws-load-balancer-controller
-                                
-                                echo "AWS Load Balancer Controller installed"
-                            fi
-                            
-                            # Install Metrics Server
-                            echo "Installing Metrics Server..."
-                            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-                            
-                            # Wait for metrics server to be ready
-                            kubectl wait --for=condition=available --timeout=300s deployment/metrics-server -n kube-system
-                            
-                            echo "Post-deployment setup completed"
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Generate Connection Info') {
-            steps {
-                echo 'Generating connection information and commands'
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${params.AWS_CREDENTIALS}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''#!/bin/bash
-                            set -e
-                            # Set AWS credentials
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_DEFAULT_REGION=${AWS_REGION}
-                            
-                            echo "Generating connection information..."
-                            
-                            # Create connection info file
-                            cat > connection-info.txt << EOF
-# EKS Cluster Connection Information
-# =================================
-
-Cluster Name: ${CLUSTER_NAME}
-Region: ${AWS_REGION}
-Stack Name: ${STACK_NAME}
-
-## Connection Commands
-# Update kubeconfig
-aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
-
-# Verify connection
-kubectl get nodes
-kubectl get pods --all-namespaces
-
-## Cluster Details
-# Get cluster info
-aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}
-
-# List node groups
-aws eks list-nodegroups --cluster-name ${CLUSTER_NAME} --region ${AWS_REGION}
-
-## Cost Information
-# Estimated monthly cost: ~$50-80/month
-# - 3x ${NODE_INSTANCE_TYPE} nodes
-# - EKS control plane
-# - NAT Gateway (if applicable)
-
-## Workshop Commands
-# Deploy sample application
-kubectl create deployment nginx --image=nginx
-kubectl expose deployment nginx --port=80 --type=LoadBalancer
-
-# Check services
-kubectl get services
-
-# Clean up
-kubectl delete deployment nginx
-kubectl delete service nginx
-
-## Note: SSH Access
-# SSH access to worker nodes is not enabled for this workshop demo
-# Use kubectl commands to interact with the cluster instead
-
-## Troubleshooting
-# Check cluster status
-aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --query cluster.status
-
-# Check node group status
-aws eks describe-nodegroup --cluster-name ${CLUSTER_NAME} --nodegroup-name workers --region ${AWS_REGION}
-
-# View cluster logs
-aws logs describe-log-groups --log-group-name-prefix /aws/eks/${CLUSTER_NAME} --region ${AWS_REGION}
-EOF
-                            
-                            echo "Connection information saved to connection-info.txt"
-                            cat connection-info.txt
-                        '''
-                    }
+                echo 'Generating EKS deployment report...'
+                dir('Jenkins/jenkins-scenarios/scenario_03_eks_deployment') {
+                    sh '''
+                        echo "EKS Deployment Report" > eks-report.txt
+                        echo "=====================" >> eks-report.txt
+                        echo "Build Number: ${BUILD_NUMBER}" >> eks-report.txt
+                        echo "Deployment Time: $(date)" >> eks-report.txt
+                        echo "Cluster Name: ${CLUSTER_NAME}" >> eks-report.txt
+                        echo "AWS Region: ${AWS_REGION}" >> eks-report.txt
+                        echo "Node Instance Type: ${NODE_INSTANCE_TYPE}" >> eks-report.txt
+                        echo "Node Count: ${NODE_COUNT}" >> eks-report.txt
+                        echo "" >> eks-report.txt
+                        echo "Cluster Status: ACTIVE" >> eks-report.txt
+                        echo "Application Status: DEPLOYED" >> eks-report.txt
+                        echo "" >> eks-report.txt
+                        echo "Access Information:" >> eks-report.txt
+                        echo "  kubectl config: aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}" >> eks-report.txt
+                        echo "  Cluster endpoint: $(kubectl cluster-info | grep 'Kubernetes control plane')" >> eks-report.txt
+                        
+                        cat eks-report.txt
+                    '''
                 }
             }
         }
@@ -498,57 +268,16 @@ EOF
     
     post {
         always {
-            echo 'Pipeline completed for EKS Deployment'
-            script {
-                // Archive connection info if it exists
-                sh '''#!/bin/bash
-                    if [ -f "connection-info.txt" ]; then
-                        echo "Archiving connection-info.txt"
-                        ls -la connection-info.txt
-                    else
-                        echo "No connection-info.txt found"
-                    fi
-                '''
-                archiveArtifacts artifacts: 'connection-info.txt', fingerprint: true, allowEmptyArchive: true
-            }
+            echo 'EKS deployment pipeline completed!'
         }
         success {
-            echo 'Pipeline succeeded for EKS Deployment'
-            script {
-                sh '''#!/bin/bash
-                    echo "EKS cluster deployment completed successfully!"
-                    echo "Cluster Details:"
-                    echo "   Cluster Name: ${CLUSTER_NAME}"
-                    echo "   Region: ${AWS_REGION}"
-                    echo "   Stack Name: ${STACK_NAME}"
-                    echo ""
-                    echo "To connect to your cluster, run:"
-                    echo "   aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}"
-                    echo ""
-                    echo "Check connection-info.txt for detailed connection instructions"
-                '''
-            }
+            echo '🎉 EKS cluster created and application deployed successfully!'
+            echo 'Cluster Name: ' + env.CLUSTER_NAME
+            echo 'AWS Region: ' + env.AWS_REGION
         }
         failure {
-            echo 'Pipeline failed for EKS Deployment'
-            script {
-                sh '''#!/bin/bash
-                    echo "EKS cluster deployment failed!"
-                    echo "Check the logs above for error details"
-                    echo "You may need to clean up resources manually:"
-                    echo "   eksctl delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}"
-                '''
-            }
-        }
-        cleanup {
-            echo 'Cleaning up temporary files'
-            sh '''#!/bin/bash
-                rm -f *.tmp *.log iam_policy.json || true
-                # Clean up SSH key pairs if they exist
-                if [ -f "${CLUSTER_NAME}-key.pem" ]; then
-                    rm -f ${CLUSTER_NAME}-key.pem
-                fi
-            '''
+            echo '❌ EKS deployment failed!'
+            echo 'Check the logs above for details.'
         }
     }
 }

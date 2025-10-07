@@ -478,8 +478,59 @@ class JenkinsSetup:
             self.print_info("You can create jobs manually in the Jenkins UI using the instructions below.")
             self.print_info("Alternatively, you can use the demo scripts in each scenario directory to create jobs.")
     
+    def show_educational_access_info(self):
+        """Show educational access information and learning path."""
+        self.print_header("🎓 Jenkins Educational Workshop Ready!")
+        print("=" * 60)
+        
+        self.print_success("Your Jenkins learning environment is ready!")
+        print()
+        
+        print(f"{Colors.BOLD}🎯 Educational Approach:{Colors.NC}")
+        print("This workshop is designed for hands-on learning where YOU create")
+        print("Jenkins jobs from scratch, just like in real-world scenarios!")
+        print()
+        
+        print(f"{Colors.BOLD}Access Information:{Colors.NC}")
+        print(f"  🌐 Jenkins URL: {self.jenkins_url}")
+        print(f"  👤 Username: admin")
+        print(f"  🔑 Password: admin")
+        print()
+        
+        print(f"{Colors.BOLD}📚 Learning Path:{Colors.NC}")
+        print("  1. Start with scenario_01_pipeline_genesis")
+        print("     • Run: python3 demo.py")
+        print("     • Learn: Job creation, pipeline basics, Docker integration")
+        print()
+        print("  2. Progress through advanced scenarios:")
+        print("     • scenario_02_testcontainers - Database testing")
+        print("     • scenario_03_docker_ninja - Advanced Docker workflows")
+        print("     • scenario_04_k8s_commander - Kubernetes deployment")
+        print("     • scenario_05_security_sentinel - Security scanning")
+        print()
+        
+        print(f"{Colors.BOLD}🎓 What You'll Learn:{Colors.NC}")
+        print("  • Creating Jenkins jobs from scratch")
+        print("  • Understanding Jenkinsfile syntax (Groovy)")
+        print("  • Git SCM integration with Jenkins")
+        print("  • Docker integration in CI/CD pipelines")
+        print("  • Pipeline monitoring and debugging")
+        print("  • Best practices for CI/CD workflows")
+        print()
+        
+        print(f"{Colors.BOLD}🚀 Getting Started:{Colors.NC}")
+        print("  1. Open Jenkins in your browser")
+        print("  2. Login with admin/admin")
+        print("  3. Navigate to scenario_01_pipeline_genesis directory")
+        print("  4. Run: python3 demo.py")
+        print("  5. Follow the interactive workshop!")
+        print()
+        
+        print(f"{Colors.YELLOW}💡 Pro Tip: Each demo.py provides step-by-step guidance{Colors.NC}")
+        print(f"{Colors.YELLOW}   for creating jobs manually - no shortcuts!{Colors.NC}")
+    
     def show_access_info(self):
-        """Show access information and next steps."""
+        """Show access information and next steps (legacy method)."""
         self.print_header("🎉 Jenkins Setup Complete!")
         print("=" * 50)
         
@@ -634,11 +685,8 @@ class JenkinsSetup:
         if not self.verify_jenkins_setup():
             return False
         
-        # Create demo jobs
-        self.create_demo_jobs()
-        
-        # Show access information
-        self.show_access_info()
+        # Show educational access information (no automatic job creation)
+        self.show_educational_access_info()
         
         return True
     

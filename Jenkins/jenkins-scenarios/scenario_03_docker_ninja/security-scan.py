@@ -41,7 +41,7 @@ def scan_docker_image(image_name):
     success, output = run_command(f"docker images {image_name}", "Checking if image exists")
     if not success:
         print(f"❌ Image {image_name} not found. Building it first...")
-        success, output = run_command(f"docker build -t {image_name} .", "Building Docker image")
+        success, output = run_command(f"docker build --no-cache -t {image_name} .", "Building Docker image")
         if not success:
             return False
     

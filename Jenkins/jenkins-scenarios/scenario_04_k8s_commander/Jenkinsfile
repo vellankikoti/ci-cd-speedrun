@@ -21,8 +21,8 @@ pipeline {
         stage('📦 Setup Environment') {
             steps {
                 echo 'Setting up the Kubernetes environment...'
-                sh 'python --version'
-                sh 'pip --version'
+                sh 'python3 --version'
+                sh 'pip3 --version'
                 sh 'docker --version'
                 sh 'kubectl version --client'
             }
@@ -31,14 +31,14 @@ pipeline {
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                sh 'python -m pip install -r requirements.txt'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
         
         stage('🧪 Run Application Tests') {
             steps {
                 echo 'Running basic application tests...'
-                sh 'python -m pytest tests/test_app.py -v --tb=short'
+                sh 'python3 -m pytest tests/test_app.py -v --tb=short'
             }
             post {
                 always {
@@ -51,7 +51,7 @@ pipeline {
             steps {
                 echo 'Building Docker image for Kubernetes...'
                 script {
-                    def image = docker.build("k8s-commander:${env.BUILD_NUMBER}")
+                    def image = docker.build("k8s-commander:${env.BUILD_NUMBER}", "--no-cache .")
                     echo "Docker image built: ${image.id}"
                 }
             }
@@ -105,7 +105,7 @@ pipeline {
         stage('🧪 Run Kubernetes Tests') {
             steps {
                 echo 'Running Kubernetes-specific tests...'
-                sh 'python -m pytest tests/test_k8s.py -v --tb=short'
+                sh 'python3 -m pytest tests/test_k8s.py -v --tb=short'
             }
             post {
                 always {

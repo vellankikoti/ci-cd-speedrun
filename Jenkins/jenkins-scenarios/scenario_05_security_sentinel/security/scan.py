@@ -76,7 +76,7 @@ def scan_docker_image():
     print("\n🔍 Scanning Docker Image...")
     
     # Build image first
-    success, output = run_command("docker build -t security-sentinel:latest .", "Building Docker image")
+    success, output = run_command("docker build --no-cache -t security-sentinel:latest .", "Building Docker image")
     if not success:
         print("❌ Failed to build Docker image!")
         return False

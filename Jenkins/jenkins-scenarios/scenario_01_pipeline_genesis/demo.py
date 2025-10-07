@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Pipeline Genesis - Jenkins Demo Script
-=====================================
+Pipeline Genesis - Educational Jenkins Workshop
+==============================================
 
-Interactive demo for your first Jenkins pipeline.
-Shows how to set up and run a simple Jenkins pipeline locally.
+An unforgettable hands-on learning experience for CI/CD with Jenkins.
+This workshop teaches you every step of creating and running Jenkins pipelines.
 
 Usage:
-    python3 demo.py              # Run interactive demo
-    python3 demo.py --simple     # Run simple demo
+    python3 demo.py              # Run full educational workshop
+    python3 demo.py --quick      # Run quick demo
     python3 demo.py --help       # Show help
 """
 
@@ -32,14 +32,15 @@ class Colors:
     BOLD = '\033[1m'
     NC = '\033[0m'  # No Color
 
-class PipelineGenesisDemo:
-    """Demo for Pipeline Genesis scenario."""
+class EducationalWorkshop:
+    """Educational Jenkins Pipeline Workshop."""
     
     def __init__(self):
         self.scenario_dir = Path(__file__).parent
         self.jenkins_url = 'http://localhost:8080'
         self.jenkins_username = 'admin'
         self.jenkins_password = 'admin'
+        self.workshop_steps = []
         
     def print_step(self, message):
         """Print a step message with consistent formatting."""
@@ -60,6 +61,18 @@ class PipelineGenesisDemo:
     def print_info(self, message, end="\n"):
         """Print an info message."""
         print(f"{Colors.CYAN}ℹ️  {message}{Colors.NC}", end=end)
+        
+    def print_learning(self, message):
+        """Print a learning point."""
+        print(f"{Colors.YELLOW}🧠 {message}{Colors.NC}")
+        
+    def print_celebration(self, message):
+        """Print a celebration message."""
+        print(f"{Colors.GREEN}🎉 {message}{Colors.NC}")
+        
+    def wait_for_user(self, message="Press Enter to continue..."):
+        """Wait for user input with a message."""
+        input(f"{Colors.CYAN}⏸️  {message}{Colors.NC}")
         
     def run_command(self, cmd, description="", capture_output=False, check=True):
         """Run a command with cross-platform support."""
@@ -109,15 +122,81 @@ class PipelineGenesisDemo:
             self.print_info("Please run 'python3 jenkins-setup.py setup' first")
             return False
     
-    def test_application_locally(self):
-        """Test the Flask application locally."""
-        self.print_header("Testing Application Locally")
+    def workshop_introduction(self):
+        """Welcome participants to the workshop."""
+        self.print_header("🚀 Welcome to the Jenkins Pipeline Workshop!")
+        print("=" * 60)
+        print()
+        print(f"{Colors.BOLD}🎓 What You'll Learn Today:{Colors.NC}")
+        print("• How to create Jenkins jobs from scratch")
+        print("• Understanding Jenkins pipeline syntax (Groovy)")
+        print("• Git SCM integration with Jenkins")
+        print("• Docker integration in CI/CD pipelines")
+        print("• Pipeline monitoring and debugging")
+        print("• Best practices for CI/CD workflows")
+        print()
+        print(f"{Colors.BOLD}🛠️  What You'll Build:{Colors.NC}")
+        print("• A complete Flask web application")
+        print("• A Docker container for your app")
+        print("• A Jenkins pipeline that builds, tests, and deploys")
+        print("• Automated testing and quality checks")
+        print()
+        print(f"{Colors.BOLD}⏱️  Workshop Duration: 45-60 minutes{Colors.NC}")
+        print()
+        
+        self.wait_for_user("Ready to start your CI/CD journey?")
+        print()
+    
+    def step_1_understand_application(self):
+        """Step 1: Understand the application we're building."""
+        self.print_header("Step 1: Understanding Our Application")
         print("=" * 50)
         
-        # Change to scenario directory
+        self.print_learning("Let's explore what we're building today!")
+        print()
+        
+        # Show application structure
+        self.print_step("Exploring application structure...")
         os.chdir(self.scenario_dir)
         
-        # Check if Python is available
+        print("📁 Application Structure:")
+        print("├── app.py                 # Main Flask application")
+        print("├── requirements.txt       # Python dependencies")
+        print("├── Dockerfile            # Container definition")
+        print("├── tests/                # Test suite")
+        print("│   └── test_app.py       # Unit tests")
+        print("└── Jenkinsfile           # Pipeline definition")
+        print()
+        
+        # Show the Flask app
+        self.print_step("Let's look at our Flask application...")
+        with open("app.py", "r") as f:
+            app_content = f.read()
+        
+        print("🐍 Flask Application (app.py):")
+        print("-" * 30)
+        print(app_content[:500] + "..." if len(app_content) > 500 else app_content)
+        print("-" * 30)
+        print()
+        
+        self.print_learning("This is a simple Flask web app with:")
+        print("• Health check endpoint (/health)")
+        print("• Info endpoint (/info)")
+        print("• Home page with basic functionality")
+        print()
+        
+        self.wait_for_user("Ready to test the application locally?")
+        print()
+    
+    def step_2_local_testing(self):
+        """Step 2: Test the application locally."""
+        self.print_header("Step 2: Local Development & Testing")
+        print("=" * 50)
+        
+        self.print_learning("Before we automate, let's test manually!")
+        print()
+        
+        # Check Python environment
         self.print_step("Checking Python environment...")
         if not self.run_command("python3 --version", capture_output=True):
             self.print_error("Python3 is not available")
@@ -125,45 +204,69 @@ class PipelineGenesisDemo:
         
         # Install dependencies
         self.print_step("Installing dependencies...")
-        # Try with --user flag first, then --break-system-packages as fallback
         if not self.run_command("python3 -m pip install --user -r requirements.txt"):
             self.print_info("Trying with --break-system-packages flag...")
             if not self.run_command("python3 -m pip install --break-system-packages -r requirements.txt"):
-                self.print_error("Failed to install dependencies")
-                self.print_info("This is expected in some environments. Continuing with demo...")
-                return True  # Continue anyway for demo purposes
+                self.print_info("Dependencies may already be installed. Continuing...")
         
         # Run tests
-        self.print_step("Running tests...")
+        self.print_step("Running our test suite...")
         if not self.run_command("python3 -m pytest tests/ -v"):
-            self.print_info("Tests may have failed due to missing dependencies")
-            self.print_info("This is expected in some environments. Continuing with demo...")
-            # Don't fail the demo for test issues
+            self.print_info("Some tests may have failed due to environment differences")
+            self.print_info("This is normal in workshop environments. Continuing...")
         
-        self.print_success("Application tests passed!")
-        return True
+        self.print_success("Local testing completed!")
+        print()
+        
+        self.print_learning("Key Learning Points:")
+        print("• Always test locally before automating")
+        print("• Use virtual environments for dependency management")
+        print("• Write comprehensive tests for your applications")
+        print("• Test-driven development (TDD) improves code quality")
+        print()
+        
+        self.wait_for_user("Ready to containerize our application?")
+        print()
     
-    def test_docker_build(self):
-        """Test Docker build locally."""
-        self.print_header("Testing Docker Build")
+    def step_3_docker_containerization(self):
+        """Step 3: Containerize the application."""
+        self.print_header("Step 3: Docker Containerization")
         print("=" * 50)
         
-        # Change to scenario directory
-        os.chdir(self.scenario_dir)
+        self.print_learning("Containers make applications portable and consistent!")
+        print()
+        
+        # Show Dockerfile
+        self.print_step("Let's examine our Dockerfile...")
+        with open("Dockerfile", "r") as f:
+            dockerfile_content = f.read()
+        
+        print("🐳 Dockerfile:")
+        print("-" * 20)
+        print(dockerfile_content)
+        print("-" * 20)
+        print()
+        
+        self.print_learning("Dockerfile Best Practices:")
+        print("• Use specific base image versions")
+        print("• Copy requirements.txt first for better caching")
+        print("• Use non-root user for security")
+        print("• Expose only necessary ports")
+        print()
         
         # Build Docker image
         self.print_step("Building Docker image...")
-        if not self.run_command("docker build -t pipeline-genesis-demo ."):
+        if not self.run_command("docker build --no-cache -t pipeline-genesis-workshop ."):
             self.print_error("Docker build failed")
             return False
         
         # Run container
         self.print_step("Running Docker container...")
-        if not self.run_command("docker run -d --name pipeline-genesis-demo -p 5001:5000 pipeline-genesis-demo"):
+        if not self.run_command("docker run -d --name pipeline-genesis-workshop -p 5001:5000 pipeline-genesis-workshop"):
             self.print_error("Failed to run Docker container")
             return False
         
-        # Wait for container to start
+        # Wait and test
         self.print_step("Waiting for container to start...")
         time.sleep(3)
         
@@ -182,241 +285,398 @@ class PipelineGenesisDemo:
             self.print_error(f"Failed to test application: {e}")
             return False
         
-        return True
+        self.print_learning("Container Benefits:")
+        print("• Consistent environment across dev/staging/prod")
+        print("• Easy scaling and deployment")
+        print("• Isolation from host system")
+        print("• Reproducible builds")
+        print()
+        
+        self.wait_for_user("Ready to create your first Jenkins job?")
+        print()
     
-    def cleanup_docker(self):
-        """Clean up Docker containers and images."""
-        self.print_step("Cleaning up Docker resources...")
-        self.run_command("docker stop pipeline-genesis-demo", check=False)
-        self.run_command("docker rm pipeline-genesis-demo", check=False)
-        self.run_command("docker rmi pipeline-genesis-demo", check=False)
-        self.print_success("Docker cleanup completed!")
-    
-    def show_jenkins_setup_instructions(self):
-        """Show instructions for setting up Jenkins job."""
-        self.print_header("Jenkins Job Setup Instructions")
+    def step_4_jenkins_job_creation(self):
+        """Step 4: Create Jenkins job manually."""
+        self.print_header("Step 4: Creating Your First Jenkins Job")
         print("=" * 50)
         
-        print(f"{Colors.BOLD}To create the Jenkins job:{Colors.NC}")
+        if not self.check_jenkins_running():
+            self.print_error("Jenkins is not running. Please start it first.")
+            return False
+        
+        self.print_learning("Now comes the exciting part - creating your first Jenkins job!")
         print()
-        print("1. Open Jenkins in your browser:")
-        print(f"   🌐 {self.jenkins_url}")
+        print("This is where you'll learn the real Jenkins workflow that")
+        print("thousands of developers use every day in production.")
         print()
-        print("2. Login with credentials:")
+        
+        self.print_step("Step-by-Step Jenkins Job Creation:")
+        print()
+        print("1️⃣  Access Jenkins:")
+        print(f"   🌐 Open: {self.jenkins_url}")
         print(f"   👤 Username: {self.jenkins_username}")
         print(f"   🔑 Password: {self.jenkins_password}")
         print()
-        print("3. Create a new Pipeline job:")
-        print("   • Click 'New Item'")
-        print("   • Enter name: 'Pipeline Genesis'")
-        print("   • Select 'Pipeline'")
+        
+        self.wait_for_user("Press Enter after logging into Jenkins...")
+        print()
+        
+        print("2️⃣  Create New Job:")
+        print("   • Click 'New Item' in the left sidebar")
+        print("   • Enter job name: 'My First Pipeline'")
+        print("   • Select 'Pipeline' as job type")
         print("   • Click 'OK'")
         print()
-        print("4. Configure the pipeline:")
+        
+        self.wait_for_user("Press Enter after creating the job...")
+        print()
+        
+        print("3️⃣  Configure Pipeline:")
         print("   • Scroll to 'Pipeline' section")
-        print("   • Definition: 'Pipeline script from SCM'")
-        print("   • SCM: 'Git'")
+        print("   • Set 'Definition' to 'Pipeline script from SCM'")
+        print("   • Set 'SCM' to 'Git'")
         print("   • Repository URL: 'https://github.com/vellankikoti/ci-cd-chaos-workshop.git'")
         print("   • Script Path: 'Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis/Jenkinsfile'")
         print("   • Click 'Save'")
         print()
-        print("5. Run the pipeline:")
-        print("   • Click 'Build Now'")
-        print("   • Watch the pipeline execute!")
+        
+        self.print_learning("What you just learned:")
+        print("• Jenkins job types (Pipeline vs Freestyle)")
+        print("• Git SCM integration")
+        print("• Pipeline script location")
+        print("• Jenkins configuration workflow")
         print()
-        print(f"{Colors.YELLOW}💡 Pro Tip: The pipeline will run through 4 stages:{Colors.NC}")
-        print("   • Hello World - Simple greeting")
-        print("   • Build App - Install dependencies")
-        print("   • Test App - Run tests")
-        print("   • Success! - Celebration")
+        
+        self.wait_for_user("Press Enter after configuring the pipeline...")
+        print()
     
-    def run_simple_demo(self):
-        """Run a simple, non-interactive demo."""
-        self.print_header("🚀 Pipeline Genesis - Simple Demo")
+    def step_5_pipeline_execution(self):
+        """Step 5: Execute and monitor the pipeline."""
+        self.print_header("Step 5: Running Your First Pipeline")
         print("=" * 50)
-        print("Running a quick demo of your first Jenkins pipeline...")
+        
+        self.print_learning("Time to see your pipeline in action!")
+        print()
+        
+        print("4️⃣  Execute Pipeline:")
+        print("   • Click 'Build Now' to start the pipeline")
+        print("   • Watch the pipeline execute in real-time")
+        print("   • Click on the build number to see detailed logs")
+        print("   • Explore each stage of the pipeline")
+        print()
+        
+        self.print_learning("Pipeline Stages You'll See:")
+        print("   🚀 Welcome - Simple greeting")
+        print("   📦 Setup - Check Python environment")
+        print("   🔧 Install Dependencies - Install Python packages")
+        print("   🧪 Run Tests - Execute test suite")
+        print("   🐳 Build Docker Image - Create container image")
+        print("   ✅ Success! - Pipeline completion")
+        print()
+        
+        self.wait_for_user("Press Enter after running the pipeline...")
+        print()
+        
+        self.print_learning("Monitoring & Debugging:")
+        print("• Blue Ocean provides visual pipeline representation")
+        print("• Console output shows detailed execution logs")
+        print("• Build history tracks all pipeline runs")
+        print("• Failed builds can be re-run or debugged")
+        print()
+        
+        self.wait_for_user("Ready to explore the Jenkinsfile?")
+        print()
+    
+    def step_6_jenkinsfile_exploration(self):
+        """Step 6: Explore and understand the Jenkinsfile."""
+        self.print_header("Step 6: Understanding the Jenkinsfile")
+        print("=" * 50)
+        
+        self.print_learning("The Jenkinsfile is the heart of your CI/CD pipeline!")
+        print()
+        
+        # Show Jenkinsfile
+        self.print_step("Let's examine our Jenkinsfile...")
+        with open("Jenkinsfile", "r") as f:
+            jenkinsfile_content = f.read()
+        
+        print("📝 Jenkinsfile (Pipeline Definition):")
+        print("-" * 40)
+        print(jenkinsfile_content)
+        print("-" * 40)
+        print()
+        
+        self.print_learning("Jenkinsfile Key Concepts:")
+        print("• pipeline { } - Main pipeline block")
+        print("• agent any - Run on any available agent")
+        print("• stages { } - Define pipeline stages")
+        print("• stage('Name') { } - Individual stage")
+        print("• steps { } - Commands to execute")
+        print("• sh 'command' - Execute shell commands")
+        print("• docker.build() - Build Docker images")
+        print()
+        
+        self.print_learning("Pipeline Best Practices:")
+        print("• Use descriptive stage names")
+        print("• Keep stages focused and atomic")
+        print("• Add error handling and notifications")
+        print("• Use parallel execution when possible")
+        print("• Version control your Jenkinsfiles")
+        print()
+        
+        self.wait_for_user("Ready to modify the Jenkinsfile?")
+        print()
+    
+    def step_7_hands_on_modification(self):
+        """Step 7: Hands-on Jenkinsfile modification."""
+        self.print_header("Step 7: Hands-On Pipeline Modification")
+        print("=" * 50)
+        
+        self.print_learning("Now let's make it your own!")
+        print()
+        
+        print("🛠️  Modification Exercise:")
+        print("Let's add a new stage to our pipeline:")
+        print()
+        print("1. Go back to your Jenkins job")
+        print("2. Click 'Configure'")
+        print("3. Scroll to the Pipeline section")
+        print("4. Change 'Pipeline script from SCM' to 'Pipeline script'")
+        print("5. Copy the Jenkinsfile content into the text area")
+        print("6. Add a new stage after the 'Build Docker Image' stage:")
+        print()
+        
+        print("```groovy")
+        print("stage('🎉 Custom Stage') {")
+        print("    steps {")
+        print("        echo 'This is my custom stage!'")
+        print("        sh 'echo \"Hello from my modification!\"'")
+        print("    }")
+        print("}")
+        print("```")
+        print()
+        
+        self.wait_for_user("Press Enter after adding the custom stage...")
+        print()
+        
+        print("7. Click 'Save'")
+        print("8. Click 'Build Now' to run the modified pipeline")
+        print("9. Watch your custom stage execute!")
+        print()
+        
+        self.wait_for_user("Press Enter after running the modified pipeline...")
+        print()
+        
+        self.print_celebration("Congratulations! You've modified your first pipeline!")
+        print()
+        
+        self.print_learning("What you just accomplished:")
+        print("• Modified a production pipeline")
+        print("• Added custom functionality")
+        print("• Tested your changes")
+        print("• Learned Jenkins pipeline syntax")
+        print()
+    
+    def step_8_advanced_concepts(self):
+        """Step 8: Advanced concepts and best practices."""
+        self.print_header("Step 8: Advanced Concepts & Best Practices")
+        print("=" * 50)
+        
+        self.print_learning("Let's explore advanced CI/CD concepts!")
+        print()
+        
+        print("🔧 Advanced Pipeline Features:")
+        print("• Parallel execution for faster builds")
+        print("• Conditional stages based on branch/PR")
+        print("• Artifact archiving and deployment")
+        print("• Integration with external tools (Slack, email)")
+        print("• Pipeline parameters and environment variables")
+        print("• Blue-Green and Canary deployments")
+        print()
+        
+        print("📊 Monitoring & Observability:")
+        print("• Build trends and metrics")
+        print("• Test result reporting")
+        print("• Code coverage integration")
+        print("• Security scanning results")
+        print("• Performance monitoring")
+        print()
+        
+        print("🛡️  Security Best Practices:")
+        print("• Use Jenkins credentials for secrets")
+        print("• Scan container images for vulnerabilities")
+        print("• Implement least privilege access")
+        print("• Regular security updates")
+        print("• Audit logs and compliance")
+        print()
+        
+        self.print_learning("Real-World Applications:")
+        print("• Microservices deployment pipelines")
+        print("• Infrastructure as Code (IaC)")
+        print("• Database migration automation")
+        print("• Multi-environment deployments")
+        print("• Feature flag management")
+        print()
+        
+        self.wait_for_user("Ready to wrap up the workshop?")
+        print()
+    
+    def workshop_conclusion(self):
+        """Wrap up the workshop."""
+        self.print_header("🎓 Workshop Conclusion")
+        print("=" * 50)
+        
+        self.print_celebration("Congratulations! You've completed the Jenkins Pipeline Workshop!")
+        print()
+        
+        print(f"{Colors.BOLD}🎯 What You've Accomplished:{Colors.NC}")
+        print("✅ Created your first Jenkins job from scratch")
+        print("✅ Configured Git SCM integration")
+        print("✅ Built and tested a Docker container")
+        print("✅ Executed a complete CI/CD pipeline")
+        print("✅ Modified and customized a Jenkinsfile")
+        print("✅ Learned Jenkins pipeline best practices")
+        print()
+        
+        print(f"{Colors.BOLD}🧠 Key Skills You've Gained:{Colors.NC}")
+        print("• Jenkins job creation and configuration")
+        print("• Pipeline-as-Code with Jenkinsfiles")
+        print("• Docker integration in CI/CD")
+        print("• Git SCM workflow with Jenkins")
+        print("• Pipeline monitoring and debugging")
+        print("• CI/CD best practices and patterns")
+        print()
+        
+        print(f"{Colors.BOLD}🚀 Next Steps for Your Learning:{Colors.NC}")
+        print("• Explore other Jenkins scenarios in this workshop")
+        print("• Try advanced pipeline features (parallel, conditional)")
+        print("• Integrate with your own projects")
+        print("• Learn about Jenkins plugins and extensions")
+        print("• Study Blue Ocean for visual pipeline management")
+        print("• Explore Jenkins X for cloud-native CI/CD")
+        print()
+        
+        print(f"{Colors.BOLD}📚 Additional Resources:{Colors.NC}")
+        print("• Jenkins Documentation: https://jenkins.io/doc/")
+        print("• Pipeline Syntax Reference: https://jenkins.io/doc/book/pipeline/syntax/")
+        print("• Blue Ocean: https://jenkins.io/projects/blueocean/")
+        print("• Jenkins Community: https://community.jenkins.io/")
+        print()
+        
+        self.print_celebration("Thank you for participating in this workshop!")
+        print("Keep building amazing CI/CD pipelines! 🚀")
+        print()
+    
+    def cleanup_docker(self):
+        """Clean up Docker containers and images."""
+        self.print_step("Cleaning up Docker resources...")
+        self.run_command("docker stop pipeline-genesis-workshop", check=False)
+        self.run_command("docker rm pipeline-genesis-workshop", check=False)
+        self.run_command("docker rmi pipeline-genesis-workshop", check=False)
+        self.print_success("Docker cleanup completed!")
+    
+    def run_full_workshop(self):
+        """Run the complete educational workshop."""
+        try:
+            self.workshop_introduction()
+            self.step_1_understand_application()
+            self.step_2_local_testing()
+            self.step_3_docker_containerization()
+            self.step_4_jenkins_job_creation()
+            self.step_5_pipeline_execution()
+            self.step_6_jenkinsfile_exploration()
+            self.step_7_hands_on_modification()
+            self.step_8_advanced_concepts()
+            self.workshop_conclusion()
+            
+            # Cleanup
+            self.cleanup_docker()
+            
+            return True
+            
+        except KeyboardInterrupt:
+            print("\n⚠️ Workshop interrupted by user")
+            self.cleanup_docker()
+            return False
+        except Exception as e:
+            print(f"\n❌ Workshop failed: {e}")
+            self.cleanup_docker()
+            return False
+    
+    def run_quick_demo(self):
+        """Run a quick demo version."""
+        self.print_header("🚀 Quick Jenkins Pipeline Demo")
+        print("=" * 50)
+        print("This is a condensed version of the full workshop.")
         print()
         
         # Test application locally
-        if not self.test_application_locally():
+        if not self.step_2_local_testing():
             return False
         
         # Test Docker build
-        if not self.test_docker_build():
-            return False
-        
-        # Show Jenkins setup instructions
-        self.show_jenkins_setup_instructions()
-        
-        # Cleanup
-        self.cleanup_docker()
-        
-        self.print_success("Demo completed successfully!")
-        print()
-        print(f"{Colors.BOLD}Next Steps:{Colors.NC}")
-        print("1. Set up the Jenkins job using the instructions above")
-        print("2. Run the pipeline in Jenkins")
-        print("3. Explore the pipeline stages and logs")
-        print("4. Try modifying the Jenkinsfile")
-        
-        return True
-    
-    def run_interactive_demo(self):
-        """Run an interactive demo with user input."""
-        self.print_header("🚀 Pipeline Genesis - Interactive Demo")
-        print("=" * 50)
-        print("Welcome to your first Jenkins pipeline demo!")
-        print("This demo will guide you through the entire process.")
-        print()
-        
-        # Check Jenkins
-        if not self.check_jenkins_running():
-            print()
-            self.print_info("Would you like to continue with local testing only? (y/n): ", end="")
-            if input().lower() != 'y':
-                return False
-        
-        # Test application locally
-        print()
-        self.print_info("Let's start by testing the application locally...")
-        if not self.test_application_locally():
-            return False
-        
-        # Test Docker build
-        print()
-        self.print_info("Now let's test the Docker build...")
-        if not self.test_docker_build():
+        if not self.step_3_docker_containerization():
             return False
         
         # Show Jenkins setup
+        self.print_header("Jenkins Job Setup")
+        print("=" * 30)
+        print("1. Open Jenkins: http://localhost:8080")
+        print("2. Login: admin/admin")
+        print("3. Create Pipeline job: 'My First Pipeline'")
+        print("4. Configure Git SCM with this repository")
+        print("5. Set Script Path: Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis/Jenkinsfile")
+        print("6. Save and run the pipeline!")
         print()
-        self.print_info("Great! Now let's set up the Jenkins job...")
-        self.show_jenkins_setup_instructions()
         
-        # Interactive Jenkins job creation
-        if self.check_jenkins_running():
-            print()
-            self.print_info("Would you like me to create the Jenkins job automatically? (y/n): ", end="")
-            try:
-                response = input().lower()
-                if response == 'y':
-                    self.create_jenkins_job()
-            except EOFError:
-                self.print_info("No input available, skipping automatic job creation")
-                self.print_info("You can create the job manually using the instructions above")
-        
-        # Cleanup
         self.cleanup_docker()
-        
-        self.print_success("Interactive demo completed!")
-        print()
-        print(f"{Colors.BOLD}What you've learned:{Colors.NC}")
-        print("• How to structure a Jenkins pipeline")
-        print("• The difference between stages and steps")
-        print("• How to test applications locally")
-        print("• How to containerize applications")
-        print("• How to set up Jenkins jobs")
-        
         return True
-    
-    def create_jenkins_job(self):
-        """Create the Jenkins job automatically."""
-        self.print_step("Creating Jenkins job automatically...")
-        
-        # Job configuration XML
-        xml_config = """<?xml version='1.1' encoding='UTF-8'?>
-<flow-definition plugin="workflow-job@2.41">
-  <description>Your first Jenkins pipeline - simple and clean!</description>
-  <keepDependencies>false</keepDependencies>
-  <properties/>
-  <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.90">
-    <scm class="hudson.plugins.git.GitSCM" plugin="git@4.8.3">
-      <configVersion>2</configVersion>
-      <userRemoteConfigs>
-        <hudson.plugins.git.UserRemoteConfig>
-          <url>https://github.com/vellankikoti/ci-cd-chaos-workshop.git</url>
-        </hudson.plugins.git.UserRemoteConfig>
-      </userRemoteConfigs>
-      <branches>
-        <hudson.plugins.git.BranchSpec>
-          <name>*/main</name>
-        </hudson.plugins.git.BranchSpec>
-      </branches>
-      <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-      <submoduleCfg class="list"/>
-      <extensions/>
-    </scm>
-    <scriptPath>Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis/Jenkinsfile</scriptPath>
-    <lightweight>true</lightweight>
-  </definition>
-  <triggers/>
-  <disabled>false</disabled>
-</flow-definition>"""
-        
-        try:
-            response = requests.post(
-                f"{self.jenkins_url}/createItem?name=Pipeline%20Genesis",
-                data=xml_config,
-                headers={'Content-Type': 'application/xml'},
-                auth=(self.jenkins_username, self.jenkins_password),
-                timeout=30
-            )
-            
-            if response.status_code in [200, 201]:
-                self.print_success("Jenkins job created successfully!")
-                print(f"   🌐 View at: {self.jenkins_url}/job/Pipeline%20Genesis/")
-                return True
-            else:
-                self.print_error(f"Failed to create job: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            self.print_error(f"Error creating Jenkins job: {e}")
-            return False
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(description='Pipeline Genesis Demo')
-    parser.add_argument('--simple', action='store_true', 
-                       help='Run simple demo without interaction')
-    parser.add_argument('--help-demo', action='store_true',
-                       help='Show demo help')
+    parser = argparse.ArgumentParser(description='Jenkins Pipeline Educational Workshop')
+    parser.add_argument('--quick', action='store_true', 
+                       help='Run quick demo instead of full workshop')
+    parser.add_argument('--help-workshop', action='store_true',
+                       help='Show workshop help')
     
     args = parser.parse_args()
     
-    if args.help_demo:
-        print("Pipeline Genesis Demo Help")
-        print("=" * 30)
+    if args.help_workshop:
+        print("Jenkins Pipeline Educational Workshop")
+        print("=" * 40)
         print()
-        print("This demo shows you how to:")
-        print("• Test a Flask application locally")
-        print("• Build and run a Docker container")
-        print("• Set up a Jenkins pipeline job")
-        print("• Run your first Jenkins pipeline")
+        print("This workshop provides hands-on learning for:")
+        print("• Jenkins job creation and configuration")
+        print("• Pipeline-as-Code with Jenkinsfiles")
+        print("• Docker integration in CI/CD")
+        print("• Git SCM workflow with Jenkins")
+        print("• Pipeline monitoring and debugging")
+        print("• CI/CD best practices and patterns")
         print()
         print("Usage:")
-        print("  python3 demo.py              # Interactive demo")
-        print("  python3 demo.py --simple     # Simple demo")
-        print("  python3 demo.py --help-demo  # Show this help")
+        print("  python3 demo.py              # Full educational workshop")
+        print("  python3 demo.py --quick      # Quick demo")
+        print("  python3 demo.py --help-workshop  # Show this help")
         return
     
-    demo = PipelineGenesisDemo()
+    workshop = EducationalWorkshop()
     
     try:
-        if args.simple:
-            success = demo.run_simple_demo()
+        if args.quick:
+            success = workshop.run_quick_demo()
         else:
-            success = demo.run_interactive_demo()
+            success = workshop.run_full_workshop()
         
         sys.exit(0 if success else 1)
         
     except KeyboardInterrupt:
-        print("\n⚠️ Demo interrupted by user")
-        demo.cleanup_docker()
+        print("\n⚠️ Workshop interrupted by user")
+        workshop.cleanup_docker()
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Demo failed: {e}")
-        demo.cleanup_docker()
+        print(f"\n❌ Workshop failed: {e}")
+        workshop.cleanup_docker()
         sys.exit(1)
 
 if __name__ == "__main__":

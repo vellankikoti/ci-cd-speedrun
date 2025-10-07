@@ -21,8 +21,8 @@ pipeline {
         stage('📦 Setup Environment') {
             steps {
                 echo 'Setting up the security environment...'
-                sh 'python --version'
-                sh 'pip --version'
+                sh 'python3 --version'
+                sh 'pip3 --version'
                 sh 'docker --version'
             }
         }
@@ -30,14 +30,14 @@ pipeline {
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies including security tools...'
-                sh 'python -m pip install -r requirements.txt'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
         
         stage('🧪 Run Application Tests') {
             steps {
                 echo 'Running basic application tests...'
-                sh 'python -m pytest tests/test_app.py -v --tb=short'
+                sh 'python3 -m pytest tests/test_app.py -v --tb=short'
             }
             post {
                 always {
@@ -85,7 +85,7 @@ pipeline {
         stage('🧪 Run Security Tests') {
             steps {
                 echo 'Running security-specific tests...'
-                sh 'python -m pytest tests/test_security.py -v --tb=short'
+                sh 'python3 -m pytest tests/test_security.py -v --tb=short'
             }
             post {
                 always {
@@ -98,7 +98,7 @@ pipeline {
             steps {
                 echo 'Building security-hardened Docker image...'
                 script {
-                    def image = docker.build("security-sentinel:${env.BUILD_NUMBER}")
+                    def image = docker.build("security-sentinel:${env.BUILD_NUMBER}", "--no-cache .")
                     echo "Docker image built: ${image.id}"
                 }
             }

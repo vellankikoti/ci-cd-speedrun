@@ -26,7 +26,7 @@ def test_docker_image_build():
     print("\n🐳 Testing Docker image build...")
     
     # Build the image
-    success, stdout, stderr = run_docker_command("docker build -t docker-ninja:test .")
+    success, stdout, stderr = run_docker_command("docker build --no-cache -t docker-ninja:test .")
     
     if not success:
         print(f"❌ Docker build failed: {stderr}")

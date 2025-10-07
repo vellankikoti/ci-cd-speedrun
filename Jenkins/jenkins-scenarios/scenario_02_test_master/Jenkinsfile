@@ -21,8 +21,8 @@ pipeline {
         stage('📦 Setup Environment') {
             steps {
                 echo 'Setting up the testing environment...'
-                sh 'python --version'
-                sh 'pip --version'
+                sh 'python3 --version'
+                sh 'pip3 --version'
                 sh 'docker --version'
             }
         }
@@ -30,14 +30,14 @@ pipeline {
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies including TestContainers...'
-                sh 'python -m pip install -r requirements.txt'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
         
         stage('🧪 Run Basic Tests') {
             steps {
                 echo 'Running basic application tests...'
-                sh 'python -m pytest tests/test_app.py -v --tb=short'
+                sh 'python3 -m pytest tests/test_app.py -v --tb=short'
             }
             post {
                 always {
@@ -49,7 +49,7 @@ pipeline {
         stage('🐘 Test with PostgreSQL') {
             steps {
                 echo 'Testing with real PostgreSQL database using TestContainers...'
-                sh 'python -m pytest tests/test_containers.py::test_postgres -v -s'
+                sh 'python3 -m pytest tests/test_containers.py::test_postgres -v -s'
             }
             post {
                 always {
@@ -61,7 +61,7 @@ pipeline {
         stage('🐬 Test with MySQL') {
             steps {
                 echo 'Testing with real MySQL database using TestContainers...'
-                sh 'python -m pytest tests/test_containers.py::test_mysql -v -s'
+                sh 'python3 -m pytest tests/test_containers.py::test_mysql -v -s'
             }
             post {
                 always {
@@ -73,7 +73,7 @@ pipeline {
         stage('🔴 Test with Redis') {
             steps {
                 echo 'Testing with real Redis database using TestContainers...'
-                sh 'python -m pytest tests/test_containers.py::test_redis -v -s'
+                sh 'python3 -m pytest tests/test_containers.py::test_redis -v -s'
             }
             post {
                 always {
@@ -85,7 +85,7 @@ pipeline {
         stage('🚀 Parallel Container Tests') {
             steps {
                 echo 'Running parallel tests with multiple databases...'
-                sh 'python -m pytest tests/test_containers.py::test_parallel_containers -v -s'
+                sh 'python3 -m pytest tests/test_containers.py::test_parallel_containers -v -s'
             }
             post {
                 always {
@@ -98,7 +98,7 @@ pipeline {
             steps {
                 echo 'Building Docker image for the application...'
                 script {
-                    def image = docker.build("test-master:${env.BUILD_NUMBER}")
+                    def image = docker.build("test-master:${env.BUILD_NUMBER}", "--no-cache .")
                     echo "Docker image built: ${image.id}"
                 }
             }

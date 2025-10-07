@@ -277,7 +277,7 @@ python eks_manager.py generate-connection-info \
 #### Build and Run Locally
 ```bash
 # Build Docker image
-docker build -t jenkins-eks-workshop .
+docker build --no-cache -t jenkins-eks-workshop .
 
 # Run complete demo
 docker run -it --rm \

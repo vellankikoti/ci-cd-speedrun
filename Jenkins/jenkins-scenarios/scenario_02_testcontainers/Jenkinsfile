@@ -188,6 +188,7 @@ print(f'✅ Database health check: {health}')
                             echo "Docker is available, building image..."
                             # Build the Docker image with build arguments
                             docker build \
+                                --no-cache \
                                 --build-arg APP_VERSION=${APP_VERSION} \
                                 --build-arg BUILD_TIME="${BUILD_TIME}" \
                                 --build-arg ENVIRONMENT=${ENVIRONMENT} \

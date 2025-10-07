@@ -218,7 +218,7 @@ pipeline {
                         cd Jenkins/scenarios/03-eks-deployment
                         export PYTHONPATH="${PWD}:${PYTHONPATH}"
                         # Run tests but don't fail the pipeline if they fail
-                        python -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
+                        python3 -m pytest tests/ -v --tb=short || echo "Some tests failed, but continuing with deployment..."
                     else
                         echo "No test directory found, skipping tests..."
                     fi

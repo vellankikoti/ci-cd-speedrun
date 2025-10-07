@@ -19,22 +19,22 @@ pipeline {
         stage('📦 Setup') {
             steps {
                 echo 'Setting up the environment...'
-                sh 'python --version'
-                sh 'pip --version'
+                sh 'python3 --version'
+                sh 'pip3 --version'
             }
         }
         
         stage('🔧 Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                sh 'python -m pip install -r requirements.txt'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
         
         stage('🧪 Run Tests') {
             steps {
                 echo 'Running tests to ensure everything works...'
-                sh 'python -m pytest tests/ -v --tb=short'
+                sh 'python3 -m pytest tests/ -v --tb=short'
             }
             post {
                 always {
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 echo 'Building Docker image...'
                 script {
-                    def image = docker.build("pipeline-genesis:${env.BUILD_NUMBER}")
+                    def image = docker.build("pipeline-genesis:${env.BUILD_NUMBER}", "--no-cache .")
                     echo "Docker image built: ${image.id}"
                 }
             }

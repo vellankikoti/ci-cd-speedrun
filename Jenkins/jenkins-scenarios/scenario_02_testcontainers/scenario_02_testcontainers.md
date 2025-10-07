@@ -263,6 +263,6 @@ python -m pytest tests/ -v
 
 Build and run locally:
 ```bash
-docker build -t 02-testcontainers .
+docker build --no-cache -t 02-testcontainers .
 docker run 02-testcontainers
 ```

@@ -152,7 +152,7 @@ pipeline {
         
         stage('🐳 Multi-stage Build') {
             steps {
-                sh 'docker build -t docker-ninja:latest .'
+                sh 'docker build --no-cache -t docker-ninja:latest .'
             }
         }
         

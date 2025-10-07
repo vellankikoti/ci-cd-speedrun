@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+    
+    options {
+        // Keep only the last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Add timestamps to console output
+        timestamps()
+    }
+    
+    stages {
+        stage('🚀 Welcome') {
+            steps {
+                echo 'Welcome to Pipeline Genesis!'
+                echo 'This is your first Jenkins pipeline - simple and clean!'
+            }
+        }
+        
+        stage('📦 Setup') {
+            steps {
+                echo 'Setting up the environment...'
+                sh 'python --version'
+                sh 'pip --version'
+            }
+        }
+        
+        stage('🔧 Install Dependencies') {
+            steps {
+                echo 'Installing Python dependencies...'
+                sh 'python -m pip install -r requirements.txt'
+            }
+        }
+        
+        stage('🧪 Run Tests') {
+            steps {
+                echo 'Running tests to ensure everything works...'
+                sh 'python -m pytest tests/ -v --tb=short'
+            }
+            post {
+                always {
+                    echo 'Tests completed!'
+                }
+            }
+        }
+        
+        stage('🐳 Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    def image = docker.build("pipeline-genesis:${env.BUILD_NUMBER}")
+                    echo "Docker image built: ${image.id}"
+                }
+            }
+        }
+        
+        stage('✅ Success!') {
+            steps {
+                echo '🎉 Congratulations! Your first pipeline completed successfully!'
+                echo 'You have learned:'
+                echo '  - Pipeline structure (stages and steps)'
+                echo '  - Basic automation workflow'
+                echo '  - Docker integration'
+                echo '  - Test execution'
+                echo ''
+                echo 'Ready for the next challenge? Move to Scenario 2!'
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Pipeline execution completed!'
+        }
+        success {
+            echo '🎊 Pipeline Genesis completed successfully!'
+            echo 'You are now a Jenkins pipeline beginner!'
+        }
+        failure {
+            echo '❌ Pipeline failed - check the logs above'
+        }
+    }
+}

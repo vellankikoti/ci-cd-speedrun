@@ -8,37 +8,139 @@ Before starting, ensure you have:
 - At least 4GB RAM available for containers
 - Internet connection for plugin downloads
 
-## 🚀 One-Time Setup (5 minutes)
+## 🚀 One-Command Setup (Cross-Platform)
+
+### Quick Start
+
+```bash
+# Navigate to Jenkins directory
+cd Jenkins
+
+# Setup Jenkins (works on Windows, Mac, Linux, VMs)
+python3 jenkins-setup.py setup
+
+# Check status
+python3 jenkins-setup.py status
+
+# Run demos
+python3 jenkins-setup.py demo
+
+# Cleanup when done
+python3 jenkins-setup.py cleanup
+```
+
+**That's it!** The script handles everything automatically across all platforms.
+
+## 🎯 Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `setup` | Complete Jenkins setup with all scenarios |
+| `status` | Check if Jenkins is running and healthy |
+| `demo` | Show available demo scenarios |
+| `cleanup` | Remove Jenkins container and data |
+
+## 🌍 Cross-Platform Support
+
+This setup works seamlessly on:
+- ✅ **Windows** (PowerShell, CMD, Git Bash)
+- ✅ **macOS** (Terminal, iTerm2)
+- ✅ **Linux** (Ubuntu, CentOS, RHEL, etc.)
+- ✅ **Virtual Machines** (VMware, VirtualBox, etc.)
+- ✅ **Cloud Instances** (AWS, Azure, GCP, etc.)
+
+## 🎮 Workshop Scenarios
+
+### Scenario 1: Pipeline Genesis
+**What it demonstrates**: Your first Jenkins pipeline - simple and clean!
+
+```bash
+cd jenkins-scenarios/scenario_01_pipeline_genesis
+python3 demo.py
+```
+
+**Features**:
+- Basic pipeline structure
+- Stage organization
+- Simple automation
+- Immediate success
+
+### Scenario 2: TestContainers Integration
+**What it demonstrates**: Integration testing with database containers
+
+```bash
+cd jenkins-scenarios/scenario_02_testcontainers
+python3 demo.py
+```
+
+**Features**:
+- Database integration testing
+- Container orchestration
+- Test isolation
+- Automated cleanup
+
+### Scenario 3: Docker Ninja
+**What it demonstrates**: Advanced Docker workflows and security scanning
+
+```bash
+cd jenkins-scenarios/scenario_03_docker_ninja
+python3 demo.py
+```
+
+**Features**:
+- Multi-stage Docker builds
+- Security scanning
+- HTML report generation
+- Production deployment
+
+### Scenario 4: K8s Commander
+**What it demonstrates**: Kubernetes deployment and management
+
+```bash
+cd jenkins-scenarios/scenario_04_k8s_commander
+python3 demo.py
+```
+
+**Features**:
+- Kubernetes manifests
+- Container orchestration
+- Health checks
+- Auto-scaling
+
+### Scenario 5: Security Sentinel
+**What it demonstrates**: Security scanning and compliance checking
+
+```bash
+cd jenkins-scenarios/scenario_05_security_sentinel
+python3 demo.py
+```
+
+**Features**:
+- Automated security scanning
+- Compliance checking
+- Vulnerability detection
+- Security reporting
+
+## 🔧 Manual Setup (If Needed)
 
 ### Step 1: Build Custom Jenkins Image
 
 ```bash
 # Navigate to Jenkins directory
-cd /path/to/ci-cd-chaos-workshop/Jenkins
+cd Jenkins
 
 # Build custom Jenkins with all plugins pre-installed
 docker build -t jenkins-workshop:custom .
 ```
 
-This will take 2-3 minutes to download and install 146+ plugins.
-
 ### Step 2: Start Jenkins Container
 
 ```bash
-docker run -d \
-  --name jenkins-workshop \
-  --restart=unless-stopped \
-  -p 8080:8080 \
-  -p 50000:50000 \
-  -v jenkins_home:/var/jenkins_home \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$(pwd)/../":/workspace \
-  --privileged \
-  jenkins-workshop:custom
+# Windows (PowerShell/CMD)
+docker run -d --name jenkins-workshop --restart=unless-stopped -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock -v "%cd%\..":/workspace --privileged jenkins-workshop:custom
 
-# (Optional) Fix Docker permissions inside container (run after container starts)
-docker exec -u root jenkins-workshop chown root:docker /var/run/docker.sock
-docker exec -u root jenkins-workshop chmod 666 /var/run/docker.sock
+# macOS/Linux
+docker run -d --name jenkins-workshop --restart=unless-stopped -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)/../":/workspace --privileged jenkins-workshop:custom
 ```
 
 ### Step 3: Wait for Jenkins to Start
@@ -47,11 +149,8 @@ docker exec -u root jenkins-workshop chmod 666 /var/run/docker.sock
 # Wait 2 minutes for Jenkins to fully start
 sleep 120
 
-# Check status (wait until it returns 200)
+# Check status
 curl -u admin:admin -s -o /dev/null -w "%{http_code}" http://localhost:8080
-
-# Or check logs to see "Jenkins is fully up and running"
-docker logs jenkins-workshop --tail 5
 ```
 
 ### Step 4: Access Jenkins Dashboard
@@ -60,137 +159,32 @@ docker logs jenkins-workshop --tail 5
 2. Login with:
    - **Username**: `admin`
    - **Password**: `admin`
-3. ✅ You should see the Jenkins dashboard with all features available
 
-### ✅ Critical Success Verification
+## 🎯 Success Criteria
 
-```bash
-# Test Python3 works
-docker exec jenkins-workshop python3 --version
-# Should return: Python 3.11.2
-
-# Test pip works
-docker exec jenkins-workshop pip3 install requests
-# Should install successfully without errors
-
-# Test Docker works
-docker exec jenkins-workshop docker ps
-# Should show running containers without permission errors
-```
-
-**Your Jenkins is now production-ready for the workshop!** 🎉
-
----
-
-## 🎯 Workshop Scenarios
-
-### Scenario 1: Docker Build Pipeline (Recommended Start)
-
-**What it demonstrates**: Complete CI/CD pipeline with Docker builds, testing, and deployment
-
-**Setup Steps**:
-
-1. **Create Pipeline Job**:
-   - Click "New Item"
-   - Name: `01-docker-build`
-   - Type: "Pipeline"
-   - Click "OK"
-
-2. **Configure Pipeline**:
-   - Scroll to "Pipeline" section
-   - Definition: "Pipeline script from SCM"
-   - SCM: "Git"
-   - Repository URL: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
-   - Script Path: `Jenkins/scenarios/01-docker-build/Jenkinsfile`
-   - Click "Save"
-
-3. **Run Pipeline**:
-   - Click "Build Now"
-   - Watch the pipeline execute through 9 stages
-   - View test results, coverage reports, and deployment configs
-
-**Expected Results**:
-- ✅ All 13 tests pass
-- ✅ Docker image builds successfully
-- ✅ HTML test reports generated
-- ✅ Security scan completed
-- ✅ Deployment configuration created
-
-### Scenario 2: Testcontainers Integration
-
-**What it demonstrates**: Integration testing with database containers
-
-**Setup**: Same as Scenario 1, but use:
-- Name: `02-testcontainers`
-- Script Path: `Jenkins/scenarios/02-testcontainers/Jenkinsfile`
-
-### Scenario 3: HTML Reports
-
-**What it demonstrates**: Test result visualization and reporting
-
-**Setup**: Same as Scenario 1, but use:
-- Name: `03-html-reports`
-- Script Path: `Jenkins/scenarios/03-html-reports/Jenkinsfile`
-
-### Scenario 4: Secrets Management
-
-**What it demonstrates**: Secure handling of credentials and secrets
-
-**Setup**: Same as Scenario 1, but use:
-- Name: `04-secrets-management`
-- Script Path: `Jenkins/scenarios/04-secrets-management/Jenkinsfile`
-
-### Scenario 5: EKS Deployment
-
-**What it demonstrates**: Kubernetes deployment pipeline
-
-**Setup**: Same as Scenario 1, but use:
-- Name: `05-eks-deployment`
-- Script Path: `Jenkins/scenarios/05-eks-deployment/Jenkinsfile`
-
----
-
-## 🔧 Local Testing (Optional)
-
-Before running pipelines, you can test scenarios locally:
-
-### Test Scenario 1 Application
-
-```bash
-cd scenarios/01-docker-build
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies and run tests
-pip install -r requirements.txt
-python3 -m pytest tests/ -v
-
-# Test Docker build
-docker build -t test-app .
-docker run -d -p 5000:5000 --name test-app test-app
-curl http://localhost:5000/health
-docker stop test-app && docker rm test-app
-```
-
----
+You've successfully set up Jenkins when:
+- ✅ Jenkins accessible at http://localhost:8080 with admin/admin
+- ✅ Can create Pipeline jobs
+- ✅ Workspace files visible in `/workspace`
+- ✅ Docker commands work in pipeline
+- ✅ All demo scenarios run successfully
+- ✅ Blue Ocean interface accessible
 
 ## 🔍 Verification & Troubleshooting
 
 ### ✅ Verify Setup is Working
 
 ```bash
-# 1. Check container is running
+# Check container is running
 docker ps | grep jenkins-workshop
 
-# 2. Check Jenkins responds
+# Check Jenkins responds
 curl -u admin:admin -s http://localhost:8080/api/json | grep "mode"
 
-# 3. Check plugin count (should be 146+)
+# Check plugin count (should be 146+)
 curl -u admin:admin -s http://localhost:8080/pluginManager/api/json?depth=1 | grep -o '"shortName"' | wc -l
 
-# 4. Test workspace mount
+# Test workspace mount
 docker exec jenkins-workshop ls -la /workspace
 ```
 
@@ -205,9 +199,8 @@ docker logs jenkins-workshop
 docker restart jenkins-workshop
 
 # If persistent issues, rebuild
-docker stop jenkins-workshop && docker rm jenkins-workshop
-docker volume rm jenkins_home
-# Then run Step 2 again
+python3 jenkins-setup.py cleanup
+python3 jenkins-setup.py setup
 ```
 
 #### Login Issues
@@ -218,7 +211,8 @@ docker volume rm jenkins_home
 #### Port 8080 Already in Use
 ```bash
 # Find what's using the port
-lsof -i :8080
+lsof -i :8080  # macOS/Linux
+netstat -ano | findstr :8080  # Windows
 
 # Use different port
 docker run -d --name jenkins-workshop -p 8081:8080 -p 50001:50000 ... jenkins-workshop:custom
@@ -233,17 +227,6 @@ sudo chmod 666 /var/run/docker.sock
 # Or run Jenkins container with different Docker group
 docker run -d --name jenkins-workshop --group-add $(stat -c '%g' /var/run/docker.sock) ...
 ```
-
-#### Pipeline Can't Find Workspace Files
-```bash
-# Verify workspace mount
-docker exec jenkins-workshop ls -la /workspace/Jenkins/scenarios/
-
-# If empty, check your mount path in docker run command
-# Should be: -v "$(pwd)/../":/workspace
-```
-
----
 
 ## 📊 What's Included
 
@@ -275,8 +258,6 @@ jenkins-workshop container
 └── Ports: 8080 (web), 50000 (agents)
 ```
 
----
-
 ## 🎓 Workshop Flow Recommendation
 
 1. **Start with Scenario 1** (most comprehensive)
@@ -289,37 +270,30 @@ jenkins-workshop container
 4. **Explore specific scenarios** based on audience interest
 5. **Customize pipelines** for specific use cases
 
----
-
 ## 🆘 Need Help?
 
 ### Quick Health Check
 ```bash
 # Run this to verify everything is working
-curl -u admin:admin -s http://localhost:8080/api/json | jq '.mode'
-# Should return: "NORMAL"
+python3 jenkins-setup.py status
 ```
 
 ### Reset Everything
 ```bash
 # Nuclear option - completely reset Jenkins
-docker stop jenkins-workshop
-docker rm jenkins-workshop
-docker volume rm jenkins_home
-docker rmi jenkins-workshop:custom
-
-# Then start from Step 1
+python3 jenkins-setup.py cleanup
+python3 jenkins-setup.py setup
 ```
 
-### Success Criteria Checklist
-- [ ] Jenkins accessible at http://localhost:8080 with admin/admin
-- [ ] Can create Pipeline jobs
-- [ ] Workspace files visible in `/workspace`
-- [ ] Docker commands work in pipeline
-- [ ] Test scenario 1 runs successfully
-- [ ] Blue Ocean interface accessible
+### Demo All Scenarios
+```bash
+# Show all available demos
+python3 jenkins-setup.py demo
 
----
+# Run specific scenario demo
+cd jenkins-scenarios/scenario_01_pipeline_genesis
+python3 demo.py --simple
+```
 
 ## 🎉 You're Ready!
 
@@ -328,5 +302,6 @@ Your Jenkins workshop environment is now fully configured with:
 - **All major plugins** for comprehensive CI/CD demos
 - **5 real-world scenarios** covering different use cases
 - **Complete Docker integration** for modern workflows
+- **Cross-platform compatibility** for any environment
 
-**Next**: Open http://localhost:8080, login with admin/admin, and start creating your first pipeline! 🚀
+**Next**: Run `python3 jenkins-setup.py setup` and start your first pipeline! 🚀

@@ -1,0 +1,133 @@
+pipeline {
+    agent any
+    
+    options {
+        // Keep only the last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Add timestamps to console output
+        timestamps()
+        // Timeout after 30 minutes
+        timeout(time: 30, unit: 'MINUTES')
+    }
+    
+    stages {
+        stage('🧪 Welcome to Test Master') {
+            steps {
+                echo 'Welcome to Test Master - Advanced Testing with TestContainers!'
+                echo 'This pipeline demonstrates real database testing in Jenkins.'
+            }
+        }
+        
+        stage('📦 Setup Environment') {
+            steps {
+                echo 'Setting up the testing environment...'
+                sh 'python --version'
+                sh 'pip --version'
+                sh 'docker --version'
+            }
+        }
+        
+        stage('🔧 Install Dependencies') {
+            steps {
+                echo 'Installing Python dependencies including TestContainers...'
+                sh 'python -m pip install -r requirements.txt'
+            }
+        }
+        
+        stage('🧪 Run Basic Tests') {
+            steps {
+                echo 'Running basic application tests...'
+                sh 'python -m pytest tests/test_app.py -v --tb=short'
+            }
+            post {
+                always {
+                    echo 'Basic tests completed!'
+                }
+            }
+        }
+        
+        stage('🐘 Test with PostgreSQL') {
+            steps {
+                echo 'Testing with real PostgreSQL database using TestContainers...'
+                sh 'python -m pytest tests/test_containers.py::test_postgres -v -s'
+            }
+            post {
+                always {
+                    echo 'PostgreSQL tests completed!'
+                }
+            }
+        }
+        
+        stage('🐬 Test with MySQL') {
+            steps {
+                echo 'Testing with real MySQL database using TestContainers...'
+                sh 'python -m pytest tests/test_containers.py::test_mysql -v -s'
+            }
+            post {
+                always {
+                    echo 'MySQL tests completed!'
+                }
+            }
+        }
+        
+        stage('🔴 Test with Redis') {
+            steps {
+                echo 'Testing with real Redis database using TestContainers...'
+                sh 'python -m pytest tests/test_containers.py::test_redis -v -s'
+            }
+            post {
+                always {
+                    echo 'Redis tests completed!'
+                }
+            }
+        }
+        
+        stage('🚀 Parallel Container Tests') {
+            steps {
+                echo 'Running parallel tests with multiple databases...'
+                sh 'python -m pytest tests/test_containers.py::test_parallel_containers -v -s'
+            }
+            post {
+                always {
+                    echo 'Parallel tests completed!'
+                }
+            }
+        }
+        
+        stage('🐳 Build Docker Image') {
+            steps {
+                echo 'Building Docker image for the application...'
+                script {
+                    def image = docker.build("test-master:${env.BUILD_NUMBER}")
+                    echo "Docker image built: ${image.id}"
+                }
+            }
+        }
+        
+        stage('✅ Test Master Success!') {
+            steps {
+                echo '🎉 Congratulations! You have mastered TestContainers!'
+                echo 'You have learned:'
+                echo '  - Real database testing with TestContainers'
+                echo '  - PostgreSQL, MySQL, and Redis integration'
+                echo '  - Parallel test execution'
+                echo '  - Jenkins pipeline with database testing'
+                echo ''
+                echo 'Ready for the next challenge? Move to Scenario 3!'
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Test Master pipeline execution completed!'
+        }
+        success {
+            echo '🎊 Test Master completed successfully!'
+            echo 'You are now a TestContainers expert!'
+        }
+        failure {
+            echo '❌ Pipeline failed - check the logs above'
+        }
+    }
+}

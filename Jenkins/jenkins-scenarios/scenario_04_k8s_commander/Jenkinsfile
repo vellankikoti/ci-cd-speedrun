@@ -1,0 +1,197 @@
+pipeline {
+    agent any
+    
+    options {
+        // Keep only the last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Add timestamps to console output
+        timestamps()
+        // Timeout after 30 minutes
+        timeout(time: 30, unit: 'MINUTES')
+    }
+    
+    stages {
+        stage('☸️ Welcome to K8s Commander') {
+            steps {
+                echo 'Welcome to K8s Commander - Kubernetes Deployment!'
+                echo 'This pipeline demonstrates Kubernetes deployment in Jenkins.'
+            }
+        }
+        
+        stage('📦 Setup Environment') {
+            steps {
+                echo 'Setting up the Kubernetes environment...'
+                sh 'python --version'
+                sh 'pip --version'
+                sh 'docker --version'
+                sh 'kubectl version --client'
+            }
+        }
+        
+        stage('🔧 Install Dependencies') {
+            steps {
+                echo 'Installing Python dependencies...'
+                sh 'python -m pip install -r requirements.txt'
+            }
+        }
+        
+        stage('🧪 Run Application Tests') {
+            steps {
+                echo 'Running basic application tests...'
+                sh 'python -m pytest tests/test_app.py -v --tb=short'
+            }
+            post {
+                always {
+                    echo 'Application tests completed!'
+                }
+            }
+        }
+        
+        stage('🐳 Build Docker Image') {
+            steps {
+                echo 'Building Docker image for Kubernetes...'
+                script {
+                    def image = docker.build("k8s-commander:${env.BUILD_NUMBER}")
+                    echo "Docker image built: ${image.id}"
+                }
+            }
+            post {
+                always {
+                    echo 'Docker image build completed!'
+                }
+            }
+        }
+        
+        stage('☸️ Validate Kubernetes Manifests') {
+            steps {
+                echo 'Validating Kubernetes manifests...'
+                sh 'kubectl apply --dry-run=client -f k8s/'
+            }
+            post {
+                always {
+                    echo 'Kubernetes manifest validation completed!'
+                }
+            }
+        }
+        
+        stage('☸️ Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying to Kubernetes...'
+                sh 'kubectl apply -f k8s/'
+                sh 'kubectl rollout status deployment/k8s-commander -n k8s-commander --timeout=60s'
+            }
+            post {
+                always {
+                    echo 'Kubernetes deployment completed!'
+                }
+            }
+        }
+        
+        stage('📊 Verify Deployment') {
+            steps {
+                echo 'Verifying Kubernetes deployment...'
+                sh 'kubectl get pods -n k8s-commander -l app=k8s-commander'
+                sh 'kubectl get services -n k8s-commander'
+                sh 'kubectl get ingress -n k8s-commander'
+                sh 'kubectl get hpa -n k8s-commander'
+            }
+            post {
+                always {
+                    echo 'Deployment verification completed!'
+                }
+            }
+        }
+        
+        stage('🧪 Run Kubernetes Tests') {
+            steps {
+                echo 'Running Kubernetes-specific tests...'
+                sh 'python -m pytest tests/test_k8s.py -v --tb=short'
+            }
+            post {
+                always {
+                    echo 'Kubernetes tests completed!'
+                }
+            }
+        }
+        
+        stage('📈 Test Scaling') {
+            steps {
+                echo 'Testing Kubernetes scaling...'
+                sh 'kubectl scale deployment k8s-commander -n k8s-commander --replicas=5'
+                sh 'sleep 10'
+                sh 'kubectl get pods -n k8s-commander -l app=k8s-commander'
+                sh 'kubectl scale deployment k8s-commander -n k8s-commander --replicas=3'
+            }
+            post {
+                always {
+                    echo 'Scaling test completed!'
+                }
+            }
+        }
+        
+        stage('🔍 Test Health Checks') {
+            steps {
+                echo 'Testing Kubernetes health checks...'
+                script {
+                    def podName = sh(
+                        script: "kubectl get pods -n k8s-commander -l app=k8s-commander -o jsonpath='{.items[0].metadata.name}'",
+                        returnStdout: true
+                    ).trim()
+                    
+                    sh "kubectl exec -n k8s-commander ${podName} -- curl -f http://localhost:5000/health"
+                    sh "kubectl exec -n k8s-commander ${podName} -- curl -f http://localhost:5000/ready"
+                    sh "kubectl exec -n k8s-commander ${podName} -- curl -f http://localhost:5000/metrics"
+                }
+            }
+            post {
+                always {
+                    echo 'Health checks completed!'
+                }
+            }
+        }
+        
+        stage('📊 Resource Analysis') {
+            steps {
+                echo 'Analyzing Kubernetes resources...'
+                sh 'kubectl top pods -n k8s-commander'
+                sh 'kubectl describe deployment k8s-commander -n k8s-commander'
+                sh 'kubectl describe service k8s-commander-service -n k8s-commander'
+            }
+            post {
+                always {
+                    echo 'Resource analysis completed!'
+                }
+            }
+        }
+        
+        stage('✅ K8s Commander Success!') {
+            steps {
+                echo '🎉 Congratulations! You have mastered Kubernetes deployment!'
+                echo 'You have learned:'
+                echo '  - Kubernetes objects and their relationships'
+                echo '  - Deployment strategies and rolling updates'
+                echo '  - Service discovery and load balancing'
+                echo '  - Horizontal Pod Autoscaling'
+                echo '  - Health checks and monitoring'
+                echo ''
+                echo 'Ready for the final challenge? Move to Scenario 5!'
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'K8s Commander pipeline execution completed!'
+            
+            // Clean up Kubernetes resources
+            sh 'kubectl delete -f k8s/ --ignore-not-found=true'
+        }
+        success {
+            echo '🎊 K8s Commander completed successfully!'
+            echo 'You are now a K8s Commander!'
+        }
+        failure {
+            echo '❌ Pipeline failed - check the logs above'
+        }
+    }
+}

@@ -70,7 +70,32 @@ pipeline {
                     echo '📦 Installing dependencies with caching...'
                     def startTime = System.currentTimeMillis()
                     dir('Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis') {
-                        sh 'python3 -m pip install -r requirements.txt'
+                        sh '''
+                            # Cross-platform Python and pip detection
+                            PYTHON_CMD="python3"
+                            PIP_CMD="pip3"
+                            
+                            # Try python3 first, then python
+                            if ! command -v python3 >/dev/null 2>&1; then
+                                if command -v python >/dev/null 2>&1; then
+                                    PYTHON_CMD="python"
+                                fi
+                            fi
+                            
+                            # Try pip3 first, then pip, then python -m pip
+                            if ! command -v pip3 >/dev/null 2>&1; then
+                                if command -v pip >/dev/null 2>&1; then
+                                    PIP_CMD="pip"
+                                else
+                                    PIP_CMD="${PYTHON_CMD} -m pip"
+                                fi
+                            fi
+                            
+                            echo "Using Python: ${PYTHON_CMD}"
+                            echo "Using Pip: ${PIP_CMD}"
+                            
+                            ${PIP_CMD} install -r requirements.txt
+                        '''
                     }
                     def duration = (System.currentTimeMillis() - startTime) / 1000
                     echo "✅ Dependencies installed in ${duration} seconds (would take 15 minutes manually)"
@@ -84,7 +109,20 @@ pipeline {
                     echo '🧪 Running comprehensive test suite...'
                     def startTime = System.currentTimeMillis()
                     dir('Jenkins/jenkins-scenarios/scenario_01_pipeline_genesis') {
-                        sh 'python3 -m pytest tests/ -v --tb=short'
+                        sh '''
+                            # Cross-platform Python detection for testing
+                            PYTHON_CMD="python3"
+                            
+                            # Try python3 first, then python
+                            if ! command -v python3 >/dev/null 2>&1; then
+                                if command -v python >/dev/null 2>&1; then
+                                    PYTHON_CMD="python"
+                                fi
+                            fi
+                            
+                            echo "Running tests with: ${PYTHON_CMD}"
+                            ${PYTHON_CMD} -m pytest tests/ -v --tb=short
+                        '''
                     }
                     def duration = (System.currentTimeMillis() - startTime) / 1000
                     echo "✅ All tests passed in ${duration} seconds (would take 20 minutes manually)"

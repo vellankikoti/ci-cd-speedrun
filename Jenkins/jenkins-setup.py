@@ -50,6 +50,10 @@ class JenkinsSetup:
         self.jenkins_password = 'admin'
         self.workspace_path = Path(__file__).parent.absolute()
         
+        # Detect cloud VM environments
+        self.is_cloud_vm = self._detect_cloud_environment()
+        self.is_docker_desktop = self._detect_docker_desktop()
+        
     def print_step(self, message):
         """Print a step message with consistent formatting."""
         print(f"{Colors.BLUE}🔹 {message}{Colors.NC}")
@@ -100,6 +104,61 @@ class JenkinsSetup:
             self.print_error(f"Command error: {e}")
             return False
     
+    def get_python_command(self):
+        """Get the correct Python command for the platform."""
+        # Try python3 first, then python
+        for cmd in ['python3', 'python']:
+            if self.run_command(f"{cmd} --version", capture_output=True):
+                return cmd
+        return 'python3'  # fallback
+    
+    def get_pip_command(self):
+        """Get the correct pip command for the platform."""
+        python_cmd = self.get_python_command()
+        # Try pip3 first, then pip, then python -m pip
+        for cmd in ['pip3', 'pip', f'{python_cmd} -m pip']:
+            if self.run_command(f"{cmd} --version", capture_output=True):
+                return cmd
+        return f'{python_cmd} -m pip'  # fallback
+
+    def _detect_cloud_environment(self):
+        """Detect if running in a cloud VM environment."""
+        try:
+            # Check for common cloud VM indicators
+            cloud_indicators = [
+                '/sys/class/dmi/id/product_name',  # AWS, Azure, GCP
+                '/sys/class/dmi/id/board_vendor',  # VMware, VirtualBox
+                '/proc/version',  # Check for cloud-specific kernels
+            ]
+            
+            for indicator in cloud_indicators:
+                if os.path.exists(indicator):
+                    with open(indicator, 'r') as f:
+                        content = f.read().lower()
+                        if any(cloud in content for cloud in ['amazon', 'aws', 'azure', 'google', 'vmware', 'virtualbox', 'qemu']):
+                            return True
+            
+            # Check environment variables
+            cloud_env_vars = ['AWS_REGION', 'AZURE_REGION', 'GCP_ZONE', 'CLOUD_PROVIDER']
+            if any(os.environ.get(var) for var in cloud_env_vars):
+                return True
+                
+        except Exception:
+            pass
+        
+        return False
+
+    def _detect_docker_desktop(self):
+        """Detect if running Docker Desktop vs Docker Engine."""
+        try:
+            # Docker Desktop typically has different behavior
+            result = self.run_command("docker context ls", capture_output=True)
+            if result and "desktop" in result.lower():
+                return True
+        except Exception:
+            pass
+        return False
+
     def check_docker_installed(self):
         """Check if Docker is installed and running."""
         self.print_step("Checking Docker installation...")
@@ -164,10 +223,17 @@ class JenkinsSetup:
         # Prepare Docker run command with cross-platform path handling
         workspace_mount = str(self.workspace_path)
         if self.is_windows:
-            # Windows path handling
+            # Windows path handling - more robust
             workspace_mount = workspace_mount.replace('\\', '/')
-            if workspace_mount[1] == ':':
+            # Handle drive letters (C: -> /c)
+            if len(workspace_mount) > 1 and workspace_mount[1] == ':':
                 workspace_mount = f"/{workspace_mount[0].lower()}{workspace_mount[2:]}"
+            # Handle UNC paths and other Windows-specific cases
+            if workspace_mount.startswith('//'):
+                workspace_mount = workspace_mount[1:]  # Remove leading slash for UNC
+        else:
+            # Unix/Linux/Mac - ensure absolute path
+            workspace_mount = str(self.workspace_path.resolve())
         
         docker_run_cmd = f"""docker run -d \
   --name {self.jenkins_container} \
@@ -187,8 +253,18 @@ class JenkinsSetup:
         # Fix Docker socket permissions (Linux/Mac only)
         if not self.is_windows:
             self.print_step("Fixing Docker socket permissions...")
+            # Try multiple approaches for Docker socket permissions
             self.run_command(f"docker exec -u root {self.jenkins_container} chown root:docker /var/run/docker.sock", check=False)
             self.run_command(f"docker exec -u root {self.jenkins_container} chmod 666 /var/run/docker.sock", check=False)
+            
+            # Alternative approach for cloud VMs and different Docker setups
+            self.run_command(f"docker exec -u root {self.jenkins_container} chmod 777 /var/run/docker.sock", check=False)
+            
+            # Verify Docker access works
+            if self.run_command(f"docker exec {self.jenkins_container} docker ps", capture_output=True):
+                self.print_success("Docker socket permissions configured successfully")
+            else:
+                self.print_info("Docker socket permissions may need manual configuration")
         
         self.print_success("Jenkins container started successfully!")
         return True
@@ -244,20 +320,22 @@ class JenkinsSetup:
             self.print_error(f"Failed to connect to Jenkins: {e}")
             return False
         
-        # Check Python3 is available
-        self.print_step("Checking Python3 availability...")
-        if self.run_command(f"docker exec {self.jenkins_container} python3 --version", capture_output=True):
-            self.print_success("Python3 is available in Jenkins")
+        # Check Python availability (cross-platform)
+        self.print_step("Checking Python availability...")
+        python_cmd = self.get_python_command()
+        if self.run_command(f"docker exec {self.jenkins_container} {python_cmd} --version", capture_output=True):
+            self.print_success(f"Python is available in Jenkins ({python_cmd})")
         else:
-            self.print_error("Python3 is not available in Jenkins")
+            self.print_error(f"Python is not available in Jenkins")
             return False
         
-        # Check pip is available
+        # Check pip availability (cross-platform)
         self.print_step("Checking pip availability...")
-        if self.run_command(f"docker exec {self.jenkins_container} pip3 --version", capture_output=True):
-            self.print_success("pip is available in Jenkins")
+        pip_cmd = self.get_pip_command()
+        if self.run_command(f"docker exec {self.jenkins_container} {pip_cmd} --version", capture_output=True):
+            self.print_success(f"pip is available in Jenkins ({pip_cmd})")
         else:
-            self.print_error("pip is not available in Jenkins")
+            self.print_error(f"pip is not available in Jenkins")
             return False
         
         # Check Docker is available
@@ -275,6 +353,17 @@ class JenkinsSetup:
         else:
             self.print_error("Workspace is not properly mounted")
             return False
+        
+        # Platform-specific validation
+        self.print_step("Running platform-specific validation...")
+        if self.is_windows:
+            self.print_info("Windows platform detected - using Windows-specific validations")
+        elif self.is_mac:
+            self.print_info("macOS platform detected - using macOS-specific validations")
+        elif self.is_linux:
+            self.print_info("Linux platform detected - using Linux-specific validations")
+        else:
+            self.print_info(f"Unknown platform detected: {self.platform}")
         
         # Check plugin count
         self.print_step("Checking installed plugins...")

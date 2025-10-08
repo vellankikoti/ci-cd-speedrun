@@ -367,7 +367,29 @@ class TestContainersDatabaseManager(PostgreSQLDatabaseManager):
         
         # Initialize parent class
         super().__init__()
+        
+        # Wait for database to be ready
+        self._wait_for_database()
         logger.info(f"✅ TestContainers database manager initialized: {container_host}:{container_port}")
+    
+    def _wait_for_database(self, max_retries=30, delay=1):
+        """Wait for the database to be ready"""
+        import time
+        for attempt in range(max_retries):
+            try:
+                with self.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT 1")
+                    cursor.close()
+                logger.info("✅ Database is ready!")
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.info(f"⏳ Waiting for database... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"❌ Database not ready after {max_retries} attempts: {e}")
+                    raise
 
 
 if __name__ == '__main__':

@@ -38,7 +38,6 @@ pipeline {
                     echo ''
                 }
             }
-        }
         
         stage('🐘 Real PostgreSQL Database') {
             steps {
@@ -603,7 +602,6 @@ EOF
                 }
             }
         }
-    }
 
     post {
         always {

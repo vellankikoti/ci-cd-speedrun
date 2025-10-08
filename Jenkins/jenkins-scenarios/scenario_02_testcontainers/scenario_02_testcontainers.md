@@ -1,17 +1,22 @@
 # TestContainers Integration
 
-Integration testing with TestContainers
+Real TestContainers integration with PostgreSQL in Jenkins Pipeline
 
 ## Overview
 
-This scenario demonstrates integration testing with testcontainers in a Jenkins pipeline.
+This scenario demonstrates real TestContainers integration with PostgreSQL databases in a Jenkins pipeline. Unlike traditional mocking, this uses actual database containers for authentic integration testing in a CI/CD pipeline.
 
 ## Files
 
-- `Jenkinsfile` - Jenkins pipeline definition
+- `Jenkinsfile` - Jenkins pipeline definition for TestContainers
+- `demo.py` - Educational workshop script
+- `demo_testcontainers.py` - Interactive TestContainers demo
+- `database.py` - PostgreSQL database manager with TestContainers
+- `app.py` - Flask application with PostgreSQL integration
 - `Dockerfile` - Docker container definition
-- `requirements.txt` - Python dependencies
-- `tests/` - Test files directory
+- `docker-compose.test.yml` - TestContainers setup
+- `requirements.txt` - TestContainers and PostgreSQL dependencies
+- `tests/` - Comprehensive test suites
 
 ## Usage
 
@@ -23,32 +28,33 @@ cd ci-cd-chaos-workshop
 
 # 2. Start Jenkins (one command!)
 cd Jenkins
-python3 setup-jenkins-complete.py setup
+python3 jenkins-setup.py setup
 
 # 3. Access Jenkins
 # Open http://localhost:8080
 # Complete the setup wizard
 
-# 4. Run the pre-configured workshop job
-# Click "🎓 Workshop - TestContainers Integration" → "Build Now"
+# 4. Run the educational workshop
+cd jenkins-scenarios/scenario_02_testcontainers
+python3 demo.py
 ```
 
-### Manual Jenkins Job Creation (Production Mode)
+### Manual Jenkins Pipeline Creation (Workshop Mode)
 
 #### Step 1: Create New Pipeline Job
 1. **Access Jenkins** at `http://localhost:8080`
 2. **Click "New Item"**
-3. **Enter job name**: `TestContainers Integration - Production`
+3. **Enter job name**: `TestContainers Integration`
 4. **Select "Pipeline"** and click "OK"
 
 #### Step 2: Configure Pipeline
-1. **Description**: "Complete testcontainers integration pipeline with testing and deployment"
+1. **Description**: "TestContainers Integration Demo - Real database testing with PostgreSQL containers"
 2. **Pipeline section**:
    - **Definition**: "Pipeline script from SCM"
    - **SCM**: "Git"
    - **Repository URL**: `https://github.com/vellankikoti/ci-cd-chaos-workshop.git`
-   - **Branches to build**: `*/main` (or your preferred branch)
-   - **Script Path**: `Jenkins/scenarios/02-testcontainers/Jenkinsfile`
+   - **Branches to build**: `*/docker-test`
+   - **Script Path**: `Jenkins/jenkins-scenarios/scenario_02_testcontainers/Jenkinsfile`
 
 #### Step 3: Configure Build Triggers (Optional)
 - **GitHub hook trigger for GITScm polling** (if using webhooks)

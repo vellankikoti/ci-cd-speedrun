@@ -1,6 +1,16 @@
-# TestContainers Integration Demo - Standard Library Only
-# This demo uses Python standard library to demonstrate integration testing concepts
+# TestContainers Integration Demo - Real TestContainers with PostgreSQL
+# This demo uses actual TestContainers for real database integration testing
 
-# Optional dependencies for enhanced functionality (not required for basic operation):
-# requests>=2.28.0  # For external HTTP requests (alternative to urllib)
-# pytest>=7.0.0     # Alternative test runner (alternative to unittest)
+# Core dependencies
+requests>=2.28.0
+psycopg2-binary>=2.9.0
+sqlalchemy>=1.4.0
+
+# TestContainers and testing
+testcontainers>=3.7.0
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# Optional dependencies for enhanced functionality
+pytest-cov>=4.0.0
+pytest-html>=3.1.0

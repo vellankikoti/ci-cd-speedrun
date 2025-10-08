@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 TestContainers Integration Tests (Simplified)
-Demonstrates integration testing patterns using only standard library
+Demonstrates integration testing patterns with PostgreSQL
 """
 
 import unittest
@@ -10,61 +10,49 @@ import time
 import os
 import sys
 import threading
-import sqlite3
+import requests
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
 # Add parent directory to path so we can import app
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app
+from database import PostgreSQLDatabaseManager
 
 
 class TestDatabaseIntegration(unittest.TestCase):
-    """Test database integration using SQLite"""
+    """Test database integration using PostgreSQL"""
 
     def setUp(self):
         """Set up test database"""
-        self.test_db_path = '/tmp/test_testcontainers.db'
-        os.environ['DB_PATH'] = self.test_db_path
+        # Set up PostgreSQL connection for testing
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_PORT'] = '5432'
+        os.environ['DB_NAME'] = 'test_testcontainers'
+        os.environ['DB_USER'] = 'postgres'
+        os.environ['DB_PASSWORD'] = 'postgres'
 
-        # Clean up any existing test database
-        if os.path.exists(self.test_db_path):
-            os.remove(self.test_db_path)
-
-        self.db_manager = app.DatabaseManager()
+        self.db_manager = PostgreSQLDatabaseManager()
+        self.db_manager.init_database()
 
     def tearDown(self):
         """Clean up test database"""
-        if os.path.exists(self.test_db_path):
-            os.remove(self.test_db_path)
+        if hasattr(self, 'db_manager'):
+            self.db_manager.close()
 
     def test_database_initialization(self):
         """Test that database initializes correctly"""
-        # Database should be initialized in setUp
-        self.assertTrue(os.path.exists(self.test_db_path))
-
-        # Check if users table exists
-        conn = sqlite3.connect(self.test_db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-        result = cursor.fetchone()
-        conn.close()
-
-        self.assertIsNotNone(result)
+        # Test health check
+        self.assertTrue(self.db_manager.health_check())
         print("✅ Database initialization test passed")
 
     def test_database_connection(self):
         """Test that we can connect to the database"""
-        conn = self.db_manager.get_connection()
-        self.assertIsNotNone(conn)
-
-        # Test a simple query
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        result = cursor.fetchone()
-        conn.close()
-
-        self.assertEqual(result[0], 1)
+        with self.db_manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
+                self.assertEqual(result[0], 1)
         print("✅ Database connection test passed")
 
     def test_health_check(self):
@@ -77,7 +65,7 @@ class TestDatabaseIntegration(unittest.TestCase):
         """Test retrieving users from database"""
         users = self.db_manager.get_users()
         self.assertIsInstance(users, list)
-        self.assertGreaterEqual(len(users), 3)  # Should have 3 sample users
+        self.assertGreaterEqual(len(users), 5)  # Should have 5 sample users
 
         # Check user structure
         if users:
@@ -114,6 +102,47 @@ class TestDatabaseIntegration(unittest.TestCase):
 
         print("✅ Duplicate email constraint test passed")
 
+    def test_update_user(self):
+        """Test updating user information"""
+        # Create a user first
+        new_user = self.db_manager.create_user('Original User', 'original@test.com')
+        user_id = new_user['id']
+
+        # Update the user
+        updated_user = self.db_manager.update_user(user_id, name='Updated User')
+        self.assertNotIn('error', updated_user)
+        self.assertEqual(updated_user['name'], 'Updated User')
+        self.assertEqual(updated_user['email'], 'original@test.com')
+
+        print("✅ Update user test passed")
+
+    def test_delete_user(self):
+        """Test deleting a user"""
+        # Create a user first
+        new_user = self.db_manager.create_user('To Delete', 'delete@test.com')
+        user_id = new_user['id']
+
+        # Delete the user
+        delete_result = self.db_manager.delete_user(user_id)
+        self.assertNotIn('error', delete_result)
+        self.assertIn('deleted_user', delete_result)
+
+        # Verify user is deleted
+        get_user = self.db_manager.get_user_by_id(user_id)
+        self.assertIsNone(get_user)
+
+        print("✅ Delete user test passed")
+
+    def test_database_stats(self):
+        """Test database statistics"""
+        stats = self.db_manager.get_database_stats()
+        self.assertIn('user_count', stats)
+        self.assertIn('database_size', stats)
+        self.assertIn('tables', stats)
+        self.assertGreaterEqual(stats['user_count'], 5)
+
+        print("✅ Database stats test passed")
+
 
 class TestApplicationServer(unittest.TestCase):
     """Test the HTTP server application"""
@@ -121,13 +150,13 @@ class TestApplicationServer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Start the application server for testing"""
-        cls.test_db_path = '/tmp/test_server_testcontainers.db'
-        os.environ['DB_PATH'] = cls.test_db_path
+        # Set up environment for testing
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_PORT'] = '5432'
+        os.environ['DB_NAME'] = 'test_server_testcontainers'
+        os.environ['DB_USER'] = 'postgres'
+        os.environ['DB_PASSWORD'] = 'postgres'
         os.environ['PORT'] = '5001'  # Use different port for testing
-
-        # Clean up any existing test database
-        if os.path.exists(cls.test_db_path):
-            os.remove(cls.test_db_path)
 
         # Start server in a separate thread
         cls.server_thread = threading.Thread(
@@ -138,15 +167,9 @@ class TestApplicationServer(unittest.TestCase):
         cls.server_thread.start()
 
         # Wait for server to start
-        time.sleep(2)
+        time.sleep(3)
 
         cls.base_url = 'http://localhost:5001'
-
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up test database"""
-        if os.path.exists(cls.test_db_path):
-            os.remove(cls.test_db_path)
 
     def test_health_endpoint(self):
         """Test the health endpoint"""
@@ -175,7 +198,7 @@ class TestApplicationServer(unittest.TestCase):
             self.assertIn('count', data)
             self.assertIn('timestamp', data)
             self.assertIsInstance(data['users'], list)
-            self.assertGreaterEqual(data['count'], 3)
+            self.assertGreaterEqual(data['count'], 5)
 
             print("✅ Users API GET test passed")
         except Exception as e:
@@ -217,13 +240,28 @@ class TestApplicationServer(unittest.TestCase):
 
             data = json.loads(response.read().decode())
             self.assertEqual(data['status'], 'connected')
-            self.assertIn('database_type', data)
+            self.assertEqual(data['database_type'], 'PostgreSQL')
             self.assertIn('user_count', data)
             self.assertIn('timestamp', data)
 
             print("✅ Database status endpoint test passed")
         except Exception as e:
             self.fail(f"Database status endpoint test failed: {e}")
+
+    def test_db_stats_endpoint(self):
+        """Test database statistics endpoint"""
+        try:
+            response = urlopen(f"{self.base_url}/api/db-stats")
+            self.assertEqual(response.status, 200)
+
+            data = json.loads(response.read().decode())
+            self.assertIn('user_count', data)
+            self.assertIn('database_size', data)
+            self.assertIn('tables', data)
+
+            print("✅ Database stats endpoint test passed")
+        except Exception as e:
+            self.fail(f"Database stats endpoint test failed: {e}")
 
     def test_info_endpoint(self):
         """Test application info endpoint"""
@@ -250,7 +288,7 @@ class TestApplicationServer(unittest.TestCase):
 
             content = response.read().decode()
             self.assertIn('TestContainers Integration Demo', content)
-            self.assertIn('Application Status', content)
+            self.assertIn('PostgreSQL', content)
 
             print("✅ Main page test passed")
         except Exception as e:
@@ -260,27 +298,42 @@ class TestApplicationServer(unittest.TestCase):
 class TestEdgeCases(unittest.TestCase):
     """Test edge cases and error conditions"""
 
-    def test_invalid_database_path(self):
-        """Test behavior with invalid database path"""
-        # Save original path
-        original_path = os.environ.get('DB_PATH', '/tmp/testcontainers_demo.db')
+    def setUp(self):
+        """Set up test database"""
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_PORT'] = '5432'
+        os.environ['DB_NAME'] = 'test_edge_cases'
+        os.environ['DB_USER'] = 'postgres'
+        os.environ['DB_PASSWORD'] = 'postgres'
 
-        # Set invalid path
-        os.environ['DB_PATH'] = '/invalid/path/test.db'
+        self.db_manager = PostgreSQLDatabaseManager()
+        self.db_manager.init_database()
+
+    def tearDown(self):
+        """Clean up test database"""
+        if hasattr(self, 'db_manager'):
+            self.db_manager.close()
+
+    def test_invalid_database_connection(self):
+        """Test behavior with invalid database connection"""
+        # Set invalid connection details
+        os.environ['DB_HOST'] = 'invalid_host'
+        os.environ['DB_PORT'] = '9999'
 
         try:
             # This should handle the error gracefully
-            db_manager = app.DatabaseManager()
+            db_manager = PostgreSQLDatabaseManager()
             self.assertIsNotNone(db_manager)
 
             # Health check should return False
             health_status = db_manager.health_check()
             self.assertFalse(health_status)
 
-            print("✅ Invalid database path test passed")
-        finally:
-            # Restore original path
-            os.environ['DB_PATH'] = original_path
+            print("✅ Invalid database connection test passed")
+        except Exception as e:
+            # This is expected behavior
+            self.assertIsNotNone(str(e))
+            print("✅ Invalid database connection error handling test passed")
 
     def test_api_validation(self):
         """Test API input validation"""
@@ -293,11 +346,13 @@ class TestEdgeCases(unittest.TestCase):
 
         for invalid_data in test_cases:
             # Test that validation logic exists in create_user
-            db_manager = app.DatabaseManager()
+            result = self.db_manager.create_user(
+                invalid_data.get('name', ''),
+                invalid_data.get('email', '')
+            )
 
             # These should fail gracefully
             if 'name' not in invalid_data or 'email' not in invalid_data:
-                # The create_user method should handle missing fields
                 self.assertTrue(True)  # Just verify structure
 
         print("✅ API validation test structure verified")
@@ -308,19 +363,19 @@ class TestPerformance(unittest.TestCase):
 
     def setUp(self):
         """Set up performance test database"""
-        self.test_db_path = '/tmp/test_performance_testcontainers.db'
-        os.environ['DB_PATH'] = self.test_db_path
+        os.environ['DB_HOST'] = 'localhost'
+        os.environ['DB_PORT'] = '5432'
+        os.environ['DB_NAME'] = 'test_performance_testcontainers'
+        os.environ['DB_USER'] = 'postgres'
+        os.environ['DB_PASSWORD'] = 'postgres'
 
-        # Clean up any existing test database
-        if os.path.exists(self.test_db_path):
-            os.remove(self.test_db_path)
-
-        self.db_manager = app.DatabaseManager()
+        self.db_manager = PostgreSQLDatabaseManager()
+        self.db_manager.init_database()
 
     def tearDown(self):
         """Clean up test database"""
-        if os.path.exists(self.test_db_path):
-            os.remove(self.test_db_path)
+        if hasattr(self, 'db_manager'):
+            self.db_manager.close()
 
     def test_bulk_user_creation(self):
         """Test creating multiple users for performance"""

@@ -146,9 +146,9 @@ def demo_application_with_testcontainers():
     
     host = postgres_container.get_container_host_ip()
     port = postgres_container.get_exposed_port(5432)
-    database = postgres_container.get_database_name()
-    username = postgres_container.get_username()
-    password = postgres_container.get_password()
+    database = postgres_container.dbname
+    username = postgres_container.username
+    password = postgres_container.password
     
     print(f"✅ PostgreSQL container started: {host}:{port}")
     

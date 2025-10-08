@@ -36,7 +36,6 @@ pipeline {
                     echo '✨ Catch integration bugs early'
                     echo '✨ Watch the magic happen below...'
                     echo ''
-                }
             }
         
         stage('🐘 Real PostgreSQL Database') {
@@ -128,6 +127,8 @@ pipeline {
         }
     }
     
+    }
+
     post {
         success {
             script {

@@ -35,9 +35,9 @@ class TestTestContainersIntegration:
         # Get connection details
         cls.host = cls.postgres_container.get_container_host_ip()
         cls.port = cls.postgres_container.get_exposed_port(5432)
-        cls.database = cls.postgres_container.get_database_name()
-        cls.username = cls.postgres_container.get_username()
-        cls.password = cls.postgres_container.get_password()
+        cls.database = cls.postgres_container.dbname  # Use dbname property instead
+        cls.username = cls.postgres_container.username  # Use username property instead
+        cls.password = cls.postgres_container.password  # Use password property instead
         
         print(f"✅ PostgreSQL container started: {cls.host}:{cls.port}")
         print(f"📊 Database: {cls.database}, User: {cls.username}")
@@ -193,9 +193,9 @@ class TestApplicationWithTestContainers:
         # Get connection details
         cls.host = cls.postgres_container.get_container_host_ip()
         cls.port = cls.postgres_container.get_exposed_port(5432)
-        cls.database = cls.postgres_container.get_database_name()
-        cls.username = cls.postgres_container.get_username()
-        cls.password = cls.postgres_container.get_password()
+        cls.database = cls.postgres_container.dbname  # Use dbname property instead
+        cls.username = cls.postgres_container.username  # Use username property instead
+        cls.password = cls.postgres_container.password  # Use password property instead
         
         # Set environment variables for the application
         os.environ['DB_TYPE'] = 'testcontainers'

@@ -41,9 +41,9 @@ def demo_testcontainers_database():
     # Get connection details
     host = postgres_container.get_container_host_ip()
     port = postgres_container.get_exposed_port(5432)
-    database = postgres_container.get_database_name()
-    username = postgres_container.get_username()
-    password = postgres_container.get_password()
+    database = postgres_container.dbname
+    username = postgres_container.username
+    password = postgres_container.password
     
     print(f"✅ PostgreSQL container started!")
     print(f"   Host: {host}")
@@ -258,33 +258,48 @@ def main():
     """Main demo function"""
     print_header("TestContainers Integration Workshop Demo")
     print("This demo shows real TestContainers integration with PostgreSQL")
-    print("Choose a demo to run:")
-    print("1. Database-only demo (TestContainers + PostgreSQL)")
-    print("2. Full application demo (TestContainers + App + API)")
-    print("3. Both demos")
     
-    try:
-        choice = input("\nEnter your choice (1-3): ").strip()
-        
-        if choice == "1":
-            demo_testcontainers_database()
-        elif choice == "2":
-            demo_application_with_testcontainers()
-        elif choice == "3":
+    # Check if running in non-interactive mode (Jenkins)
+    if os.getenv('JENKINS_URL') or os.getenv('CI'):
+        print("🤖 Running in automated mode (Jenkins/CI)")
+        print("Running both database and application demos...")
+        try:
             demo_testcontainers_database()
             print("\n" + "="*60)
-            input("Press Enter to continue to application demo...")
+            print("Continuing to application demo...")
             demo_application_with_testcontainers()
-        else:
-            print("❌ Invalid choice. Running database demo by default.")
-            demo_testcontainers_database()
-    
-    except KeyboardInterrupt:
-        print("\n🛑 Demo stopped by user")
-    except Exception as e:
-        print(f"❌ Demo error: {e}")
-        import traceback
-        traceback.print_exc()
+        except Exception as e:
+            print(f"❌ Demo error: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print("Choose a demo to run:")
+        print("1. Database-only demo (TestContainers + PostgreSQL)")
+        print("2. Full application demo (TestContainers + App + API)")
+        print("3. Both demos")
+        
+        try:
+            choice = input("\nEnter your choice (1-3): ").strip()
+            
+            if choice == "1":
+                demo_testcontainers_database()
+            elif choice == "2":
+                demo_application_with_testcontainers()
+            elif choice == "3":
+                demo_testcontainers_database()
+                print("\n" + "="*60)
+                input("Press Enter to continue to application demo...")
+                demo_application_with_testcontainers()
+            else:
+                print("❌ Invalid choice. Running database demo by default.")
+                demo_testcontainers_database()
+        
+        except KeyboardInterrupt:
+            print("\n🛑 Demo stopped by user")
+        except Exception as e:
+            print(f"❌ Demo error: {e}")
+            import traceback
+            traceback.print_exc()
 
 if __name__ == "__main__":
     main()

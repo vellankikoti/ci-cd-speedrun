@@ -25,20 +25,49 @@ class TestDatabaseIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test database"""
-        # Set up PostgreSQL connection for testing
-        os.environ['DB_HOST'] = 'localhost'
-        os.environ['DB_PORT'] = '5432'
-        os.environ['DB_NAME'] = 'test_testcontainers'
-        os.environ['DB_USER'] = 'postgres'
-        os.environ['DB_PASSWORD'] = 'postgres'
-
-        self.db_manager = PostgreSQLDatabaseManager()
+        # Check if we should use TestContainers
+        if os.getenv('DB_TYPE') == 'testcontainers':
+            from testcontainers.postgres import PostgresContainer
+            from database import TestContainersDatabaseManager
+            
+            # Start TestContainers PostgreSQL
+            self.postgres_container = PostgresContainer("postgres:15")
+            self.postgres_container.start()
+            
+            # Set environment variables for TestContainers
+            os.environ['DB_HOST'] = self.postgres_container.get_container_host_ip()
+            os.environ['DB_PORT'] = str(self.postgres_container.get_exposed_port(5432))
+            os.environ['DB_NAME'] = self.postgres_container.dbname
+            os.environ['DB_USER'] = self.postgres_container.username
+            os.environ['DB_PASSWORD'] = self.postgres_container.password
+            
+            self.db_manager = TestContainersDatabaseManager(
+                container_host=self.postgres_container.get_container_host_ip(),
+                container_port=self.postgres_container.get_exposed_port(5432),
+                database=self.postgres_container.dbname,
+                username=self.postgres_container.username,
+                password=self.postgres_container.password
+            )
+        else:
+            # Set up regular PostgreSQL connection for testing
+            os.environ['DB_HOST'] = 'localhost'
+            os.environ['DB_PORT'] = '5432'
+            os.environ['DB_NAME'] = 'test_testcontainers'
+            os.environ['DB_USER'] = 'postgres'
+            os.environ['DB_PASSWORD'] = 'postgres'
+            
+            self.db_manager = PostgreSQLDatabaseManager()
+        
         self.db_manager.init_database()
 
     def tearDown(self):
         """Clean up test database"""
         if hasattr(self, 'db_manager'):
             self.db_manager.close()
+        
+        # Clean up TestContainers if used
+        if hasattr(self, 'postgres_container'):
+            self.postgres_container.stop()
 
     def test_database_initialization(self):
         """Test that database initializes correctly"""
@@ -150,12 +179,28 @@ class TestApplicationServer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Start the application server for testing"""
-        # Set up environment for testing
-        os.environ['DB_HOST'] = 'localhost'
-        os.environ['DB_PORT'] = '5432'
-        os.environ['DB_NAME'] = 'test_server_testcontainers'
-        os.environ['DB_USER'] = 'postgres'
-        os.environ['DB_PASSWORD'] = 'postgres'
+        # Check if we should use TestContainers
+        if os.getenv('DB_TYPE') == 'testcontainers':
+            from testcontainers.postgres import PostgresContainer
+            
+            # Start TestContainers PostgreSQL
+            cls.postgres_container = PostgresContainer("postgres:15")
+            cls.postgres_container.start()
+            
+            # Set environment variables for TestContainers
+            os.environ['DB_HOST'] = cls.postgres_container.get_container_host_ip()
+            os.environ['DB_PORT'] = str(cls.postgres_container.get_exposed_port(5432))
+            os.environ['DB_NAME'] = cls.postgres_container.dbname
+            os.environ['DB_USER'] = cls.postgres_container.username
+            os.environ['DB_PASSWORD'] = cls.postgres_container.password
+        else:
+            # Set up regular PostgreSQL connection for testing
+            os.environ['DB_HOST'] = 'localhost'
+            os.environ['DB_PORT'] = '5432'
+            os.environ['DB_NAME'] = 'test_server_testcontainers'
+            os.environ['DB_USER'] = 'postgres'
+            os.environ['DB_PASSWORD'] = 'postgres'
+        
         os.environ['PORT'] = '5001'  # Use different port for testing
 
         # Start server in a separate thread
@@ -170,6 +215,12 @@ class TestApplicationServer(unittest.TestCase):
         time.sleep(3)
 
         cls.base_url = 'http://localhost:5001'
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up TestContainers if used"""
+        if hasattr(cls, 'postgres_container'):
+            cls.postgres_container.stop()
 
     def test_health_endpoint(self):
         """Test the health endpoint"""
@@ -313,6 +364,10 @@ class TestEdgeCases(unittest.TestCase):
         """Clean up test database"""
         if hasattr(self, 'db_manager'):
             self.db_manager.close()
+        
+        # Clean up TestContainers if used
+        if hasattr(self, 'postgres_container'):
+            self.postgres_container.stop()
 
     def test_invalid_database_connection(self):
         """Test behavior with invalid database connection"""
@@ -376,6 +431,10 @@ class TestPerformance(unittest.TestCase):
         """Clean up test database"""
         if hasattr(self, 'db_manager'):
             self.db_manager.close()
+        
+        # Clean up TestContainers if used
+        if hasattr(self, 'postgres_container'):
+            self.postgres_container.stop()
 
     def test_bulk_user_creation(self):
         """Test creating multiple users for performance"""

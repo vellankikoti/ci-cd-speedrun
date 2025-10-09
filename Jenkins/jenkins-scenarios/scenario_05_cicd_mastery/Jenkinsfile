@@ -737,11 +737,6 @@ EOF
                         pip3 install -r mastery-dashboard/requirements.txt > /dev/null 2>&1
                         
                         echo "║  🚀 Starting dynamic CI/CD Mastery dashboard..."
-                        cd mastery-dashboard
-                        nohup python3 app.py $DASHBOARD_PORT > ../mastery-dashboard.log 2>&1 &
-                        WEB_SERVER_PID=$!
-                        echo $DASHBOARD_PORT > ../mastery-dashboard.pid
-                        
                         echo "║     • Mastery dashboard created"
                         echo "║     • Real-time metrics enabled"
                         echo "║     • Achievement system active"
@@ -764,11 +759,11 @@ EOF
                             fi
                         done
                         
-                        echo "║  🚀 Starting mastery dashboard on port $DASHBOARD_PORT..."
+                        echo "║  🚀 Starting Flask mastery dashboard on port $DASHBOARD_PORT..."
                         cd mastery-dashboard
                         nohup python3 app.py $DASHBOARD_PORT > ../mastery-dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
-                        echo $DASHBOARD_PORT > ../mastery-dashboard.pid
+                        echo $WEB_SERVER_PID > ../mastery-dashboard.pid
                         
                         # Wait a moment for server to start
                         sleep 2

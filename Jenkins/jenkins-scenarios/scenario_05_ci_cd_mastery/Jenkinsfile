@@ -498,7 +498,7 @@ EOF
                         # Verify container is actually running
                         if docker ps | grep -q $CONTAINER_NAME; then
                             echo "║     ✅ Container deployed: $CONTAINER_NAME"
-                            echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
+                            echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT (or use Docker host IP if accessing from outside)"
                             echo "║     ✅ Port mapping: $EXTERNAL_PORT:5000"
                             
                             # Test if port is accessible
@@ -550,6 +550,10 @@ EOF
                         # Read port from file
                         WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
                         
+                        # Get Docker host IP for container-to-container communication
+                        DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        echo "║     • Using Docker host IP: $DOCKER_HOST_IP"
+                        
                         # Retry health check with timeout
                         MAX_RETRIES=10
                         RETRY_COUNT=0
@@ -558,7 +562,7 @@ EOF
                         while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$HEALTH_SUCCESS" = false ]; do
                             echo "║     • Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
                             
-                            if curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
+                            if curl -f --connect-timeout 5 --max-time 10 http://$DOCKER_HOST_IP:$WEBAPP_PORT/api/health 2>/dev/null; then
                                 echo "║     ✅ Health check passed"
                                 HEALTH_SUCCESS=true
                                 break
@@ -584,7 +588,8 @@ EOF
                     sh '''
                         echo "║     Testing metrics endpoint..."
                         WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
-                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/metrics
+                        DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        curl -f --connect-timeout 5 --max-time 10 http://$DOCKER_HOST_IP:$WEBAPP_PORT/api/metrics
                         echo "║     ✅ Metrics API working"
                     '''
                     
@@ -593,7 +598,8 @@ EOF
                     sh '''
                         echo "║     Testing pipelines endpoint..."
                         WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
-                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/pipelines
+                        DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        curl -f --connect-timeout 5 --max-time 10 http://$DOCKER_HOST_IP:$WEBAPP_PORT/api/pipelines
                         echo "║     ✅ Pipelines API working"
                     '''
                     
@@ -602,7 +608,8 @@ EOF
                     sh '''
                         echo "║     Testing main dashboard..."
                         WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
-                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/
+                        DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        curl -f --connect-timeout 5 --max-time 10 http://$DOCKER_HOST_IP:$WEBAPP_PORT/
                         echo "║     ✅ Main dashboard accessible"
                     '''
                     
@@ -643,7 +650,7 @@ EOF
                     echo "║  🏆 Max Points: 150 points"
                     echo "║"
                     echo "║  🌐 Dashboard Access:"
-                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
+                    echo "║     • URL: http://localhost:$WEBAPP_PORT (or use Docker host IP if accessing from outside)"
                     echo "║     • Type: ${params.DASHBOARD_TYPE}"
                     echo "║     • Style: ${params.VISUALIZATION_STYLE}"
                     echo "║     • Company: ${params.COMPANY_NAME}"
@@ -680,7 +687,7 @@ EOF
                     echo "║  ⏱️  Total Time: 5 minutes"
                     echo "║"
                     echo "║  🌐 Your CI/CD Dashboard:"
-                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
+                    echo "║     • URL: http://localhost:$WEBAPP_PORT (or use Docker host IP if accessing from outside)"
                     echo "║     • Type: ${params.DASHBOARD_TYPE}"
                     echo "║     • Style: ${params.VISUALIZATION_STYLE}"
                     echo "║     • Company: ${params.COMPANY_NAME}"

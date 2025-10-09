@@ -1285,7 +1285,11 @@ EOF
                         echo "║     • Environment: ${ENVIRONMENT}"
                         echo "║     • Features: ${FEATURES}"
                         echo "║     • Strategy: ${DEPLOYMENT_STRATEGY}"
-                        echo "║     • Monitoring level: ${ENVIRONMENT == 'Production' ? 'Enterprise' : 'Standard'}"
+                        if [ "${ENVIRONMENT}" = "Production" ]; then
+                            echo "║     • Monitoring level: Enterprise"
+                        else
+                            echo "║     • Monitoring level: Standard"
+                        fi
                     '''
                     
                     echo "║"

@@ -1,196 +1,421 @@
-# Scenario 05: Jenkins CI/CD Dashboard Builder
+# 🎯 CI/CD Mastery - Interactive Learning Platform
+**30-40 Minutes - Master Advanced CI/CD Concepts**
 
-## Overview
+*"Learn production-grade CI/CD patterns through interactive exploration"*
 
-The **Jenkins CI/CD Dashboard Builder** is a 5-minute hands-on experience that creates a real, interactive CI/CD monitoring dashboard. This scenario teaches attendees how to build production-ready web applications using Jenkins pipelines while creating something tangible they can actually use.
+## 🚀 **The Challenge**
 
-## Learning Objectives
+**Real-world scenario:** You've mastered basic Jenkins pipelines. Now you need to:
+- 🎯 Learn advanced CI/CD patterns
+- 🏭 Understand production deployment strategies
+- 🧪 Practice testing and monitoring
+- 🔒 Master security and compliance
 
-By the end of this scenario, attendees will have:
+**Your mission:** Explore 5 key CI/CD topics through an interactive learning platform.
 
-- **Built a Real Web Application**: Created an interactive CI/CD dashboard from scratch
-- **Mastered Jenkins Pipeline Development**: Learned automated application building and deployment
-- **Gained Full-Stack Skills**: Developed both frontend and backend components
-- **Applied Production Patterns**: Implemented containerization, testing, and monitoring
+---
 
-## Dashboard Features
+## 🚀 **Quick Start (3 Steps)**
 
-### 🎨 Interactive Web Interface
-- **Real-time Metrics**: Live build statistics and performance data
-- **Pipeline Monitoring**: Visual pipeline status and progress tracking
-- **Alert System**: Real-time notifications and warnings
-- **Responsive Design**: Works on desktop and mobile devices
+### **Step 1: Create Jenkins Pipeline**
+```bash
+# In Jenkins UI:
+# 1. New Item → Pipeline
+# 2. Name: scenario_05_ci_cd_mastery
+# 3. Pipeline script from SCM → Git
+# 4. Repository URL: https://github.com/vellankikoti/ci-cd-chaos-workshop
+# 5. Branch: jenkins-test
+# 6. Script Path: Jenkins/jenkins-scenarios/scenario_05_ci_cd_mastery/Jenkinsfile
+```
 
-### 🚀 Backend API
-- **RESTful Endpoints**: Health checks, metrics, pipelines, alerts
-- **Real-time Data**: Live updates and dynamic content
-- **Flask Framework**: Modern Python web development
-- **Production Ready**: Health checks, error handling, logging
+### **Step 2: Configure Parameters**
+```bash
+CICD_TOPIC: Pipelines          # Choose your topic
+COMPLEXITY: Beginner            # Choose your level
+NAMESPACE: cicd-learning        # Default namespace
+```
 
-### 🐳 Containerization
-- **Docker Support**: Complete containerization setup
-- **Docker Compose**: Easy deployment and orchestration
-- **Production Patterns**: Health checks, port management, networking
-- **Zero Dependencies**: Works anywhere Docker runs
+### **Step 3: Run & Access**
+```bash
+# 1. Click "Build with Parameters"
+# 2. Wait ~20 seconds
+# 3. Check console output for URL:
+#    "🌐 Access at: http://localhost:XXXX"
+# 4. Open URL in browser
+```
 
-## Build Stages
+---
 
-### 1. 📊 Dashboard Application Creation (1 minute)
-- **Objective**: Build interactive web dashboard and Flask API
-- **Deliverables**: HTML, CSS, JavaScript, Python Flask app
-- **Skills**: Full-stack web development, API design
-- **Points**: 200 points
+## 📚 **What You'll Master**
 
-### 2. 🐳 Containerization & Deployment (1 minute)
-- **Objective**: Containerize and deploy the dashboard
-- **Deliverables**: Dockerfile, docker-compose.yml, running container
-- **Skills**: Docker, containerization, deployment
-- **Points**: 200 points
+### **5 CI/CD Topics**
+| Topic | What You'll Learn | Duration |
+|-------|-------------------|----------|
+| **Pipelines** | Pipeline types, stages, parallel execution | 35 min |
+| **Testing** | Unit tests, integration tests, quality gates | 40 min |
+| **Deployment** | Blue-green, canary, rolling updates | 45 min |
+| **Monitoring** | Metrics, alerts, dashboard creation | 35 min |
+| **Security** | Secrets, scanning, compliance, audit logging | 40 min |
 
-### 3. 📊 Testing & Validation (1 minute)
-- **Objective**: Test and validate the dashboard functionality
-- **Deliverables**: API tests, health checks, integration tests
-- **Skills**: Testing strategies, validation, quality assurance
-- **Points**: 150 points
+### **Learning Modules Per Topic**
+Each topic includes 5 comprehensive modules:
 
-### 4. 🎯 Interactive Demo & Learning (1 minute)
-- **Objective**: Demonstrate dashboard capabilities and features
-- **Deliverables**: Live demo, feature showcase, learning outcomes
-- **Skills**: Presentation, technical communication
-- **Points**: 150 points
+#### **Pipelines**
+- Declarative vs Scripted Pipelines
+- Pipeline Stages and Steps
+- Parallel Execution
+- Post Actions and Notifications
+- Pipeline as Code Best Practices
 
-### 5. 🏆 Final Results & Learning (1 minute)
-- **Objective**: Showcase completed dashboard and learning outcomes
-- **Deliverables**: Final results, next steps, documentation
-- **Skills**: Documentation, knowledge transfer
-- **Points**: 100 points
+#### **Testing**
+- Unit Testing in CI/CD
+- Integration Testing
+- Code Quality Gates
+- Test Reporting
+- Automated Test Suites
 
-## Dashboard Parameters
+#### **Deployment**
+- Deployment Strategies
+- Blue-Green Deployments
+- Canary Releases
+- Rollback Mechanisms
+- Zero-Downtime Deployments
 
-### Dashboard Types
-- **Basic**: Simple interface with core features
-- **Advanced**: Enhanced features and customization
-- **Enterprise**: Full-featured with advanced analytics
-- **Custom**: Tailored to specific requirements
+#### **Monitoring**
+- Pipeline Monitoring
+- Build Metrics
+- Performance Tracking
+- Alert Configuration
+- Dashboard Creation
 
-### Visualization Styles
-- **Minimal**: Clean, simple design
-- **Interactive**: Rich interactions and animations
-- **3D**: Three-dimensional visualizations
-- **Real-time**: Live data updates and streaming
+#### **Security**
+- Secrets Management
+- Access Control
+- Security Scanning
+- Compliance Checks
+- Audit Logging
 
-### Configuration Options
-- **Company Branding**: Customizable company name and branding
-- **Metrics Enabled**: Real-time metrics collection
-- **Alerts Enabled**: Alert notification system
-- **Theme Selection**: Multiple visual themes
+---
 
-## Generated Application
+## 🎓 **Learning Experience**
 
-### Frontend Components
-- **HTML5**: Modern semantic markup
-- **CSS3**: Responsive design with animations
-- **JavaScript**: Interactive features and real-time updates
-- **Responsive Layout**: Mobile-friendly design
+### **Interactive Dashboard**
+```
+┌─────────────────────────────────────┐
+│   🎯 CI/CD Mastery                  │
+│   Interactive Learning Platform     │
+├─────────────────────────────────────┤
+│                                     │
+│  📊 Current Focus                   │
+│  Topic: Pipelines                   │
+│  Level: Beginner                    │
+│                                     │
+│  📈 Learning Progress               │
+│  Status: Active                     │
+│  Modules: 5 available               │
+│  Time: ~45 minutes                  │
+│                                     │
+│  🚀 Features                        │
+│  ✅ Interactive Examples            │
+│  ✅ Real-world Patterns             │
+│  ✅ Best Practices                  │
+│  ✅ Hands-on Labs                   │
+└─────────────────────────────────────┘
+```
 
-### Backend Components
-- **Flask API**: Python web framework
-- **RESTful Endpoints**: Health, metrics, pipelines, alerts
-- **Real-time Data**: Live metrics and status updates
-- **Error Handling**: Robust error management
+### **Code Examples**
+Every topic includes real Jenkins pipeline examples:
 
-### Infrastructure
-- **Dockerfile**: Container configuration
-- **Docker Compose**: Easy deployment
-- **Requirements**: Python dependencies
-- **Documentation**: Complete setup and usage guide
+```groovy
+pipeline {
+    agent any
 
-## Getting Started
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building application...'
+                sh './build.sh'
+            }
+        }
 
-### Prerequisites
-- Jenkins installed and running
-- Docker installed (for containerization)
-- Basic understanding of web development
-- 5 minutes of dedicated time
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh './test.sh'
+            }
+        }
 
-### Quick Start
-1. **Run the Demo**: Execute `python3 demo_simple.py`
-2. **Create Pipeline**: Set up new Jenkins pipeline job
-3. **Configure Parameters**: Choose dashboard type and style
-4. **Build Dashboard**: Run the pipeline to create your app
-5. **Access Dashboard**: Open http://localhost:8081 (or detected port)
+        stage('Deploy') {
+            steps {
+                echo 'Deploying to production...'
+                sh './deploy.sh'
+            }
+        }
+    }
+}
+```
 
-## Learning Outcomes
+---
 
-### Technical Skills
-- **Jenkins Pipeline Development**: Automated application building
-- **Web Application Development**: Frontend and backend development
-- **API Design**: RESTful API creation and documentation
-- **Containerization**: Docker and Docker Compose
-- **Testing Strategies**: Comprehensive testing approaches
+## 🎮 **Parameters Explained**
 
-### Practical Skills
-- **Real Application Building**: Create something you can actually use
-- **Production Patterns**: Implement real-world best practices
-- **Problem Solving**: Debug and troubleshoot issues
-- **Documentation**: Create clear, comprehensive documentation
+### **CICD_TOPIC**
+Choose which CI/CD concept to learn:
+- **Pipelines**: Pipeline fundamentals and best practices
+- **Testing**: Testing strategies and quality assurance
+- **Deployment**: Deployment patterns and strategies
+- **Monitoring**: Metrics, alerts, and observability
+- **Security**: Security scanning and compliance
 
-## Dashboard Access
+### **COMPLEXITY**
+- **Beginner**: Core concepts with simple examples
+- **Intermediate**: Advanced patterns and real-world use cases
+- **Advanced**: Production architectures and enterprise patterns
 
-After successful build:
+### **NAMESPACE**
+- Default: `cicd-learning`
+- Used for organizing examples and resources
 
-- **Main Dashboard**: http://localhost:8081 (or detected port)
-- **API Health**: http://localhost:8081/api/health
-- **Metrics API**: http://localhost:8081/api/metrics
-- **Pipelines API**: http://localhost:8081/api/pipelines
-- **Alerts API**: http://localhost:8081/api/alerts
+---
 
-## Customization Options
+## 🔧 **Behind the Scenes**
 
-### Dashboard Type
-- **Basic**: Core features, simple interface
-- **Advanced**: Enhanced features, more customization
-- **Enterprise**: Full analytics, advanced monitoring
-- **Custom**: Tailored to specific needs
+### **What the Pipeline Does**
+1. **Generates Dockerfile** with Python Flask application
+2. **Creates web application** with interactive content
+3. **Builds Docker image** with health checks
+4. **Finds available port** (8081-8131) with retry logic
+5. **Deploys container** with environment variables
+6. **Verifies health** of all API endpoints
 
-### Visualization Style
-- **Minimal**: Clean, simple design
-- **Interactive**: Rich interactions and animations
-- **3D**: Three-dimensional visualizations
-- **Real-time**: Live streaming data
+### **Technology Stack**
+- **Backend**: Python 3.11 with Flask
+- **Frontend**: HTML/CSS/JavaScript (vanilla)
+- **Container**: Docker with health checks
+- **Port Management**: Automatic retry with TOCTTOU protection
 
-### Company Branding
-- Custom company name
-- Branded interface elements
-- Customizable themes
-- Professional appearance
+### **API Endpoints**
+```bash
+GET /                    # Main interactive dashboard
+GET /api/health          # Health check
+GET /api/status          # Application status
+GET /api/topics          # Learning topics for current concept
+```
 
-## Next Steps
+---
 
-After building your dashboard:
+## 🐛 **Troubleshooting**
 
-1. **Explore Features**: Test all dashboard functionality
-2. **Customize Interface**: Modify themes and branding
-3. **Integrate Real Data**: Connect to actual CI/CD tools
-4. **Add Features**: Extend with new capabilities
-5. **Deploy to Production**: Scale for team use
+### **Build Failed?**
+```bash
+# Check Docker is running
+docker ps
 
-## Troubleshooting
+# Check available ports
+netstat -tuln | grep "808[0-9]"
 
-### Common Issues
-- **Port Conflicts**: Dashboard port already in use
-- **Docker Issues**: Docker not running or permissions
-- **Build Failures**: Check Jenkins logs for errors
-- **Access Issues**: Verify container is running
+# Clean up old containers
+docker ps -a --filter "name=cicd-mastery" --format "{{.Names}}" | xargs docker rm -f
+```
 
-### Getting Help
-- Check Jenkins build logs for detailed errors
-- Verify Docker is running and accessible
-- Test API endpoints individually
-- Review generated documentation
+### **Can't Access Web App?**
+```bash
+# 1. Find the port from Jenkins console output
+# Look for: "🌐 Access at: http://localhost:XXXX"
 
-## Conclusion
+# 2. Check container is running
+docker ps --filter "name=cicd-mastery"
 
-The Jenkins CI/CD Dashboard Builder provides a hands-on way to learn Jenkins pipeline development while creating a real, useful application. You'll build a complete web application with frontend, backend, and infrastructure components that you can actually use and customize.
+# 3. Check container logs
+docker logs cicd-mastery-<BUILD_NUMBER>
 
-**Ready to build your CI/CD dashboard? Let's start creating!** 🚀
+# 4. Test API directly
+curl http://localhost:<PORT>/api/health
+```
+
+### **Port Conflict?**
+```bash
+# The pipeline automatically tries ports 8081-8131
+# If all are in use, clean up:
+docker ps -a --filter "name=cicd-mastery" --format "{{.Names}}" | xargs docker rm -f
+```
+
+---
+
+## 🧹 **Cleanup**
+
+### **Stop Current Container**
+```bash
+docker stop cicd-mastery-<BUILD_NUMBER>
+docker rm cicd-mastery-<BUILD_NUMBER>
+```
+
+### **Stop All CI/CD Mastery Containers**
+```bash
+docker ps -a --filter "name=cicd-mastery" --format "{{.Names}}" | xargs docker rm -f
+```
+
+### **Clean Up Images**
+```bash
+docker images | grep cicd-mastery | awk '{print $3}' | xargs docker rmi -f
+```
+
+---
+
+## 🎯 **Success Criteria**
+
+After completing CI/CD Mastery, you should be able to:
+
+✅ Explain advanced CI/CD pipeline patterns
+✅ Design production-ready deployment strategies
+✅ Implement comprehensive testing strategies
+✅ Set up monitoring and alerting
+✅ Apply security best practices
+✅ Configure compliance checks
+✅ Build enterprise-grade CI/CD pipelines
+
+---
+
+## 🚀 **Next Steps**
+
+### **Continue Learning**
+1. Try all 5 topics (Pipelines, Testing, Deployment, Monitoring, Security)
+2. Explore each complexity level (Beginner → Intermediate → Advanced)
+3. Apply patterns to your own Jenkins pipelines
+4. Build production-ready CI/CD workflows
+
+### **Related Scenarios**
+- **Scenario 01**: Production Pipeline Foundation
+- **Scenario 02**: Parameterized Builds
+- **Scenario 03**: Jenkins Powerhouse
+- **Scenario 04**: K8s Commander (Kubernetes basics)
+
+### **Learning Path**
+```
+Scenario 01 (Foundation)
+    ↓
+Scenario 02 (Parameterized Builds)
+    ↓
+Scenario 03 (Advanced Features)
+    ↓
+Scenario 04 (Kubernetes Intro)
+    ↓
+Scenario 05 (CI/CD Mastery) ← You are here!
+```
+
+---
+
+## 📊 **What Makes This Special**
+
+### **Interactive Learning**
+- Beautiful, responsive web interface
+- Real-time topic switching
+- Dynamic content loading
+- Visual progress tracking
+
+### **Production Focus**
+- Real-world patterns
+- Industry best practices
+- Enterprise-grade examples
+- Production deployment strategies
+
+### **Flexible Exploration**
+- 5 different topics
+- 3 complexity levels
+- 5 modules per topic
+- Self-paced learning
+
+### **Parameter-Driven**
+- Different topics change content
+- Complexity affects depth
+- Easy to restart and explore
+- Clean, simple interface
+
+---
+
+## 🎓 **For Workshop Instructors**
+
+### **Preparation Checklist**
+- [ ] Jenkins running on localhost:8080
+- [ ] Docker installed and running
+- [ ] Ports 8081-8131 available
+- [ ] Git repository accessible
+
+### **Workshop Flow**
+1. **Introduction** (5 min): Explain CI/CD Mastery concepts
+2. **Setup** (5 min): Guide through pipeline creation
+3. **Exploration** (30 min): Let attendees explore all topics
+4. **Discussion** (10 min): Review key patterns and best practices
+5. **Q&A** (10 min): Answer questions
+
+### **Teaching Tips**
+- Start with "Pipelines" topic at Beginner level
+- Show how to switch topics by running new builds
+- Demonstrate the difference between complexity levels
+- Relate concepts back to scenarios 01-04
+- Encourage hands-on exploration
+
+---
+
+## 💡 **Pro Tips**
+
+1. **Start with Pipelines** - Foundation for everything
+2. **Try all complexity levels** - See how depth increases
+3. **Explore all 5 topics** - Get comprehensive understanding
+4. **Apply to real projects** - Use patterns in your pipelines
+5. **Combine with Scenario 04** - Connect Jenkins to Kubernetes
+
+---
+
+## 🌟 **Why CI/CD Mastery?**
+
+**Problem:** Jenkins users know basic pipelines, but need to learn:
+- Advanced deployment strategies
+- Production testing patterns
+- Monitoring and observability
+- Security and compliance
+
+**Solution:** CI/CD Mastery provides:
+- ✅ Interactive learning in familiar Jenkins environment
+- ✅ 5 comprehensive topics
+- ✅ Production patterns from day one
+- ✅ Real-world examples and best practices
+
+---
+
+## 📞 **Support**
+
+**Issues?**
+1. Check troubleshooting section above
+2. Verify Docker and Jenkins are running
+3. Check container logs
+4. Try cleaning up and rerunning
+
+**Questions?**
+- Review this documentation
+- Check Jenkins console output
+- Inspect container logs
+- Ask your instructor
+
+---
+
+## 📦 **Files in This Scenario**
+
+```
+scenario_05_ci_cd_mastery/
+├── Jenkinsfile                      # Pipeline definition (21KB)
+└── scenario_05_ci_cd_mastery.md     # This documentation
+```
+
+**Generated during runtime** (not in git):
+- `Dockerfile` - Dynamic Docker image
+- `app.py` - Flask web application
+- `webapp.port` - Current port number
+
+---
+
+**Ready to master CI/CD? Start your journey now!** 🚀✨
+
+---
+
+*Built with ❤️ for the Jenkins and DevOps community*

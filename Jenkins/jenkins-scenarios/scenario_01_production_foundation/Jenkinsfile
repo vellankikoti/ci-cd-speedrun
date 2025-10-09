@@ -125,7 +125,7 @@ pipeline {
                             
                             # Check for hardcoded secrets (real scan)
                             echo "Checking for hardcoded secrets..."
-                            SECRETS_FOUND=$(grep -r -i "password\|secret\|key\|token" . --include="*.py" --include="*.js" --include="*.json" | wc -l)
+                            SECRETS_FOUND=$(grep -r -i -E "password|secret|key|token" . --include="*.py" --include="*.js" --include="*.json" | wc -l)
                             echo "  • Potential secrets found: $SECRETS_FOUND"
                             
                             # Check file permissions
@@ -135,7 +135,7 @@ pipeline {
                             
                             # Check for common security issues
                             echo "Analyzing code for security issues..."
-                            SQL_INJECTION=$(grep -r -i "execute\|query" . --include="*.py" | grep -v "def" | wc -l)
+                            SQL_INJECTION=$(grep -r -i -E "execute|query" . --include="*.py" | grep -v "def" | wc -l)
                             echo "  • Potential SQL injection points: $SQL_INJECTION"
                             
                             # Check Python dependencies for known vulnerabilities

@@ -635,8 +635,8 @@ EOF
                     sh '''
                         echo "║     • Building Docker image..."
                         
-                        IMAGE_NAME="jenkins-demo-${ENVIRONMENT,,}-${VERSION}"
-                        CONTAINER_NAME="${ENVIRONMENT,,}-app"
+                        IMAGE_NAME="jenkins-demo-$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-${VERSION}"
+                        CONTAINER_NAME="$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-app"
                         
                         # Build the image
                         docker build -t $IMAGE_NAME . || {
@@ -657,8 +657,8 @@ EOF
                     echo "║"
                     echo "║  🎯 Docker Image Details:"
                     sh '''
-                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
-                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
+                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-${VERSION}")
+                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-app")
                         
                         echo "║     • Image: $IMAGE_NAME"
                         echo "║     • Container: $CONTAINER_NAME"
@@ -725,8 +725,8 @@ EOF
                     
                     // Deploy Docker container
                     sh '''
-                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
-                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
+                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-${VERSION}")
+                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-app")
                         
                         echo "║"
                         echo "║  🐳 Deploying Docker container..."
@@ -783,7 +783,7 @@ EOF
                     echo "║  📊 Post-Deployment State:"
                     sh '''
                         RUNNING_PROCS=$(ps aux | wc -l)
-                        CONTAINER_STATUS=$(docker ps --filter "name=${ENVIRONMENT,,}-app" --format "table {{.Status}}" | tail -1)
+                        CONTAINER_STATUS=$(docker ps --filter "name=$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-app" --format "table {{.Status}}" | tail -1)
                         echo "║     • Running processes: $RUNNING_PROCS"
                         echo "║     • Container status: $CONTAINER_STATUS"
                         echo "║     • Health check: ✅ PASSED"
@@ -1013,8 +1013,8 @@ EOF
             echo "║"
             echo "║  🌐 WEB APPLICATION ACCESS:"
             sh '''
-                CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
-                IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
+                CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-app")
+                IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-$(echo ${ENVIRONMENT} | tr '[:upper:]' '[:lower:]')-${VERSION}")
                 WEBAPP_PORT=$(cat webapp.port 2>/dev/null || echo "8081")
                 
                 echo "║     • Docker Container: $CONTAINER_NAME"

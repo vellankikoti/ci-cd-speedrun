@@ -644,13 +644,28 @@ This dashboard demonstrates:
                         echo "║     ✅ Cleanup completed"
                     '''
                     
-                    // Simple port detection - try ports 8081-8090
+                    // Enhanced port detection with Docker port checking
                     echo "║  🔍 Finding available port..."
                     def WEBAPP_PORT = 8081
                     def foundPort = false
                     
-                    for (int port = 8081; port <= 8090; port++) {
+                    // Get list of ports used by Docker containers
+                    def dockerPorts = sh(
+                        script: "docker ps --format '{{.Ports}}' | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | sort -n | uniq || true",
+                        returnStdout: true
+                    ).trim().split('\n').findAll { it.isNumber() && it.toInteger() > 0 }.collect { it.toInteger() }
+                    
+                    echo "║  📊 Docker ports in use: ${dockerPorts.take(5).join(', ')}${dockerPorts.size() > 5 ? '...' : ''}"
+                    
+                    // Try ports 8081-8100, avoiding Docker ports
+                    for (int port = 8081; port <= 8100; port++) {
                         echo "║  🔍 Checking port $port..."
+                        
+                        // Skip if port is used by Docker
+                        if (dockerPorts.contains(port)) {
+                            echo "║     Port $port is used by Docker, trying next..."
+                            continue
+                        }
                         
                         // Test if port is available by trying to connect to it
                         def portTest = sh(
@@ -670,52 +685,9 @@ This dashboard demonstrates:
                     }
                     
                     if (!foundPort) {
-                        echo "║     ⚠️  No port found in range 8081-8090, trying higher range..."
-                        // Try higher ports
-                        for (int port = 8091; port <= 8100; port++) {
-                            echo "║  🔍 Checking port $port..."
-                            
-                            def portTest = sh(
-                                script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$port' 2>/dev/null",
-                                returnStatus: true
-                            )
-                            
-                            if (portTest != 0) {
-                                WEBAPP_PORT = port
-                                foundPort = true
-                                echo "║     ✅ Found available port: $WEBAPP_PORT"
-                                break
-                            } else {
-                                echo "║     Port $port is in use, trying next..."
-                            }
-                        }
-                    }
-                    
-                    if (!foundPort) {
-                        echo "║     ⚠️  No port found in range, trying random port..."
-                        // Try a few random ports in the 8xxx range
-                        def randomPorts = [8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090, 8091, 8092, 8093, 8094, 8095, 8096, 8097, 8098, 8099, 8100].shuffled()
-                        
-                        for (int port : randomPorts) {
-                            echo "║  🔍 Trying random port $port..."
-                            
-                            def portTest = sh(
-                                script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$port' 2>/dev/null",
-                                returnStatus: true
-                            )
-                            
-                            if (portTest != 0) {
-                                WEBAPP_PORT = port
-                                foundPort = true
-                                echo "║     ✅ Found available port: $WEBAPP_PORT"
-                                break
-                            }
-                        }
-                        
-                        if (!foundPort) {
-                            echo "║     ⚠️  All ports busy, using port 8081 with force"
-                            WEBAPP_PORT = 8081
-                        }
+                        echo "║     ⚠️  No port found, using random port 8xxx"
+                        WEBAPP_PORT = 8000 + (new Random().nextInt(1000))
+                        foundPort = true
                     }
                     
                     // Build Docker image
@@ -748,6 +720,15 @@ This dashboard demonstrates:
                                 lsof -ti:$WEBAPP_PORT | xargs -r kill -9 2>/dev/null || true
                             fi
                             
+                            # Also try to kill processes using netstat if available
+                            if command -v netstat >/dev/null 2>&1; then
+                                netstat -tulpn 2>/dev/null | grep ":$WEBAPP_PORT " | awk '{print \$7}' | cut -d'/' -f1 | xargs -r kill -9 2>/dev/null || true
+                            fi
+                            
+                            # Force remove any containers using this port
+                            docker ps -a --filter "publish=$WEBAPP_PORT" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
+                            docker ps -a --filter "publish=$WEBAPP_PORT" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+                            
                             # Try to start container
                             if CONTAINER_ID=\$(docker run -d \\
                                 --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
@@ -773,9 +754,44 @@ This dashboard demonstrates:
                         done
                         
                         if [ "\$CONTAINER_STARTED" = "false" ]; then
-                            echo "║     ❌ Container deployment failed after \$MAX_RETRIES attempts"
-                            echo "║     💡 Try running: docker ps -a | grep ci-cd-dashboard"
-                            exit 1
+                            echo "║     ❌ Container deployment failed after \$MAX_RETRIES attempts on port $WEBAPP_PORT"
+                            echo "║     🔄 Trying alternative port..."
+                            
+                            # Try alternative ports
+                            for alt_port in 8082 8083 8084 8085 8086 8087 8088 8089 8090; do
+                                echo "║     🔍 Trying port \$alt_port..."
+                                
+                                # Clean up the port
+                                if command -v lsof >/dev/null 2>&1; then
+                                    lsof -ti:\$alt_port | xargs -r kill -9 2>/dev/null || true
+                                fi
+                                docker ps -a --filter "publish=\$alt_port" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
+                                docker ps -a --filter "publish=\$alt_port" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+                                
+                                # Try to start container on alternative port
+                                if CONTAINER_ID=\$(docker run -d \\
+                                    --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
+                                    -p \$alt_port:5000 \\
+                                    -e DASHBOARD_TYPE='${params.DASHBOARD_TYPE ?: 'Basic'}' \\
+                                    -e VISUALIZATION_STYLE='${params.VISUALIZATION_STYLE ?: 'Interactive'}' \\
+                                    -e COMPANY_NAME='${params.COMPANY_NAME ?: 'Your Company'}' \\
+                                    ci-cd-dashboard:${BUILD_TIMESTAMP} 2>&1); then
+                                    
+                                    echo "║     ✅ Container started on port \$alt_port: \$CONTAINER_ID"
+                                    WEBAPP_PORT=\$alt_port
+                                    CONTAINER_STARTED=true
+                                    break
+                                else
+                                    echo "║     ❌ Port \$alt_port also failed"
+                                    docker rm -f ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
+                                fi
+                            done
+                            
+                            if [ "\$CONTAINER_STARTED" = "false" ]; then
+                                echo "║     ❌ All port attempts failed"
+                                echo "║     💡 Try running: docker ps -a | grep ci-cd-dashboard"
+                                exit 1
+                            fi
                         fi
                         
                         # Wait for container to start

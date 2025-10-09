@@ -13,6 +13,11 @@ pipeline {
     environment {
         APP_NAME = 'ci-cd-dashboard'
         BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
+        COMPANY_NAME = "${params.COMPANY_NAME}"
+        DASHBOARD_TYPE = "${params.DASHBOARD_TYPE}"
+        VISUALIZATION_STYLE = "${params.VISUALIZATION_STYLE}"
+        ENABLE_METRICS = "${params.ENABLE_METRICS}"
+        ENABLE_ALERTS = "${params.ENABLE_ALERTS}"
     }
     
     // CI/CD Dashboard parameters
@@ -106,13 +111,13 @@ pipeline {
                     
                     // Create simple dashboard.html
                     sh '''
-                        cat > dashboard.html << 'EOF'
+                        cat > dashboard.html << EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Dashboard - ''' + params.COMPANY_NAME + '''</title>
+    <title>CI/CD Dashboard - ${COMPANY_NAME}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -447,7 +452,7 @@ EOF
                             fi
 
                             # Port appears available, try to start container immediately
-                            echo "║     • Attempting deployment on port $EXTERNAL_PORT (attempt $((PORT_ATTEMPT + 1)))..."
+                            echo "║     • Attempting deployment on port $EXTERNAL_PORT (attempt \$((PORT_ATTEMPT + 1)))..."
 
                             if docker run -d \\
                                 --name $CONTAINER_NAME \\
@@ -548,7 +553,7 @@ EOF
                         HEALTH_SUCCESS=false
                         
                         while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$HEALTH_SUCCESS" = false ]; do
-                            echo "║     • Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+                            echo "║     • Attempt \$((RETRY_COUNT + 1))/$MAX_RETRIES..."
                             
                             if curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
                                 echo "║     ✅ Health check passed"

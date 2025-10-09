@@ -1,302 +1,203 @@
 pipeline {
     agent any
     
+    // Production-grade options
     options {
-        timeout(time: 20, unit: 'MINUTES')
+        timeout(time: 15, unit: 'MINUTES')
         timestamps()
-        retry(2)
         buildDiscarder(logRotator(numToKeepStr: '10'))
+        skipDefaultCheckout()
     }
     
+    // Environment variables
+    environment {
+        APP_NAME = 'k8s-commander'
+        BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
+    }
+    
+    // K8s Commander parameters
     parameters {
         choice(
             name: 'K8S_CONCEPT',
-            choices: ['Pods', 'Services', 'Deployments', 'ConfigMaps', 'Secrets', 'Ingress', 'All Concepts'],
-            description: 'Kubernetes concept to explore'
+            choices: ['Pods', 'Services', 'Deployments', 'ConfigMaps', 'Secrets'],
+            description: 'Select Kubernetes concept to explore'
         )
         choice(
             name: 'LEARNING_LEVEL',
             choices: ['Beginner', 'Intermediate', 'Advanced'],
-            description: 'Learning complexity level'
-        )
-        booleanParam(
-            name: 'INTERACTIVE_DEMO',
-            defaultValue: true,
-            description: 'Enable interactive demonstrations'
-        )
-        booleanParam(
-            name: 'HANDS_ON_LAB',
-            defaultValue: true,
-            description: 'Enable hands-on lab exercises'
+            description: 'Select your learning level'
         )
         string(
             name: 'NAMESPACE',
             defaultValue: 'k8s-learning',
-            description: 'Kubernetes namespace for exercises'
+            description: 'Kubernetes namespace for resources'
+        )
+        string(
+            name: 'K8S_VERSION',
+            defaultValue: '1.28',
+            description: 'Kubernetes version to use'
+        )
+        booleanParam(
+            name: 'INTERACTIVE_DEMO',
+            defaultValue: true,
+            description: 'Enable interactive demonstrations?'
+        )
+        booleanParam(
+            name: 'HANDS_ON_LAB',
+            defaultValue: true,
+            description: 'Enable hands-on lab exercises?'
         )
     }
     
-    environment {
-        K8S_VERSION = '1.28'
-        DOCKER_REGISTRY = 'docker.io'
-        LEARNING_PROGRESS = '0'
-        ACHIEVEMENTS = ''
-        CURRENT_CONCEPT = "${params.K8S_CONCEPT}"
-        LEARNING_LEVEL = "${params.LEARNING_LEVEL}"
-    }
-
     stages {
-        stage('🚀 K8s Commander Launch') {
+        stage('📋 K8s Commander Setup') {
             steps {
                 script {
-                    echo "🚀 Welcome to K8s Commander - Your Kubernetes Learning Journey!"
+                    echo "🚀 Starting K8s Commander learning journey..."
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                        🎯 K8S COMMANDER LAUNCH                              ║"
+                    echo "║                    🚀 K8S COMMANDER SETUP                                   ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎓 Learning Journey: Jenkins → Kubernetes Transition"
-                    echo "║  📚 Concept Focus: ${params.K8S_CONCEPT}"
-                    echo "║  🎯 Learning Level: ${params.LEARNING_LEVEL}"
-                    echo "║  🧪 Interactive Demo: ${params.INTERACTIVE_DEMO ? 'Enabled' : 'Disabled'}"
-                    echo "║  🔬 Hands-on Lab: ${params.HANDS_ON_LAB ? 'Enabled' : 'Disabled'}"
-                    echo "║  📦 Namespace: ${params.NAMESPACE}"
-                    echo "║  🏷️  K8s Version: ${env.K8S_VERSION}"
+                    echo "║  🎯 Learning Configuration:"
+                    echo "║     • Concept: ${params.K8S_CONCEPT}"
+                    echo "║     • Level: ${params.LEARNING_LEVEL}"
+                    echo "║     • Namespace: ${params.NAMESPACE}"
+                    echo "║     • K8s Version: ${params.K8S_VERSION}"
+                    echo "║     • Interactive Demo: ${params.INTERACTIVE_DEMO}"
+                    echo "║     • Hands-on Lab: ${params.HANDS_ON_LAB}"
+                    echo "║"
+                    echo "║  🏗️  Building K8s Commander application..."
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+                
+                checkout scm
+            }
+        }
+        
+        stage('🔍 K8s Concept Analysis') {
+            steps {
+                script {
+                    echo "🔍 Analyzing Kubernetes concept: ${params.K8S_CONCEPT}"
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🔍 K8S CONCEPT ANALYSIS                                   ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    // Initialize learning progress
-                    env.LEARNING_PROGRESS = '0'
-                    env.ACHIEVEMENTS = '🚀 K8s Commander Started'
+                    sh '''
+                        echo "║  📚 Concept: ${K8S_CONCEPT}"
+                        echo "║  📖 Level: ${LEARNING_LEVEL}"
+                        echo "║  🏷️  Namespace: ${NAMESPACE}"
+                        echo "║  🔢 Version: ${K8S_VERSION}"
+                        echo "║"
+                        echo "║  🎯 Learning Objectives:"
+                        case "${K8S_CONCEPT}" in
+                            "Pods")
+                                echo "║     • Understand Pod lifecycle"
+                                echo "║     • Learn Pod networking"
+                                echo "║     • Practice Pod management"
+                                ;;
+                            "Services")
+                                echo "║     • Master Service types"
+                                echo "║     • Learn load balancing"
+                                echo "║     • Practice service discovery"
+                                ;;
+                            "Deployments")
+                                echo "║     • Understand rolling updates"
+                                echo "║     • Learn scaling strategies"
+                                echo "║     • Practice deployment management"
+                                ;;
+                            "ConfigMaps")
+                                echo "║     • Learn configuration management"
+                                echo "║     • Practice data injection"
+                                echo "║     • Understand best practices"
+                                ;;
+                            "Secrets")
+                                echo "║     • Master secret management"
+                                echo "║     • Learn encryption at rest"
+                                echo "║     • Practice secure deployments"
+                                ;;
+                        esac
+                        echo "║"
+                        echo "║  ✅ Concept analysis complete!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
                 }
             }
         }
         
-        stage('📚 Kubernetes Concepts Overview') {
-            steps {
-                script {
-                    echo "📚 Exploring Kubernetes Concepts through Jenkins..."
-                    echo ""
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    📚 KUBERNETES CONCEPTS OVERVIEW                           ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    
-                    // Dynamic concept explanation based on selection
-                    def conceptExplanations = [
-                        'Pods': [
-                            '🎯 What are Pods?',
-                            '• Smallest deployable unit in Kubernetes',
-                            '• Contains one or more containers',
-                            '• Shares network and storage resources',
-                            '• Ephemeral - can be created and destroyed',
-                            '• Example: Web server + sidecar container'
-                        ],
-                        'Services': [
-                            '🌐 What are Services?',
-                            '• Stable network endpoint for Pods',
-                            '• Provides load balancing and service discovery',
-                            '• Types: ClusterIP, NodePort, LoadBalancer',
-                            '• Enables communication between components',
-                            '• Example: Frontend → Backend communication'
-                        ],
-                        'Deployments': [
-                            '🚀 What are Deployments?',
-                            '• Manages Pod replicas and updates',
-                            '• Provides rolling updates and rollbacks',
-                            '• Ensures desired state is maintained',
-                            '• Handles scaling up and down',
-                            '• Example: Web application with 3 replicas'
-                        ],
-                        'ConfigMaps': [
-                            '⚙️ What are ConfigMaps?',
-                            '• Stores configuration data as key-value pairs',
-                            '• Separates configuration from application code',
-                            '• Can be mounted as files or environment variables',
-                            '• Non-sensitive configuration data',
-                            '• Example: Database connection strings'
-                        ],
-                        'Secrets': [
-                            '🔐 What are Secrets?',
-                            '• Stores sensitive data (passwords, tokens)',
-                            '• Base64 encoded (not encrypted by default)',
-                            '• Can be mounted as files or environment variables',
-                            '• Better than hardcoding sensitive data',
-                            '• Example: API keys, database passwords'
-                        ],
-                        'Ingress': [
-                            '🌍 What is Ingress?',
-                            '• Manages external access to services',
-                            '• Provides HTTP/HTTPS routing',
-                            '• SSL termination and load balancing',
-                            '• Path-based and host-based routing',
-                            '• Example: myapp.com/api → backend service'
-                        ]
-                    ]
-                    
-                    def selectedConcept = params.K8S_CONCEPT
-                    if (selectedConcept == 'All Concepts') {
-                        conceptExplanations.each { concept, explanation ->
-                            echo "║"
-                            echo "║  ${concept}:"
-                            explanation.each { line ->
-                                echo "║     ${line}"
-                            }
-                        }
-                    } else {
-                        echo "║  ${selectedConcept}:"
-                        conceptExplanations[selectedConcept].each { line ->
-                            echo "║     ${line}"
-                        }
-                    }
-                    
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update progress
-                    env.LEARNING_PROGRESS = '20'
-                    env.ACHIEVEMENTS += ', 📚 Concepts Learned'
-                }
-            }
-        }
-        
-        stage('🎮 Interactive K8s Demo') {
+        stage('🎮 Interactive Demo Creation') {
             when {
                 expression { params.INTERACTIVE_DEMO == true }
             }
             steps {
                 script {
-                    echo "🎮 Launching Interactive Kubernetes Demo..."
+                    echo "🎮 Creating interactive K8s demonstration..."
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🎮 INTERACTIVE K8S DEMO                                  ║"
+                    echo "║                    🎮 INTERACTIVE DEMO CREATION                             ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    // Create interactive demo based on concept
-                        sh '''
-                        echo "║  🎯 Interactive Demo: ${CURRENT_CONCEPT}"
-                        echo "║  📊 Learning Level: ${LEARNING_LEVEL}"
-                        echo "║"
-                        echo "║  🚀 Simulating Kubernetes operations..."
+                    sh '''
+                        echo "║  🎯 Creating interactive K8s demo for: ${K8S_CONCEPT}"
+                        echo "║  📁 Setting up demo environment..."
                         
-                        # Simulate kubectl commands based on concept
-                        case "${CURRENT_CONCEPT}" in
-                            "Pods")
-                                echo "║     • kubectl get pods"
-                                echo "║     • kubectl describe pod my-pod"
-                                echo "║     • kubectl logs my-pod"
-                                echo "║     • kubectl exec -it my-pod -- /bin/bash"
-                                ;;
-                            "Services")
-                                echo "║     • kubectl get services"
-                                echo "║     • kubectl expose deployment my-app --port=80"
-                                echo "║     • kubectl get endpoints"
-                                echo "║     • kubectl port-forward service/my-service 8080:80"
-                                ;;
-                            "Deployments")
-                                echo "║     • kubectl get deployments"
-                                echo "║     • kubectl create deployment my-app --image=nginx"
-                                echo "║     • kubectl scale deployment my-app --replicas=3"
-                                echo "║     • kubectl rollout status deployment/my-app"
-                                ;;
-                            "ConfigMaps")
-                                echo "║     • kubectl get configmaps"
-                                echo "║     • kubectl create configmap my-config --from-literal=key=value"
-                                echo "║     • kubectl describe configmap my-config"
-                                echo "║     • kubectl get configmap my-config -o yaml"
-                                ;;
-                            "Secrets")
-                                echo "║     • kubectl get secrets"
-                                echo "║     • kubectl create secret generic my-secret --from-literal=password=secret"
-                                echo "║     • kubectl describe secret my-secret"
-                                echo "║     • kubectl get secret my-secret -o yaml"
-                                ;;
-                            "Ingress")
-                                echo "║     • kubectl get ingress"
-                                echo "║     • kubectl apply -f ingress.yaml"
-                                echo "║     • kubectl describe ingress my-ingress"
-                                echo "║     • kubectl get ingress my-ingress -o yaml"
-                                ;;
-                            "All Concepts")
-                                echo "║     • kubectl get all"
-                                echo "║     • kubectl get pods,services,deployments"
-                                echo "║     • kubectl get configmaps,secrets"
-                                echo "║     • kubectl get ingress"
-                                ;;
-                        esac
-                        
-                        echo "║"
-                        echo "║  ✅ Interactive demo completed successfully!"
-                        echo "║  💡 These commands would work in a real Kubernetes cluster"
-                    '''
-                    
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update progress
-                    env.LEARNING_PROGRESS = '40'
-                    env.ACHIEVEMENTS += ', 🎮 Demo Completed'
-                }
-            }
-        }
-        
-        stage('🔬 Hands-on Lab Exercise') {
-            when {
-                expression { params.HANDS_ON_LAB == true }
-            }
-            steps {
-                script {
-                    echo "🔬 Starting Hands-on Lab Exercise..."
-                    echo ""
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🔬 HANDS-ON LAB EXERCISE                                 ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    
-                    // Create lab exercise files
-                        sh '''
-                        echo "║  🎯 Lab Exercise: ${CURRENT_CONCEPT} Practice"
-                        echo "║  📦 Namespace: ${NAMESPACE}"
-                        echo "║"
-                        echo "║  📝 Creating lab exercise files..."
-                        
-                        mkdir -p k8s-lab
+                        # Create demo directory
+                        mkdir -p k8s-demo
                         
                         # Create YAML files based on concept
-                        case "${CURRENT_CONCEPT}" in
+                        case "${K8S_CONCEPT}" in
                             "Pods")
-                                cat > k8s-lab/pod-example.yaml << 'EOF'
+                                cat > k8s-demo/pod-demo.yaml << 'EOF'
 apiVersion: v1
 kind: Pod
 metadata:
   name: nginx-pod
   labels:
     app: nginx
+    environment: demo
 spec:
   containers:
   - name: nginx
     image: nginx:latest
     ports:
     - containerPort: 80
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
 EOF
-                                echo "║     • Created pod-example.yaml"
+                                echo "║     ✅ Created pod-demo.yaml"
                                 ;;
                             "Services")
-                                cat > k8s-lab/service-example.yaml << 'EOF'
+                                cat > k8s-demo/service-demo.yaml << 'EOF'
 apiVersion: v1
 kind: Service
 metadata:
   name: nginx-service
+  labels:
+    app: nginx
 spec:
   selector:
     app: nginx
   ports:
   - port: 80
     targetPort: 80
+    protocol: TCP
   type: ClusterIP
 EOF
-                                echo "║     • Created service-example.yaml"
+                                echo "║     ✅ Created service-demo.yaml"
                                 ;;
                             "Deployments")
-                                cat > k8s-lab/deployment-example.yaml << 'EOF'
+                                cat > k8s-demo/deployment-demo.yaml << 'EOF'
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-deployment
+  labels:
+    app: nginx
 spec:
   replicas: 3
   selector:
@@ -312,197 +213,492 @@ spec:
         image: nginx:latest
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
 EOF
-                                echo "║     • Created deployment-example.yaml"
-                                ;;
-                            "ConfigMaps")
-                                cat > k8s-lab/configmap-example.yaml << 'EOF'
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-config
-data:
-  database_url: "mysql://localhost:3306/mydb"
-  debug_mode: "true"
-  max_connections: "100"
-EOF
-                                echo "║     • Created configmap-example.yaml"
-                                ;;
-                            "Secrets")
-                                cat > k8s-lab/secret-example.yaml << 'EOF'
-apiVersion: v1
-kind: Secret
-metadata:
-  name: app-secret
-type: Opaque
-data:
-  username: YWRtaW4=  # base64 encoded 'admin'
-  password: cGFzc3dvcmQ=  # base64 encoded 'password'
-EOF
-                                echo "║     • Created secret-example.yaml"
-                                ;;
-                            "Ingress")
-                                cat > k8s-lab/ingress-example.yaml << 'EOF'
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: app-ingress
-spec:
-  rules:
-  - host: myapp.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: nginx-service
-            port:
-              number: 80
-EOF
-                                echo "║     • Created ingress-example.yaml"
-                                ;;
-                            "All Concepts")
-                                # Create all example files
-                                echo "║     • Creating comprehensive lab with all concepts..."
-                                echo "║     • This would include Pods, Services, Deployments,"
-                                echo "║     • ConfigMaps, Secrets, and Ingress examples"
+                                echo "║     ✅ Created deployment-demo.yaml"
                                 ;;
                         esac
                         
-                        echo "║"
-                        echo "║  📋 Lab Instructions:"
-                        echo "║     1. Review the generated YAML files"
-                        echo "║     2. Understand the structure and fields"
-                        echo "║     3. Try applying them to a K8s cluster:"
-                        echo "║        kubectl apply -f k8s-lab/"
-                        echo "║     4. Verify with: kubectl get all"
-                        echo "║"
-                        echo "║  ✅ Lab exercise files created successfully!"
+                        echo "║  🎮 Interactive demo files created!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     '''
-                    
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update progress
-                    env.LEARNING_PROGRESS = '60'
-                    env.ACHIEVEMENTS += ', 🔬 Lab Completed'
                 }
             }
         }
         
-        stage('🌐 Interactive Learning Dashboard') {
-            steps {
-                script {
-                    echo "🌐 Generating Interactive Learning Dashboard..."
-                    echo ""
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                🌐 INTERACTIVE LEARNING DASHBOARD                           ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    
-                    // Create simple console dashboard
-                        sh '''
-                        echo "║  🎯 Creating K8s Commander Learning Dashboard..."
-                        echo "║"
-                        echo "║  📊 K8S COMMANDER DASHBOARD"
-                        echo "║  ================================="
-                        echo "║  🎯 Current Focus: ${CURRENT_CONCEPT}"
-                        echo "║  📚 Learning Level: ${LEARNING_LEVEL}"
-                        echo "║  🏷️  Namespace: ${NAMESPACE}"
-                        echo "║  🔢 K8s Version: ${K8S_VERSION}"
-                        echo "║  🎮 Interactive Demo: ${INTERACTIVE_DEMO}"
-                        echo "║  🔬 Hands-on Lab: ${HANDS_ON_LAB}"
-                        echo "║"
-                        echo "║  🏆 ACHIEVEMENTS UNLOCKED:"
-                        echo "║  ✅ K8s Commander Started"
-                        echo "║  ✅ Concepts Learned"
-                        echo "║  ✅ Demo Completed"
-                        echo "║  ✅ Lab Completed"
-                        echo "║  ✅ Dashboard Created"
-                        echo "║  ✅ Mastery Achieved"
-                        echo "║"
-                        echo "║  📚 LEARNING PATH:"
-                        echo "║  ✅ Kubernetes Concepts Overview"
-                        echo "║  ✅ Interactive Demo"
-                        echo "║  ✅ Hands-on Lab"
-                        echo "║  🔄 Learning Dashboard"
-                        echo "║  ⏳ Next: Advanced K8s Patterns"
-                        echo "║"
-                        echo "║  📊 LIVE METRICS:"
-                        echo "║  • Current Time: $(date)"
-                        echo "║  • Learning Duration: Active"
-                        echo "║  • Pipeline Status: ✅ Running"
-                        echo "║  • Build Number: ${BUILD_NUMBER}"
-                        echo "║  • Git Commit: ${GIT_COMMIT}"
-                        echo "║"
-                        echo "║  🎉 K8S COMMANDER DASHBOARD COMPLETE!"
-                        echo "║  ================================="
-                        
-                        echo "║  ✅ Console Dashboard Complete!"
-                        echo "║  📊 All K8s learning information displayed above"
-                    '''
-                    
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update progress
-                    env.LEARNING_PROGRESS = '80'
-                    env.ACHIEVEMENTS += ', 🌐 Dashboard Created'
-                }
+        stage('🔬 Hands-on Lab Setup') {
+            when {
+                expression { params.HANDS_ON_LAB == true }
             }
-        }
-        
-        stage('🎓 K8s Mastery Assessment') {
             steps {
                 script {
-                    echo "🎓 Conducting K8s Mastery Assessment..."
+                    echo "🔬 Setting up hands-on lab exercises..."
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🎓 K8S MASTERY ASSESSMENT                               ║"
+                    echo "║                    🔬 HANDS-ON LAB SETUP                                    ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
                     sh '''
-                        echo "║  📊 Assessment Results:"
-                        echo "║     • Concept Understanding: ✅ Excellent"
-                        echo "║     • Hands-on Practice: ✅ Completed"
-                        echo "║     • Interactive Learning: ✅ Engaged"
-                        echo "║     • Progress Tracking: ✅ ${LEARNING_PROGRESS}%"
-                        echo "║"
-                        echo "║  🏆 Mastery Level Achieved:"
-                        case "${LEARNING_LEVEL}" in
-                            "Beginner")
-                                echo "║     • 🥉 Bronze Level - K8s Explorer"
-                                echo "║     • Ready for: Basic K8s operations"
-                                echo "║     • Next: Intermediate concepts"
-                                ;;
-                            "Intermediate")
-                                echo "║     • 🥈 Silver Level - K8s Practitioner"
-                                echo "║     • Ready for: Production deployments"
-                                echo "║     • Next: Advanced patterns"
-                                ;;
-                            "Advanced")
-                                echo "║     • 🥇 Gold Level - K8s Master"
-                                echo "║     • Ready for: Complex architectures"
-                                echo "║     • Next: K8s administration"
-                                ;;
-                        esac
-                        echo "║"
-                        echo "║  🎯 Key Learnings:"
-                        echo "║     • Kubernetes concepts through Jenkins"
-                        echo "║     • YAML configuration understanding"
-                        echo "║     • kubectl command familiarity"
-                        echo "║     • Real-world application patterns"
-                        echo "║"
-                        echo "║  🚀 Next Steps:"
-                        echo "║     • Practice with real K8s cluster"
-                        echo "║     • Explore advanced K8s features"
-                        echo "║     • Learn K8s administration"
-                        echo "║     • Master CI/CD with K8s"
+                        echo "║  🧪 Creating hands-on lab for: ${K8S_CONCEPT}"
+                        echo "║  📁 Setting up lab environment..."
+                        
+                        # Create lab directory
+                        mkdir -p k8s-lab
+                        
+                        # Create lab exercises
+                        cat > k8s-lab/lab-instructions.md << 'EOF'
+# K8s Commander Lab: ${K8S_CONCEPT}
+
+## Lab Objectives
+- Understand ${K8S_CONCEPT} concepts
+- Practice hands-on exercises
+- Learn best practices
+
+## Exercises
+1. Create a ${K8S_CONCEPT} resource
+2. Verify the resource is running
+3. Test the resource functionality
+4. Clean up resources
+
+## Commands to Try
+```bash
+# Create the resource
+kubectl apply -f ${K8S_CONCEPT}-demo.yaml
+
+# Check status
+kubectl get ${K8S_CONCEPT}
+
+# Describe the resource
+kubectl describe ${K8S_CONCEPT} nginx-${K8S_CONCEPT,,}
+
+# Clean up
+kubectl delete -f ${K8S_CONCEPT}-demo.yaml
+```
+EOF
+                        
+                        echo "║     ✅ Created lab instructions"
+                        echo "║  🔬 Hands-on lab setup complete!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     '''
+                }
+            }
+        }
+        
+        stage('🐳 K8s Commander App Build') {
+            steps {
+                script {
+                    echo "🐳 Building K8s Commander web application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🐳 K8S COMMANDER APP BUILD                               ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    sh '''
+                        echo "║  🏗️  Building K8s Commander Docker image..."
+                        
+                        # Find available port (avoiding Jenkins on 8080)
+                        WEBAPP_PORT=8081
+                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
+                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                            if [ $WEBAPP_PORT -gt 8090 ]; then
+                                echo "║  ❌ No available ports found (8081-8090)"
+                                exit 1
+                            fi
+                        done
+                        
+                        echo "║  🌐 Using port: $WEBAPP_PORT"
+                        
+                        # Create Dockerfile for K8s Commander app
+                        cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \\
+    curl \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Create the K8s Commander application
+RUN cat > app.py << 'PYEOF'
+#!/usr/bin/env python3
+import os
+import time
+import json
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from datetime import datetime
+
+class K8sCommanderHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/api/status':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            status = {
+                'status': 'running',
+                'concept': os.environ.get('K8S_CONCEPT', 'Pods'),
+                'level': os.environ.get('LEARNING_LEVEL', 'Beginner'),
+                'namespace': os.environ.get('NAMESPACE', 'k8s-learning'),
+                'k8s_version': os.environ.get('K8S_VERSION', '1.28'),
+                'interactive_demo': os.environ.get('INTERACTIVE_DEMO', 'true'),
+                'hands_on_lab': os.environ.get('HANDS_ON_LAB', 'true'),
+                'timestamp': datetime.now().isoformat(),
+                'uptime': int(time.time() - start_time)
+            }
+            self.wfile.write(json.dumps(status, indent=2).encode())
+        elif self.path == '/api/concept':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            concept = os.environ.get('K8S_CONCEPT', 'Pods')
+            concept_info = {
+                'Pods': {
+                    'description': 'The smallest deployable unit in Kubernetes',
+                    'purpose': 'Run containers and manage their lifecycle',
+                    'examples': ['nginx-pod', 'redis-pod', 'mysql-pod']
+                },
+                'Services': {
+                    'description': 'Network abstraction for Pods',
+                    'purpose': 'Enable communication between Pods',
+                    'examples': ['nginx-service', 'api-service', 'db-service']
+                },
+                'Deployments': {
+                    'description': 'Manages Pod replicas and updates',
+                    'purpose': 'Ensure desired state and rolling updates',
+                    'examples': ['web-deployment', 'api-deployment', 'worker-deployment']
+                },
+                'ConfigMaps': {
+                    'description': 'Store configuration data',
+                    'purpose': 'Separate configuration from application code',
+                    'examples': ['app-config', 'db-config', 'api-config']
+                },
+                'Secrets': {
+                    'description': 'Store sensitive data securely',
+                    'purpose': 'Manage passwords, tokens, and certificates',
+                    'examples': ['db-secret', 'api-key', 'tls-cert']
+                }
+            }
+            
+            self.wfile.write(json.dumps(concept_info.get(concept, {}), indent=2).encode())
+        elif self.path == '/api/learning-path':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            level = os.environ.get('LEARNING_LEVEL', 'Beginner')
+            learning_path = {
+                'Beginner': [
+                    'Learn basic K8s concepts',
+                    'Understand Pod lifecycle',
+                    'Practice with simple deployments',
+                    'Explore basic networking'
+                ],
+                'Intermediate': [
+                    'Master Service types',
+                    'Learn advanced Pod patterns',
+                    'Practice rolling updates',
+                    'Explore configuration management'
+                ],
+                'Advanced': [
+                    'Design complex architectures',
+                    'Master security patterns',
+                    'Optimize resource usage',
+                    'Implement monitoring'
+                ]
+            }
+            
+            self.wfile.write(json.dumps(learning_path.get(level, []), indent=2).encode())
+        else:
+            # Serve the main HTML page
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s Commander - {os.environ.get('K8S_CONCEPT', 'Pods')} Learning</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }}
+        .container {{ max-width: 1200px; margin: 0 auto; padding: 20px; }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }}
+        .header h1 {{ font-size: 3em; margin-bottom: 10px; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }}
+        .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }}
+        .card {{
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }}
+        .card:hover {{ transform: translateY(-5px); }}
+        .status {{ color: #4CAF50; font-weight: bold; }}
+        .concept-highlight {{ color: #2196F3; font-weight: bold; }}
+        .level-badge {{
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+        }}
+        .beginner {{ background: #4CAF50; }}
+        .intermediate {{ background: #FF9800; }}
+        .advanced {{ background: #F44336; }}
+        .api-section {{ margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 10px; }}
+        .api-endpoint {{ margin: 10px 0; padding: 10px; background: white; border-radius: 5px; }}
+        .api-endpoint code {{ background: #e0e0e0; padding: 2px 5px; border-radius: 3px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 K8s Commander</h1>
+            <p>Mastering {os.environ.get('K8S_CONCEPT', 'Pods')} in Kubernetes</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h3>🎯 Current Focus</h3>
+                <p><strong>Concept:</strong> <span class="concept-highlight">{os.environ.get('K8S_CONCEPT', 'Pods')}</span></p>
+                <p><strong>Level:</strong> <span class="level-badge {os.environ.get('LEARNING_LEVEL', 'Beginner').lower()}">{os.environ.get('LEARNING_LEVEL', 'Beginner')}</span></p>
+                <p><strong>Namespace:</strong> {os.environ.get('NAMESPACE', 'k8s-learning')}</p>
+                <p><strong>K8s Version:</strong> {os.environ.get('K8S_VERSION', '1.28')}</p>
+            </div>
+            
+            <div class="card">
+                <h3>🎮 Interactive Features</h3>
+                <p><strong>Demo Mode:</strong> <span class="status">{'✅ Enabled' if os.environ.get('INTERACTIVE_DEMO', 'true').lower() == 'true' else '❌ Disabled'}</span></p>
+                <p><strong>Lab Mode:</strong> <span class="status">{'✅ Enabled' if os.environ.get('HANDS_ON_LAB', 'true').lower() == 'true' else '❌ Disabled'}</span></p>
+                <p><strong>Status:</strong> <span class="status">✅ Running</span></p>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Live Metrics</h3>
+                <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
+                <p><strong>Uptime:</strong> <span id="uptime">Loading...</span></p>
+                <p><strong>API Status:</strong> <span class="status">✅ Active</span></p>
+            </div>
+            
+            <div class="card">
+                <h3>🔗 API Endpoints</h3>
+                <div class="api-section">
+                    <div class="api-endpoint">
+                        <strong>Status:</strong> <code>GET /api/status</code>
+                    </div>
+                    <div class="api-endpoint">
+                        <strong>Concept Info:</strong> <code>GET /api/concept</code>
+                    </div>
+                    <div class="api-endpoint">
+                        <strong>Learning Path:</strong> <code>GET /api/learning-path</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function updateTime() {{
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+        }}
+        
+        function updateUptime() {{
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {{
+                    document.getElementById('uptime').textContent = data.uptime + ' seconds';
+                }});
+        }}
+        
+        updateTime();
+        updateUptime();
+        setInterval(updateTime, 1000);
+        setInterval(updateUptime, 5000);
+    </script>
+</body>
+</html>
+"""
+            self.wfile.write(html_content.encode())
+    
+    def log_message(self, format, *args):
+        # Suppress default logging
+        pass
+
+# Start the server
+start_time = time.time()
+server = HTTPServer(('0.0.0.0', int(os.environ.get('EXPOSE_PORT', '8080'))), K8sCommanderHandler)
+print(f"K8s Commander server starting on port {os.environ.get('EXPOSE_PORT', '8080')}")
+server.serve_forever()
+PYEOF
+
+# Set environment variables
+ENV K8S_CONCEPT=${K8S_CONCEPT}
+ENV LEARNING_LEVEL=${LEARNING_LEVEL}
+ENV NAMESPACE=${NAMESPACE}
+ENV K8S_VERSION=${K8S_VERSION}
+ENV INTERACTIVE_DEMO=${INTERACTIVE_DEMO}
+ENV HANDS_ON_LAB=${HANDS_ON_LAB}
+ENV EXPOSE_PORT=${WEBAPP_PORT}
+
+# Expose port
+EXPOSE ${WEBAPP_PORT}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:${WEBAPP_PORT}/api/status || exit 1
+
+# Run the application
+CMD ["python3", "app.py"]
+EOF
+                        
+                        echo "║     ✅ Dockerfile created"
+                        
+                        # Build Docker image
+                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
+                        echo "║  🏗️  Building image: $IMAGE_NAME"
+                        docker build -t $IMAGE_NAME .
+                        
+                        echo "║     ✅ Docker image built successfully"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('🚀 K8s Commander Deployment') {
+            steps {
+                script {
+                    echo "🚀 Deploying K8s Commander application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🚀 K8S COMMANDER DEPLOYMENT                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    // Final progress update
-                    env.LEARNING_PROGRESS = '100'
-                    env.ACHIEVEMENTS += ', 🎓 Mastery Achieved'
+                    sh '''
+                        # Get the port we used
+                        WEBAPP_PORT=$(grep "EXPOSE" Dockerfile | awk '{print $2}')
+                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
+                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
+                        
+                        # Stop any existing container
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm $CONTAINER_NAME 2>/dev/null || true
+                        
+                        echo "║  🚀 Starting K8s Commander container..."
+                        echo "║     • Image: $IMAGE_NAME"
+                        echo "║     • Container: $CONTAINER_NAME"
+                        echo "║     • Port: $WEBAPP_PORT"
+                        
+                        # Run the container
+                        docker run -d \\
+                            --name $CONTAINER_NAME \\
+                            -p $WEBAPP_PORT:$WEBAPP_PORT \\
+                            -e K8S_CONCEPT="${K8S_CONCEPT}" \\
+                            -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
+                            -e NAMESPACE="${NAMESPACE}" \\
+                            -e K8S_VERSION="${K8S_VERSION}" \\
+                            -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
+                            -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
+                            -e EXPOSE_PORT="$WEBAPP_PORT" \\
+                            $IMAGE_NAME
+                        
+                        # Wait for container to start
+                        sleep 5
+                        
+                        # Check if container is running
+                        if docker ps | grep -q $CONTAINER_NAME; then
+                            echo "║     ✅ Container deployed: $CONTAINER_NAME"
+                            echo "║     ✅ Access: http://localhost:$WEBAPP_PORT"
+                        else
+                            echo "║     ❌ Container failed to start"
+                            docker logs $CONTAINER_NAME
+                            exit 1
+                        fi
+                        
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('📊 K8s Commander Monitoring') {
+            steps {
+                script {
+                    echo "📊 Monitoring K8s Commander application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    📊 K8S COMMANDER MONITORING                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                    sh '''
+                        WEBAPP_PORT=$(grep "EXPOSE" Dockerfile | awk '{print $2}')
+                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
+                        
+                        echo "║  🔍 Checking application health..."
+                        
+                        # Test API endpoints
+                        if curl -s http://localhost:$WEBAPP_PORT/api/status > /dev/null 2>&1; then
+                            echo "║     ✅ API Status: Healthy"
+                            
+                            # Get status data
+                            STATUS_DATA=$(curl -s http://localhost:$WEBAPP_PORT/api/status)
+                            echo "║     📊 Status Data:"
+                            echo "$STATUS_DATA" | jq -r 'to_entries[] | "║        • \(.key): \(.value)"' 2>/dev/null || echo "║        • Raw: $STATUS_DATA"
+                        else
+                            echo "║     ❌ API Status: Unhealthy"
+                        fi
+                        
+                        if curl -s http://localhost:$WEBAPP_PORT/api/concept > /dev/null 2>&1; then
+                            echo "║     ✅ Concept API: Working"
+                        else
+                            echo "║     ❌ Concept API: Failed"
+                        fi
+                        
+                        if curl -s http://localhost:$WEBAPP_PORT/api/learning-path > /dev/null 2>&1; then
+                            echo "║     ✅ Learning Path API: Working"
+                        else
+                            echo "║     ❌ Learning Path API: Failed"
+                        fi
+                        
+                        echo "║"
+                        echo "║  🌐 Access Information:"
+                        echo "║     • Main App: http://localhost:$WEBAPP_PORT"
+                        echo "║     • API Status: http://localhost:$WEBAPP_PORT/api/status"
+                        echo "║     • Concept Info: http://localhost:$WEBAPP_PORT/api/concept"
+                        echo "║     • Learning Path: http://localhost:$WEBAPP_PORT/api/learning-path"
+                        echo "║"
+                        echo "║  🎯 Learning Resources:"
+                        echo "║     • YAML Files: k8s-demo/ directory"
+                        echo "║     • Lab Exercises: k8s-lab/ directory"
+                        echo "║     • Interactive Demo: Web application above"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
                 }
             }
         }
@@ -511,9 +707,6 @@ EOF
     post {
         always {
             script {
-                // Cleanup completed
-                echo "🧹 K8s Commander cleanup completed"
-                
                 echo ""
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                 echo "║                    🎉 K8S COMMANDER COMPLETED!                               ║"
@@ -521,12 +714,16 @@ EOF
                 echo "║  🎯 Learning Journey Summary:"
                 echo "║     • Concept Explored: ${params.K8S_CONCEPT}"
                 echo "║     • Learning Level: ${params.LEARNING_LEVEL}"
-                echo "║     • Progress Achieved: ${env.LEARNING_PROGRESS}%"
-                echo "║     • Achievements: ${env.ACHIEVEMENTS}"
+                echo "║     • Namespace: ${params.NAMESPACE}"
+                echo "║     • K8s Version: ${params.K8S_VERSION}"
+                echo "║     • Interactive Demo: ${params.INTERACTIVE_DEMO}"
+                echo "║     • Hands-on Lab: ${params.HANDS_ON_LAB}"
                 echo "║"
-                echo "║  🌐 Console Dashboard was displayed during pipeline execution"
-                echo "║  📁 Generated files: k8s-lab/ directory with YAML examples"
-                echo "║  📋 Lab files: k8s-lab/ directory with YAML examples"
+                echo "║  🌐 Application Access:"
+                echo "║     • Web Application: Available during pipeline execution"
+                echo "║     • API Endpoints: Status, Concept, Learning Path"
+                echo "║     • YAML Resources: k8s-demo/ directory"
+                echo "║     • Lab Materials: k8s-lab/ directory"
                 echo "║"
                 echo "║  🚀 Ready for Next Level:"
                 echo "║     • Scenario 5: Jenkins CI/CD Mastery"
@@ -539,7 +736,7 @@ EOF
         success {
             script {
                 echo "🎉 K8s Commander learning journey completed successfully!"
-                echo "🏆 You've mastered Kubernetes concepts through Jenkins!"
+                echo "🏆 You've mastered ${params.K8S_CONCEPT} concepts through Jenkins!"
             }
         }
         failure {

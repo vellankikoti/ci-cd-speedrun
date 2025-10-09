@@ -624,7 +624,8 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
                 }
             }
 
-            self.wfile.write(json.dumps(lesson_content.get(lesson_id, {{}}), indent=2).encode())
+            lesson_data = lesson_content.get(lesson_id, {})
+            self.wfile.write(json.dumps(lesson_data, indent=2).encode())
         else:
             # Serve the main HTML page
             self.send_response(200)

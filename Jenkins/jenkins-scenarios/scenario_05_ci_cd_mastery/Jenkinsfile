@@ -702,116 +702,90 @@ This dashboard demonstrates:
                     
                     echo "║  🚀 Deploying container..."
                     
-                    // Run container with retry mechanism
-                    sh """
-                        echo "║  🐳 Starting container on port $WEBAPP_PORT..."
-                        
-                        # Try to run container, with retry if port is busy
-                        MAX_RETRIES=3
-                        RETRY_COUNT=0
-                        CONTAINER_STARTED=false
-                        
-                        while [ \$RETRY_COUNT -lt \$MAX_RETRIES ] && [ "\$CONTAINER_STARTED" = "false" ]; do
-                            RETRY_COUNT=\$((RETRY_COUNT + 1))
-                            echo "║     Attempt \$RETRY_COUNT/\$MAX_RETRIES..."
+                    // Run container with comprehensive port handling
+                    def finalPort = sh(
+                        script: """
+                            echo "║  🐳 Starting container on port $WEBAPP_PORT..."
                             
-                            # Kill any process using the port
-                            if command -v lsof >/dev/null 2>&1; then
-                                lsof -ti:$WEBAPP_PORT | xargs -r kill -9 2>/dev/null || true
-                            fi
-                            
-                            # Also try to kill processes using netstat if available
-                            if command -v netstat >/dev/null 2>&1; then
-                                netstat -tulpn 2>/dev/null | grep ":$WEBAPP_PORT " | awk '{print \$7}' | cut -d'/' -f1 | xargs -r kill -9 2>/dev/null || true
-                            fi
-                            
-                            # Force remove any containers using this port
-                            docker ps -a --filter "publish=$WEBAPP_PORT" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
-                            docker ps -a --filter "publish=$WEBAPP_PORT" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-                            
-                            # Try to start container
-                            if CONTAINER_ID=\$(docker run -d \\
-                                --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
-                                -p $WEBAPP_PORT:5000 \\
-                                -e DASHBOARD_TYPE='${params.DASHBOARD_TYPE ?: 'Basic'}' \\
-                                -e VISUALIZATION_STYLE='${params.VISUALIZATION_STYLE ?: 'Interactive'}' \\
-                                -e COMPANY_NAME='${params.COMPANY_NAME ?: 'Your Company'}' \\
-                                ci-cd-dashboard:${BUILD_TIMESTAMP} 2>&1); then
-                                
-                                echo "║     ✅ Container started: \$CONTAINER_ID"
-                                CONTAINER_STARTED=true
-                            else
-                                echo "║     ❌ Attempt \$RETRY_COUNT failed: \$CONTAINER_ID"
-                                
-                                # Clean up failed container
-                                docker rm -f ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                                
-                                if [ \$RETRY_COUNT -lt \$MAX_RETRIES ]; then
-                                    echo "║     ⏳ Retrying in 2 seconds..."
-                                    sleep 2
-                                fi
-                            fi
-                        done
-                        
-                        if [ "\$CONTAINER_STARTED" = "false" ]; then
-                            echo "║     ❌ Container deployment failed after \$MAX_RETRIES attempts on port $WEBAPP_PORT"
-                            echo "║     🔄 Trying alternative port..."
-                            
-                            # Try alternative ports
-                            for alt_port in 8082 8083 8084 8085 8086 8087 8088 8089 8090; do
-                                echo "║     🔍 Trying port \$alt_port..."
+                            # Function to try starting container on a port
+                            try_port() {
+                                local port=\$1
+                                echo "║     🔍 Trying port \$port..."
                                 
                                 # Clean up the port
                                 if command -v lsof >/dev/null 2>&1; then
-                                    lsof -ti:\$alt_port | xargs -r kill -9 2>/dev/null || true
+                                    lsof -ti:\$port | xargs -r kill -9 2>/dev/null || true
                                 fi
-                                docker ps -a --filter "publish=\$alt_port" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
-                                docker ps -a --filter "publish=\$alt_port" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+                                if command -v netstat >/dev/null 2>&1; then
+                                    netstat -tulpn 2>/dev/null | grep ":\$port " | awk '{print \\\$7}' | cut -d'/' -f1 | xargs -r kill -9 2>/dev/null || true
+                                fi
+                                docker ps -a --filter "publish=\$port" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
+                                docker ps -a --filter "publish=\$port" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
                                 
-                                # Try to start container on alternative port
+                                # Try to start container
                                 if CONTAINER_ID=\$(docker run -d \\
                                     --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
-                                    -p \$alt_port:5000 \\
+                                    -p \$port:5000 \\
                                     -e DASHBOARD_TYPE='${params.DASHBOARD_TYPE ?: 'Basic'}' \\
                                     -e VISUALIZATION_STYLE='${params.VISUALIZATION_STYLE ?: 'Interactive'}' \\
                                     -e COMPANY_NAME='${params.COMPANY_NAME ?: 'Your Company'}' \\
                                     ci-cd-dashboard:${BUILD_TIMESTAMP} 2>&1); then
                                     
-                                    echo "║     ✅ Container started on port \$alt_port: \$CONTAINER_ID"
-                                    WEBAPP_PORT=\$alt_port
-                                    CONTAINER_STARTED=true
-                                    break
+                                    echo "║     ✅ Container started on port \$port: \$CONTAINER_ID"
+                                    echo \$port
+                                    return 0
                                 else
-                                    echo "║     ❌ Port \$alt_port also failed"
+                                    echo "║     ❌ Port \$port failed: \$CONTAINER_ID"
                                     docker rm -f ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
+                                    return 1
                                 fi
-                            done
+                            }
                             
-                            if [ "\$CONTAINER_STARTED" = "false" ]; then
-                                echo "║     ❌ All port attempts failed"
-                                echo "║     💡 Try running: docker ps -a | grep ci-cd-dashboard"
+                            # Try the primary port first
+                            if try_port $WEBAPP_PORT; then
+                                echo "║     ✅ Primary port $WEBAPP_PORT worked"
+                            else
+                                echo "║     🔄 Primary port failed, trying alternatives..."
+                                
+                                # Try alternative ports
+                                for alt_port in 8082 8083 8084 8085 8086 8087 8088 8089 8090 8091 8092 8093 8094 8095; do
+                                    if try_port \$alt_port; then
+                                        echo "║     ✅ Alternative port \$alt_port worked"
+                                        break
+                                    fi
+                                done
+                            fi
+                            
+                            # Wait for container to start
+                            echo "║  ⏳ Waiting for container to start..."
+                            sleep 5
+                            
+                            # Check if container is running
+                            if ! docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
+                                echo "║     ❌ Container failed to start"
+                                echo "║     • Container logs:"
+                                docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
                                 exit 1
                             fi
-                        fi
-                        
-                        # Wait for container to start
-                        echo "║  ⏳ Waiting for container to start..."
-                        sleep 5
-                        
-                        # Check if container is running
-                        if ! docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
-                            echo "║     ❌ Container failed to start"
-                            echo "║     • Container logs:"
-                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                            exit 1
-                        fi
-                        
-                        # Save port info
-                        echo $WEBAPP_PORT > dashboard.port
-                        
-                        echo "║     ✅ Container deployed successfully"
-                        echo "║     🌐 Dashboard URL: http://localhost:$WEBAPP_PORT"
-                    """
+                            
+                            # Get the actual port from running container
+                            ACTUAL_PORT=\$(docker ps --filter "name=ci-cd-dashboard-${BUILD_TIMESTAMP}" --format "{{.Ports}}" | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | head -1)
+                            echo "║     📊 Container running on port: \$ACTUAL_PORT"
+                            
+                            # Save port info
+                            echo \$ACTUAL_PORT > dashboard.port
+                            
+                            echo "║     ✅ Container deployed successfully"
+                            echo "║     🌐 Dashboard URL: http://localhost:\$ACTUAL_PORT"
+                            
+                            # Return the actual port
+                            echo \$ACTUAL_PORT
+                        """,
+                        returnStdout: true
+                    ).trim()
+                    
+                    // Update the port variable with the actual port used
+                    WEBAPP_PORT = finalPort
                     
                     echo "║"
                     echo "║  🎯 Containerization Complete!"

@@ -399,112 +399,46 @@ EOF
                     echo "║                🌐 INTERACTIVE LEARNING DASHBOARD                           ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    // Find available port starting from 8081
+                    // Create simple console dashboard
                         sh '''
-                        echo "║  🎯 Creating interactive learning dashboard..."
-                        mkdir -p dashboard
-                        
-                        # Use Flask default port 5000 (avoiding Jenkins on 8080)
-                        DASHBOARD_PORT=5000
-                        while netstat -tuln 2>/dev/null | grep -q ":$DASHBOARD_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$DASHBOARD_PORT"; do
-                            DASHBOARD_PORT=$((DASHBOARD_PORT + 1))
-                            if [ $DASHBOARD_PORT -gt 5010 ]; then
-                                echo "║  ❌ No available ports found (5000-5010)"
-                                exit 1
-                            fi
-                        done
-                        
-                        echo "║  🌐 Using port: $DASHBOARD_PORT"
-                        
-                        # Create super simple HTML file
-                        echo "<h1>K8s Commander Dashboard</h1><p>Jenkins Pipeline Working!</p><p>Port: $DASHBOARD_PORT</p><p>Time: $(date)</p>" > dashboard/index.html
-                        
-                        # Create a simple test file
-                        echo "Test file - Server is working!" > dashboard/test.txt
-
-
-                        echo "║  🚀 Starting K8s Commander dashboard..."
-                        echo "║     • Interactive dashboard created"
-                        echo "║     • Real-time progress tracking enabled"
-                        echo "║     • Achievement system active"
+                        echo "║  🎯 Creating K8s Commander Learning Dashboard..."
                         echo "║"
-                        echo "║  🌐 Dashboard Features:"
-                        echo "║     • Live progress tracking"
-                        echo "║     • Achievement badges"
-                        echo "║     • Learning path visualization"
-                        echo "║     • Interactive concept exploration"
-                        echo "║     • Real-time updates"
+                        echo "║  📊 K8S COMMANDER DASHBOARD"
+                        echo "║  ================================="
+                        echo "║  🎯 Current Focus: ${CURRENT_CONCEPT}"
+                        echo "║  📚 Learning Level: ${LEARNING_LEVEL}"
+                        echo "║  🏷️  Namespace: ${NAMESPACE}"
+                        echo "║  🔢 K8s Version: ${K8S_VERSION}"
+                        echo "║  🎮 Interactive Demo: ${INTERACTIVE_DEMO}"
+                        echo "║  🔬 Hands-on Lab: ${HANDS_ON_LAB}"
+                        echo "║"
+                        echo "║  🏆 ACHIEVEMENTS UNLOCKED:"
+                        echo "║  ✅ K8s Commander Started"
+                        echo "║  ✅ Concepts Learned"
+                        echo "║  ✅ Demo Completed"
+                        echo "║  ✅ Lab Completed"
+                        echo "║  ✅ Dashboard Created"
+                        echo "║  ✅ Mastery Achieved"
+                        echo "║"
+                        echo "║  📚 LEARNING PATH:"
+                        echo "║  ✅ Kubernetes Concepts Overview"
+                        echo "║  ✅ Interactive Demo"
+                        echo "║  ✅ Hands-on Lab"
+                        echo "║  🔄 Learning Dashboard"
+                        echo "║  ⏳ Next: Advanced K8s Patterns"
+                        echo "║"
+                        echo "║  📊 LIVE METRICS:"
+                        echo "║  • Current Time: $(date)"
+                        echo "║  • Learning Duration: Active"
+                        echo "║  • Pipeline Status: ✅ Running"
+                        echo "║  • Build Number: ${BUILD_NUMBER}"
+                        echo "║  • Git Commit: ${GIT_COMMIT}"
+                        echo "║"
+                        echo "║  🎉 K8S COMMANDER DASHBOARD COMPLETE!"
+                        echo "║  ================================="
                         
-                        # Start simple HTTP server
-                        echo "║  🚀 Starting web server on port $DASHBOARD_PORT..."
-                        cd dashboard
-                        
-                        
-                        # Show what files were created
-                        echo "║  📁 Files created in dashboard directory:"
-                        ls -la dashboard/ | while read line; do echo "║     $line"; done
-                        
-                        # Start HTTP server with detailed logging
-                        echo "║  🔄 Starting Python HTTP server on port $DASHBOARD_PORT..."
-                        echo "║  📝 Server command: python3 -m http.server $DASHBOARD_PORT --bind 0.0.0.0"
-                        
-                        # Start server in background
-                        python3 -m http.server $DASHBOARD_PORT --bind 0.0.0.0 > ../dashboard.log 2>&1 &
-                        WEB_SERVER_PID=$!
-                        echo $WEB_SERVER_PID > ../dashboard.pid
-                        
-                        # Wait and check
-                        sleep 5
-                        echo "║  🔍 Checking if server started..."
-                        
-                        if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
-                            echo "║  ✅ Server process is running (PID: $WEB_SERVER_PID)"
-                            
-                            # Test with curl
-                            echo "║  🧪 Testing server response..."
-                            if curl -s -m 5 http://localhost:$DASHBOARD_PORT/ > /dev/null 2>&1; then
-                                echo "║  ✅ Server is responding to HTTP requests!"
-                                echo "║  🌐 Dashboard URL: http://localhost:$DASHBOARD_PORT/"
-                                echo "║  🌐 Alternative URL: http://127.0.0.1:$DASHBOARD_PORT/"
-                                
-                                # Test the actual content
-                                echo "║  📄 Testing dashboard content..."
-                                curl -s http://localhost:$DASHBOARD_PORT/ | head -3 | while read line; do echo "║     $line"; done
-                            else
-                                echo "║  ⚠️  Server started but not responding to HTTP requests"
-                                echo "║  🔍 Testing with wget..."
-                                if wget -q -O - http://localhost:$DASHBOARD_PORT/ > /dev/null 2>&1; then
-                                    echo "║  ✅ Server responds to wget requests!"
-                                else
-                                    echo "║  ❌ Server not responding to any HTTP requests"
-                                    echo "║  🔍 Checking if port is in use..."
-                                    netstat -tuln | grep ":$DASHBOARD_PORT " || echo "║     Port $DASHBOARD_PORT is not in use"
-                                fi
-                            fi
-                        else
-                            echo "║  ❌ Server process failed to start"
-                            echo "║  🔍 Server logs:"
-                            cat ../dashboard.log | head -20 | while read line; do echo "║     $line"; done
-                        fi
-                        
-                        # Show network info
-                        echo "║  🌐 Network information:"
-                        echo "║     • Hostname: $(hostname)"
-                        echo "║     • IP Address: $(hostname -I | awk '{print $1}')"
-                        echo "║     • Port: $DASHBOARD_PORT"
-                        echo "║     • Process ID: $WEB_SERVER_PID"
-                        
-                        # Wait a moment for server to start
-                        sleep 2
-                        
-                        # Get host IP
-                        HOST_IP=$(hostname -I | awk '{print $1}')
-                        
-                        echo "║  ✅ Dashboard started successfully!"
-                        echo "║  🌐 Access URLs:"
-                        echo "║     • Local: http://localhost:$DASHBOARD_PORT/"
-                        echo "║     • Network: http://$HOST_IP:$DASHBOARD_PORT/"
-                        echo "║  🆔 Process ID: $WEB_SERVER_PID"
+                        echo "║  ✅ Console Dashboard Complete!"
+                        echo "║  📊 All K8s learning information displayed above"
                     '''
                     
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
@@ -577,23 +511,8 @@ EOF
     post {
         always {
             script {
-                // Cleanup web server
-                sh '''
-                    if [ -f dashboard.pid ]; then
-                        DASHBOARD_PORT=$(cat dashboard.pid)
-                        WEB_SERVER_PID=$(ps aux | grep "python3 app.py $DASHBOARD_PORT" | grep -v grep | awk '{print $2}')
-                        if [ ! -z "$WEB_SERVER_PID" ]; then
-                            echo "🛑 Stopping K8s Commander dashboard (PID: $WEB_SERVER_PID)..."
-                            kill $WEB_SERVER_PID
-                            sleep 1
-                            if kill -0 $WEB_SERVER_PID 2>/dev/null; then
-                                kill -9 $WEB_SERVER_PID
-                            fi
-                            echo "✅ K8s Commander dashboard stopped"
-                        fi
-                        rm -f dashboard.pid
-                    fi
-                '''
+                // Cleanup completed
+                echo "🧹 K8s Commander cleanup completed"
                 
                 echo ""
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
@@ -605,18 +524,8 @@ EOF
                 echo "║     • Progress Achieved: ${env.LEARNING_PROGRESS}%"
                 echo "║     • Achievements: ${env.ACHIEVEMENTS}"
                 echo "║"
-                sh '''
-                    if [ -f dashboard.pid ]; then
-                        DASHBOARD_PORT=$(cat dashboard.pid)
-                        HOST_IP=$(hostname -I | awk '{print $1}')
-                        echo "║  🌐 Dashboard was available at:"
-                        echo "║     • Local: http://localhost:$DASHBOARD_PORT/"
-                        echo "║     • Network: http://$HOST_IP:$DASHBOARD_PORT/"
-                    else
-                        echo "║  🌐 Dashboard was available during pipeline execution"
-                    fi
-                '''
-                echo "║  📁 Generated files: dashboard/ directory with Flask app"
+                echo "║  🌐 Console Dashboard was displayed during pipeline execution"
+                echo "║  📁 Generated files: k8s-lab/ directory with YAML examples"
                 echo "║  📋 Lab files: k8s-lab/ directory with YAML examples"
                 echo "║"
                 echo "║  🚀 Ready for Next Level:"

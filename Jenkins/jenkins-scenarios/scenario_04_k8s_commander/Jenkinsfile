@@ -1,0 +1,1663 @@
+pipeline {
+    agent any
+    
+    // Production-grade options
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        skipDefaultCheckout()
+    }
+    
+    // Environment variables
+    environment {
+        APP_NAME = 'k8s-commander'
+        BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
+    }
+    
+    // K8s Commander parameters
+    parameters {
+        choice(
+            name: 'K8S_CONCEPT',
+            choices: ['Pods', 'Services', 'Deployments', 'ConfigMaps', 'Secrets'],
+            description: 'Select Kubernetes concept to explore'
+        )
+        choice(
+            name: 'LEARNING_LEVEL',
+            choices: ['Beginner', 'Intermediate', 'Advanced'],
+            description: 'Select your learning level'
+        )
+        string(
+            name: 'NAMESPACE',
+            defaultValue: 'k8s-learning',
+            description: 'Kubernetes namespace for resources'
+        )
+        string(
+            name: 'K8S_VERSION',
+            defaultValue: '1.28',
+            description: 'Kubernetes version to use'
+        )
+        booleanParam(
+            name: 'INTERACTIVE_DEMO',
+            defaultValue: true,
+            description: 'Enable interactive demonstrations?'
+        )
+        booleanParam(
+            name: 'HANDS_ON_LAB',
+            defaultValue: true,
+            description: 'Enable hands-on lab exercises?'
+        )
+    }
+
+    stages {
+        stage('📋 K8s Commander Setup') {
+            steps {
+                script {
+                    echo "🚀 Starting K8s Commander learning journey..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🚀 K8S COMMANDER SETUP                                   ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Learning Configuration:"
+                    echo "║     • Concept: ${params.K8S_CONCEPT}"
+                    echo "║     • Level: ${params.LEARNING_LEVEL}"
+                    echo "║     • Namespace: ${params.NAMESPACE}"
+                    echo "║     • K8s Version: ${params.K8S_VERSION}"
+                    echo "║     • Interactive Demo: ${params.INTERACTIVE_DEMO}"
+                    echo "║     • Hands-on Lab: ${params.HANDS_ON_LAB}"
+                    echo "║"
+                    echo "║  🏗️  Building K8s Commander application..."
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+                
+                checkout scm
+            }
+        }
+        
+        stage('🔍 K8s Concept Analysis') {
+            steps {
+                script {
+                    echo "🔍 Analyzing Kubernetes concept: ${params.K8S_CONCEPT}"
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🔍 K8S CONCEPT ANALYSIS                                   ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                    sh '''
+                        echo "║  📚 Concept: ${K8S_CONCEPT}"
+                        echo "║  📖 Level: ${LEARNING_LEVEL}"
+                        echo "║  🏷️  Namespace: ${NAMESPACE}"
+                        echo "║  🔢 Version: ${K8S_VERSION}"
+                        echo "║"
+                        echo "║  🎯 Learning Objectives:"
+                        case "${K8S_CONCEPT}" in
+                            "Pods")
+                                echo "║     • Understand Pod lifecycle"
+                                echo "║     • Learn Pod networking"
+                                echo "║     • Practice Pod management"
+                                ;;
+                            "Services")
+                                echo "║     • Master Service types"
+                                echo "║     • Learn load balancing"
+                                echo "║     • Practice service discovery"
+                                ;;
+                            "Deployments")
+                                echo "║     • Understand rolling updates"
+                                echo "║     • Learn scaling strategies"
+                                echo "║     • Practice deployment management"
+                                ;;
+                            "ConfigMaps")
+                                echo "║     • Learn configuration management"
+                                echo "║     • Practice data injection"
+                                echo "║     • Understand best practices"
+                                ;;
+                            "Secrets")
+                                echo "║     • Master secret management"
+                                echo "║     • Learn encryption at rest"
+                                echo "║     • Practice secure deployments"
+                                ;;
+                        esac
+                        echo "║"
+                        echo "║  ✅ Concept analysis complete!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('🎮 Interactive Demo Creation') {
+            when {
+                expression { params.INTERACTIVE_DEMO == true }
+            }
+            steps {
+                script {
+                    echo "🎮 Creating interactive K8s demonstration..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🎮 INTERACTIVE DEMO CREATION                             ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                    sh '''
+                        echo "║  🎯 Creating interactive K8s demo for: ${K8S_CONCEPT}"
+                        echo "║  📁 Setting up demo environment..."
+                        
+                        # Create demo directory
+                        mkdir -p k8s-demo
+                        
+                        # Create YAML files based on concept
+                        case "${K8S_CONCEPT}" in
+                            "Pods")
+                                cat > k8s-demo/pod-demo.yaml << 'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+    environment: demo
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+EOF
+                                echo "║     ✅ Created pod-demo.yaml"
+                                ;;
+                            "Services")
+                                cat > k8s-demo/service-demo.yaml << 'EOF'
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  type: ClusterIP
+EOF
+                                echo "║     ✅ Created service-demo.yaml"
+                                ;;
+                            "Deployments")
+                                cat > k8s-demo/deployment-demo.yaml << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+EOF
+                                echo "║     ✅ Created deployment-demo.yaml"
+                                ;;
+                        esac
+                        
+                        echo "║  🎮 Interactive demo files created!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('🔬 Hands-on Lab Setup') {
+            when {
+                expression { params.HANDS_ON_LAB == true }
+            }
+            steps {
+                script {
+                    echo "🔬 Setting up hands-on lab exercises..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🔬 HANDS-ON LAB SETUP                                    ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                        sh '''
+                        echo "║  🧪 Creating hands-on lab for: ${K8S_CONCEPT}"
+                        echo "║  📁 Setting up lab environment..."
+                        
+                        # Create lab directory
+                        mkdir -p k8s-lab
+                        
+                        # Create lab exercises
+                        cat > k8s-lab/lab-instructions.md << 'EOF'
+# K8s Commander Lab: ${K8S_CONCEPT}
+
+## Lab Objectives
+- Understand ${K8S_CONCEPT} concepts
+- Practice hands-on exercises
+- Learn best practices
+
+## Exercises
+1. Create a ${K8S_CONCEPT} resource
+2. Verify the resource is running
+3. Test the resource functionality
+4. Clean up resources
+
+## Commands to Try
+```bash
+# Create the resource
+kubectl apply -f ${K8S_CONCEPT}-demo.yaml
+
+# Check status
+kubectl get ${K8S_CONCEPT}
+
+# Describe the resource
+kubectl describe ${K8S_CONCEPT} nginx-${K8S_CONCEPT,,}
+
+# Clean up
+kubectl delete -f ${K8S_CONCEPT}-demo.yaml
+```
+EOF
+                        
+                        echo "║     ✅ Created lab instructions"
+                        echo "║  🔬 Hands-on lab setup complete!"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('🐳 K8s Commander App Build') {
+            steps {
+                script {
+                    echo "🐳 Building K8s Commander web application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🐳 K8S COMMANDER APP BUILD                               ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                        sh '''
+                        echo "║  🏗️  Building K8s Commander Docker image..."
+
+                        # Use port 8080 INSIDE the container (will map to external port during deployment)
+                        INTERNAL_PORT=8080
+
+                        echo "║  🌐 Container internal port: $INTERNAL_PORT"
+
+                        # Create Dockerfile for K8s Commander app
+                        cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \\
+    curl \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Create the K8s Commander application
+RUN cat > app.py << 'PYEOF'
+#!/usr/bin/env python3
+import os
+import time
+import json
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from datetime import datetime
+
+class K8sCommanderHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/api/status':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            status = {
+                'status': 'running',
+                'concept': os.environ.get('K8S_CONCEPT', 'Pods'),
+                'level': os.environ.get('LEARNING_LEVEL', 'Beginner'),
+                'namespace': os.environ.get('NAMESPACE', 'k8s-learning'),
+                'k8s_version': os.environ.get('K8S_VERSION', '1.28'),
+                'interactive_demo': os.environ.get('INTERACTIVE_DEMO', 'true'),
+                'hands_on_lab': os.environ.get('HANDS_ON_LAB', 'true'),
+                'timestamp': datetime.now().isoformat(),
+                'uptime': int(time.time() - start_time)
+            }
+            self.wfile.write(json.dumps(status, indent=2).encode())
+        elif self.path == '/api/concept':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            concept = os.environ.get('K8S_CONCEPT', 'Pods')
+            concept_info = {
+                'Pods': {
+                    'description': 'The smallest deployable unit in Kubernetes',
+                    'purpose': 'Run containers and manage their lifecycle',
+                    'examples': ['nginx-pod', 'redis-pod', 'mysql-pod']
+                },
+                'Services': {
+                    'description': 'Network abstraction for Pods',
+                    'purpose': 'Enable communication between Pods',
+                    'examples': ['nginx-service', 'api-service', 'db-service']
+                },
+                'Deployments': {
+                    'description': 'Manages Pod replicas and updates',
+                    'purpose': 'Ensure desired state and rolling updates',
+                    'examples': ['web-deployment', 'api-deployment', 'worker-deployment']
+                },
+                'ConfigMaps': {
+                    'description': 'Store configuration data',
+                    'purpose': 'Separate configuration from application code',
+                    'examples': ['app-config', 'db-config', 'api-config']
+                },
+                'Secrets': {
+                    'description': 'Store sensitive data securely',
+                    'purpose': 'Manage passwords, tokens, and certificates',
+                    'examples': ['db-secret', 'api-key', 'tls-cert']
+                }
+            }
+            
+            self.wfile.write(json.dumps(concept_info.get(concept, {}), indent=2).encode())
+        elif self.path == '/api/learning-path':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            level = os.environ.get('LEARNING_LEVEL', 'Beginner')
+            learning_path = {
+                'Beginner': [
+                    'Learn basic K8s concepts',
+                    'Understand Pod lifecycle',
+                    'Practice with simple deployments',
+                    'Explore basic networking'
+                ],
+                'Intermediate': [
+                    'Master Service types',
+                    'Learn advanced Pod patterns',
+                    'Practice rolling updates',
+                    'Explore configuration management'
+                ],
+                'Advanced': [
+                    'Design complex architectures',
+                    'Master security patterns',
+                    'Optimize resource usage',
+                    'Implement monitoring'
+                ]
+            }
+
+            self.wfile.write(json.dumps(learning_path.get(level, []), indent=2).encode())
+        elif self.path == '/api/lessons':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            concept = os.environ.get('K8S_CONCEPT', 'Pods')
+            level = os.environ.get('LEARNING_LEVEL', 'Beginner')
+
+            lessons = {
+                'Pods': {
+                    'title': 'Mastering Kubernetes Pods',
+                    'modules': [
+                        {'id': 1, 'name': 'What are Pods?', 'duration': '5 min', 'status': 'available'},
+                        {'id': 2, 'name': 'Pod Lifecycle', 'duration': '8 min', 'status': 'available'},
+                        {'id': 3, 'name': 'Multi-Container Pods', 'duration': '10 min', 'status': 'available'},
+                        {'id': 4, 'name': 'Production Patterns', 'duration': '12 min', 'status': 'available'},
+                        {'id': 5, 'name': 'Hands-on Lab', 'duration': '15 min', 'status': 'available'}
+                    ]
+                },
+                'Services': {
+                    'title': 'Kubernetes Services Deep Dive',
+                    'modules': [
+                        {'id': 1, 'name': 'What are Services?', 'duration': '6 min', 'status': 'available'},
+                        {'id': 2, 'name': 'ClusterIP Services', 'duration': '8 min', 'status': 'available'},
+                        {'id': 3, 'name': 'NodePort & LoadBalancer', 'duration': '10 min', 'status': 'available'},
+                        {'id': 4, 'name': 'Service Discovery', 'duration': '12 min', 'status': 'available'},
+                        {'id': 5, 'name': 'Production Networking', 'duration': '15 min', 'status': 'available'}
+                    ]
+                },
+                'Deployments': {
+                    'title': 'Mastering Kubernetes Deployments',
+                    'modules': [
+                        {'id': 1, 'name': 'What are Deployments?', 'duration': '6 min', 'status': 'available'},
+                        {'id': 2, 'name': 'Rolling Updates', 'duration': '8 min', 'status': 'available'},
+                        {'id': 3, 'name': 'Scaling', 'duration': '10 min', 'status': 'available'},
+                        {'id': 4, 'name': 'Rollback', 'duration': '12 min', 'status': 'available'},
+                        {'id': 5, 'name': 'Production Strategies', 'duration': '15 min', 'status': 'available'}
+                    ]
+                },
+                'ConfigMaps': {
+                    'title': 'Configuration with ConfigMaps',
+                    'modules': [
+                        {'id': 1, 'name': 'What are ConfigMaps?', 'duration': '5 min', 'status': 'available'},
+                        {'id': 2, 'name': 'Using ConfigMaps', 'duration': '8 min', 'status': 'available'},
+                        {'id': 3, 'name': 'Configuration Patterns', 'duration': '10 min', 'status': 'available'},
+                        {'id': 4, 'name': 'Dynamic Updates', 'duration': '12 min', 'status': 'available'},
+                        {'id': 5, 'name': 'Production Config Management', 'duration': '15 min', 'status': 'available'}
+                    ]
+                },
+                'Secrets': {
+                    'title': 'Secure Secrets Management',
+                    'modules': [
+                        {'id': 1, 'name': 'What are Secrets?', 'duration': '6 min', 'status': 'available'},
+                        {'id': 2, 'name': 'Using Secrets Securely', 'duration': '8 min', 'status': 'available'},
+                        {'id': 3, 'name': 'Secret Rotation', 'duration': '10 min', 'status': 'available'},
+                        {'id': 4, 'name': 'External Secret Managers', 'duration': '12 min', 'status': 'available'},
+                        {'id': 5, 'name': 'Production Security', 'duration': '15 min', 'status': 'available'}
+                    ]
+                }
+            }
+
+            self.wfile.write(json.dumps(lessons.get(concept, {}), indent=2).encode())
+        elif self.path.startswith('/api/lesson/'):
+            # Get specific lesson content
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            lesson_id = self.path.split('/')[-1]
+            concept = os.environ.get('K8S_CONCEPT', 'Pods')
+
+            # Define lessons for each K8s concept
+            all_lessons = {
+            'Pods': {
+                '1': {
+                    'title': 'What are Pods?',
+                    'duration': '5 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Pods are the smallest deployable units in Kubernetes. A Pod represents a single instance of a running process in your cluster.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Key Concepts',
+                            'points': [
+                                'A Pod can contain one or more containers',
+                                'Containers in a Pod share network and storage',
+                                'Pods are ephemeral - they can be created and destroyed',
+                                'Each Pod gets its own IP address'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Simple Pod Example',
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: nginx-pod\\n  labels:\\n    app: nginx\\nspec:\\n  containers:\\n  - name: nginx\\n    image: nginx:latest\\n    ports:\\n    - containerPort: 80'
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Best Practice',
+                            'content': 'In production, you rarely create Pods directly. Instead, use Deployments which manage Pods for you and provide features like rolling updates and scaling.'
+                        }
+                    ]
+                },
+                '2': {
+                    'title': 'Pod Lifecycle',
+                    'duration': '8 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Understanding the Pod lifecycle is crucial for debugging and managing your Kubernetes applications.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Pod Phases',
+                            'points': [
+                                '🟡 Pending: Pod accepted but not running yet',
+                                '🟢 Running: Pod bound to node and containers running',
+                                '🟢 Succeeded: All containers terminated successfully',
+                                '🔴 Failed: At least one container failed',
+                                '🟠 Unknown: Pod state cannot be determined'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Check Pod Status',
+                            'commands': [
+                                'kubectl get pods',
+                                'kubectl describe pod <pod-name>',
+                                'kubectl logs <pod-name>',
+                                'kubectl get pod <pod-name> -o yaml'
+                            ]
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Monitoring',
+                            'content': 'Always implement health checks (liveness and readiness probes) to let Kubernetes automatically manage Pod lifecycle and ensure high availability.'
+                        }
+                    ]
+                },
+                '3': {
+                    'title': 'Multi-Container Pods',
+                    'duration': '10 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Multi-container Pods are powerful patterns for building modular, reusable applications in Kubernetes.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Common Patterns',
+                            'points': [
+                                '📦 Sidecar: Helper container that extends main container',
+                                '🔌 Ambassador: Proxy that simplifies network connections',
+                                '🔧 Adapter: Standardizes output from main container',
+                                '🔄 Init Containers: Run before main containers start'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Sidecar Pattern Example',
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: app-with-sidecar\\nspec:\\n  containers:\\n  - name: app\\n    image: myapp:1.0\\n    ports:\\n    - containerPort: 8080\\n  - name: logging-sidecar\\n    image: fluentd\\n    volumeMounts:\\n    - name: logs\\n      mountPath: /var/log\\n  volumes:\\n  - name: logs\\n    emptyDir: {{}}'
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Use Case',
+                            'content': 'Sidecar containers are widely used for logging, monitoring, security, and service mesh patterns like Istio which injects an Envoy proxy sidecar.'
+                        }
+                    ]
+                },
+                '4': {
+                    'title': 'Production Patterns',
+                    'duration': '12 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Production-ready Pods require careful configuration of resources, health checks, and security settings.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Essential Production Features',
+                            'points': [
+                                '⚡ Resource Limits: Prevent resource exhaustion',
+                                '🔍 Health Checks: Enable auto-healing',
+                                '🛡️ Security Context: Run as non-root',
+                                '🏷️ Labels & Annotations: Organize and track'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Production-Ready Pod',
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: production-app\\n  labels:\\n    app: myapp\\n    tier: backend\\nspec:\\n  securityContext:\\n    runAsNonRoot: true\\n    runAsUser: 1000\\n  containers:\\n  - name: app\\n    image: myapp:1.0\\n    resources:\\n      requests:\\n        memory: "64Mi"\\n        cpu: "250m"\\n      limits:\\n        memory: "128Mi"\\n        cpu: "500m"\\n    livenessProbe:\\n      httpGet:\\n        path: /healthz\\n        port: 8080\\n      initialDelaySeconds: 15\\n      periodSeconds: 10\\n    readinessProbe:\\n      httpGet:\\n        path: /ready\\n        port: 8080\\n      initialDelaySeconds: 5\\n      periodSeconds: 5'
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Real-World Impact',
+                            'content': 'These patterns prevent 90% of production incidents. Resource limits prevent cascading failures, health checks enable zero-downtime deployments, and security contexts prevent container escapes.'
+                        }
+                    ]
+                },
+                '5': {
+                    'title': 'Hands-on Lab',
+                    'duration': '15 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Practice creating and managing Pods with real kubectl commands. This lab builds on everything you have learned.'
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 1: Create a Pod',
+                            'commands': [
+                                'kubectl create namespace k8s-learning',
+                                'kubectl run nginx --image=nginx --port=80 -n k8s-learning',
+                                'kubectl get pods -n k8s-learning',
+                                'kubectl describe pod nginx -n k8s-learning'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 2: Interact with Pod',
+                            'commands': [
+                                'kubectl logs nginx -n k8s-learning',
+                                'kubectl exec -it nginx -n k8s-learning -- /bin/bash',
+                                'kubectl port-forward nginx 8080:80 -n k8s-learning',
+                                'curl http://localhost:8080'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 3: Update and Delete',
+                            'commands': [
+                                'kubectl label pod nginx tier=backend -n k8s-learning',
+                                'kubectl get pod nginx --show-labels -n k8s-learning',
+                                'kubectl delete pod nginx -n k8s-learning',
+                                'kubectl get pods -n k8s-learning'
+                            ]
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Next Steps',
+                            'content': 'You are now ready to deploy real applications to Kubernetes! Continue to the Kubernetes scenarios to deploy production applications with auto-scaling, secrets management, and GitOps.'
+                        }
+                    ]
+                }
+            },
+            'Services': {
+                '1': {
+                    'title': 'What are Services?',
+                    'duration': '6 min',
+                    'sections': [
+                        {'type': 'intro', 'content': 'Services provide stable networking for Pods. They act as a load balancer and service discovery mechanism in Kubernetes.'},
+                        {'type': 'concept', 'title': 'Service Types', 'points': ['ClusterIP: Internal cluster communication', 'NodePort: Expose on each node port', 'LoadBalancer: Cloud provider integration', 'ExternalName: DNS CNAME record']},
+                        {'type': 'yaml', 'title': 'ClusterIP Service', 'code': 'apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: my-service\\nspec:\\n  type: ClusterIP\\n  selector:\\n    app: myapp\\n  ports:\\n  - port: 80\\n    targetPort: 8080'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Use ClusterIP for internal services and LoadBalancer for external access. NodePort is rarely used in production.'}
+                    ]
+                },
+                '2': {'title': 'ClusterIP Services', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'ClusterIP is the default Service type, providing internal cluster networking.'}]},
+                '3': {'title': 'NodePort & LoadBalancer', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'These Service types expose your application outside the cluster.'}]},
+                '4': {'title': 'Service Discovery', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Kubernetes provides DNS-based service discovery automatically.'}]},
+                '5': {'title': 'Production Networking', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Learn production patterns for networking, ingress, and service mesh.'}]}
+            },
+            'Deployments': {
+                '1': {
+                    'title': 'What are Deployments?',
+                    'duration': '6 min',
+                    'sections': [
+                        {'type': 'intro', 'content': 'Deployments manage ReplicaSets and provide declarative updates for Pods. They are the standard way to run applications in Kubernetes.'},
+                        {'type': 'concept', 'title': 'Key Features', 'points': ['Declarative updates', 'Rolling updates', 'Rollback capability', 'Scaling', 'Self-healing']},
+                        {'type': 'yaml', 'title': 'Basic Deployment', 'code': 'apiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: nginx-deployment\\nspec:\\n  replicas: 3\\n  selector:\\n    matchLabels:\\n      app: nginx\\n  template:\\n    metadata:\\n      labels:\\n        app: nginx\\n    spec:\\n      containers:\\n      - name: nginx\\n        image: nginx:1.21\\n        ports:\\n        - containerPort: 80'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Always use Deployments instead of creating Pods directly. Deployments provide built-in reliability and zero-downtime updates.'}
+                    ]
+                },
+                '2': {'title': 'Rolling Updates', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Rolling updates allow you to update applications with zero downtime.'}]},
+                '3': {'title': 'Scaling', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Scale your application horizontally with simple commands or autoscaling.'}]},
+                '4': {'title': 'Rollback', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Quickly rollback to previous versions when issues occur.'}]},
+                '5': {'title': 'Production Strategies', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Learn blue-green and canary deployment patterns.'}]}
+            },
+            'ConfigMaps': {
+                '1': {
+                    'title': 'What are ConfigMaps?',
+                    'duration': '5 min',
+                    'sections': [
+                        {'type': 'intro', 'content': 'ConfigMaps store non-sensitive configuration data as key-value pairs, making apps portable and environment-agnostic.'},
+                        {'type': 'concept', 'title': 'Use Cases', 'points': ['Application configuration', 'Command-line arguments', 'Environment variables', 'Configuration files']},
+                        {'type': 'yaml', 'title': 'ConfigMap Example', 'code': 'apiVersion: v1\\nkind: ConfigMap\\nmetadata:\\n  name: app-config\\ndata:\\n  DATABASE_HOST: postgres.default.svc\\n  DATABASE_PORT: "5432"\\n  LOG_LEVEL: info'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Use ConfigMaps for all non-sensitive config. Never put passwords or API keys in ConfigMaps - use Secrets instead.'}
+                    ]
+                },
+                '2': {'title': 'Using ConfigMaps', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Mount ConfigMaps as environment variables or volumes.'}]},
+                '3': {'title': 'Configuration Patterns', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Learn patterns for managing configuration across environments.'}]},
+                '4': {'title': 'Dynamic Updates', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Update configuration without restarting Pods.'}]},
+                '5': {'title': 'Production Config Management', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Manage configuration at scale with GitOps and automation.'}]}
+            },
+            'Secrets': {
+                '1': {
+                    'title': 'What are Secrets?',
+                    'duration': '6 min',
+                    'sections': [
+                        {'type': 'intro', 'content': 'Secrets store sensitive data like passwords, OAuth tokens, and SSH keys. They provide encryption and access control.'},
+                        {'type': 'concept', 'title': 'Secret Types', 'points': ['Opaque: arbitrary data', 'kubernetes.io/dockerconfigjson: Docker credentials', 'kubernetes.io/tls: TLS certificates', 'kubernetes.io/service-account-token: Service account tokens']},
+                        {'type': 'yaml', 'title': 'Secret Example', 'code': 'apiVersion: v1\\nkind: Secret\\nmetadata:\\n  name: db-secret\\ntype: Opaque\\nstringData:\\n  username: admin\\n  password: super-secret-password'},
+                        {'type': 'production', 'title': 'Security Warning', 'content': 'Secrets are base64 encoded, NOT encrypted at rest by default. Use encryption at rest and external secret managers (Vault, AWS Secrets Manager) for production.'}
+                    ]
+                },
+                '2': {'title': 'Using Secrets Securely', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Best practices for mounting and accessing secrets.'}]},
+                '3': {'title': 'Secret Rotation', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Rotate secrets without downtime.'}]},
+                '4': {'title': 'External Secret Managers', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Integrate with Vault, AWS Secrets Manager, Azure Key Vault.'}]},
+                '5': {'title': 'Production Security', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Complete security strategy for secrets management.'}]}
+            }
+            }
+
+            # Get lessons for the current concept
+            lesson_content = all_lessons.get(concept, {})
+            lesson_data = lesson_content.get(lesson_id, {})
+            self.wfile.write(json.dumps(lesson_data, indent=2).encode())
+        else:
+            # Serve the main HTML page
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s Commander - Interactive Kubernetes Masterclass</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }}
+        .container {{ max-width: 1400px; margin: 0 auto; padding: 20px; }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }}
+        .header h1 {{ font-size: 3em; margin-bottom: 10px; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }}
+        .header p {{ color: rgba(255, 255, 255, 0.9); font-size: 1.2em; }}
+
+        .nav-tabs {{
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }}
+        .tab-button {{
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }}
+        .tab-button:hover {{ background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }}
+        .tab-button.active {{ background: white; color: #667eea; font-weight: bold; }}
+
+        .tab-content {{ display: none; }}
+        .tab-content.active {{ display: block; }}
+
+        .dashboard {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }}
+        .card {{
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }}
+        .card:hover {{ transform: translateY(-5px); }}
+        .card h3 {{ margin-bottom: 15px; color: #667eea; }}
+
+        .lesson-module {{
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }}
+        .lesson-module:hover {{ background: #f8f9fa; transform: translateX(5px); }}
+        .lesson-module h4 {{ color: #333; margin-bottom: 5px; }}
+        .lesson-module p {{ color: #666; font-size: 0.9em; }}
+
+        .concept-card {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }}
+        .concept-card h2 {{ margin-bottom: 15px; }}
+
+        .production-pattern {{
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }}
+        .production-pattern h4 {{ color: #856404; margin-bottom: 10px; }}
+
+        .code-block {{
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }}
+
+        .btn {{
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }}
+        .btn:hover {{ background: #764ba2; transform: scale(1.05); }}
+
+        .progress-bar {{
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }}
+        .progress-fill {{
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }}
+
+        .level-badge {{
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.9em;
+        }}
+        .beginner {{ background: #4CAF50; }}
+        .intermediate {{ background: #FF9800; }}
+        .advanced {{ background: #F44336; }}
+
+        .status {{ color: #4CAF50; font-weight: bold; }}
+
+        .yaml-example {{
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }}
+
+        .kubectl-command {{
+            background: #2d2d2d;
+            color: #4CAF50;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 5px 0;
+        }}
+
+        .navigation-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }}
+
+        .nav-card {{
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }}
+        .nav-card:hover {{
+            border-color: #667eea;
+            transform: scale(1.05);
+        }}
+        .nav-card h3 {{ color: #667eea; margin-bottom: 10px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 K8s Commander Masterclass</h1>
+            <p>Interactive Kubernetes Learning - From Basics to Production</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">
+                <span class="level-badge {os.environ.get('LEARNING_LEVEL', 'Beginner').lower()}">{os.environ.get('LEARNING_LEVEL', 'Beginner')}</span>
+                <span style="margin: 0 10px;">•</span>
+                Current Concept: <strong>{os.environ.get('K8S_CONCEPT', 'Pods')}</strong>
+            </p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="tab-button" onclick="showTab('lessons')">📚 Lessons</button>
+            <button class="tab-button" onclick="showTab('production')">🏭 Production Patterns</button>
+            <button class="tab-button" onclick="showTab('labs')">🧪 Hands-on Labs</button>
+            <button class="tab-button" onclick="showTab('next')">🚀 Next Steps</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🎯 Current Focus</h3>
+                    <p><strong>Concept:</strong> {os.environ.get('K8S_CONCEPT', 'Pods')}</p>
+                    <p><strong>Level:</strong> <span class="level-badge {os.environ.get('LEARNING_LEVEL', 'Beginner').lower()}">{os.environ.get('LEARNING_LEVEL', 'Beginner')}</span></p>
+                    <p><strong>Namespace:</strong> {os.environ.get('NAMESPACE', 'k8s-learning')}</p>
+                    <p><strong>K8s Version:</strong> {os.environ.get('K8S_VERSION', '1.28')}</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="overallProgress" style="width: 0%"></div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Progress: <span id="progressText">0%</span></p>
+                </div>
+
+                <div class="card">
+                    <h3>🎮 Interactive Features</h3>
+                    <p><strong>Demo Mode:</strong> <span class="status" id="demoStatus">{'✅ Enabled' if os.environ.get('INTERACTIVE_DEMO', 'true') == 'true' else '⏸️  Disabled'}</span></p>
+                    <p><strong>Lab Mode:</strong> <span class="status" id="labStatus">{'✅ Enabled' if os.environ.get('HANDS_ON_LAB', 'true') == 'true' else '⏸️  Disabled'}</span></p>
+                    <p><strong>Production Examples:</strong> <span class="status">✅ Active</span></p>
+                    <p><strong>YAML Generator:</strong> <span class="status">✅ Ready</span></p>
+                </div>
+
+                <div class="card">
+                    <h3>📊 Learning Stats</h3>
+                    <p><strong>Modules Available:</strong> <span id="moduleCount">5</span></p>
+                    <p><strong>Estimated Time:</strong> <span id="totalTime">50 minutes</span></p>
+                    <p><strong>Completed:</strong> <span id="completedModules">0</span></p>
+                    <p><strong>Next:</strong> <span id="nextModule">What are Pods?</span></p>
+                </div>
+            </div>
+
+            <div class="concept-card">
+                <h2>🎯 What You'll Master Today</h2>
+                <p style="margin: 10px 0;">This interactive masterclass will take you from understanding basic {os.environ.get('K8S_CONCEPT', 'Pods')} to implementing production-ready patterns in real Kubernetes clusters.</p>
+                <ul style="list-style: none; padding-left: 0; margin-top: 15px;">
+                    <li style="padding: 8px 0;">✅ Core {os.environ.get('K8S_CONCEPT', 'Pods')} concepts and architecture</li>
+                    <li style="padding: 8px 0;">✅ Best practices from real-world deployments</li>
+                    <li style="padding: 8px 0;">✅ Production-ready YAML configurations</li>
+                    <li style="padding: 8px 0;">✅ Hands-on labs with real examples</li>
+                    <li style="padding: 8px 0;">✅ Bridge to full Kubernetes deployment</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Lessons Tab -->
+        <div id="lessons" class="tab-content">
+            <div class="card">
+                <h2>📚 Learning Modules</h2>
+                <div id="lessonsContainer">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Patterns Tab -->
+        <div id="production" class="tab-content">
+            <div class="card">
+                <h2>🏭 Production-Ready Patterns</h2>
+                <p style="margin-bottom: 20px;">Learn how these concepts are implemented in real production environments.</p>
+
+                <div class="production-pattern">
+                    <h4>⚡ Resource Limits & Requests</h4>
+                    <p>Always define resource limits to prevent runaway containers from impacting the cluster.</p>
+                    <div class="yaml-example">
+                        <pre style="margin: 0; overflow-x: auto;">resources:
+  requests:
+    memory: "64Mi"
+    cpu: "250m"
+  limits:
+    memory: "128Mi"
+    cpu: "500m"</pre>
+                    </div>
+                </div>
+
+                <div class="production-pattern">
+                    <h4>🔍 Health Checks & Probes</h4>
+                    <p>Implement liveness and readiness probes for automatic healing and zero-downtime deployments.</p>
+                    <div class="yaml-example">
+                        <pre style="margin: 0; overflow-x: auto;">livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5</pre>
+                    </div>
+                </div>
+
+                <div class="production-pattern">
+                    <h4>🛡️ Security Best Practices</h4>
+                    <p>Run containers as non-root and implement security contexts.</p>
+                    <div class="yaml-example">
+                        <pre style="margin: 0; overflow-x: auto;">securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL</pre>
+                    </div>
+                </div>
+
+                <div class="production-pattern">
+                    <h4>🔄 Rolling Updates & Rollbacks</h4>
+                    <p>Configure rolling update strategy for zero-downtime deployments.</p>
+                    <div class="yaml-example">
+                        <pre style="margin: 0; overflow-x: auto;">strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Labs Tab -->
+        <div id="labs" class="tab-content">
+            <div class="card">
+                <h2>🧪 Hands-on Labs</h2>
+                <p style="margin-bottom: 20px;">Practice with real kubectl commands and YAML files.</p>
+
+                <h3 style="margin: 20px 0;">Lab 1: Create Your First Pod</h3>
+                <div class="kubectl-command">$ kubectl apply -f k8s-demo/pod-demo.yaml</div>
+
+                <h3 style="margin: 20px 0;">Lab 2: Check Pod Status</h3>
+                <div class="kubectl-command">$ kubectl get pods -n {os.environ.get('NAMESPACE', 'k8s-learning')}</div>
+                <div class="kubectl-command">$ kubectl describe pod nginx-pod</div>
+
+                <h3 style="margin: 20px 0;">Lab 3: View Logs</h3>
+                <div class="kubectl-command">$ kubectl logs nginx-pod -n {os.environ.get('NAMESPACE', 'k8s-learning')}</div>
+
+                <h3 style="margin: 20px 0;">Lab 4: Execute Commands</h3>
+                <div class="kubectl-command">$ kubectl exec -it nginx-pod -- /bin/bash</div>
+
+                <button class="btn" onclick="downloadYAML()" style="margin-top: 20px;">📥 Download All Lab Files</button>
+            </div>
+        </div>
+
+        <!-- Next Steps Tab -->
+        <div id="next" class="tab-content">
+            <div class="card">
+                <h2>🚀 Ready for Production Kubernetes?</h2>
+                <p style="margin-bottom: 20px;">You've mastered the basics! Now it's time to deploy real applications to production Kubernetes clusters.</p>
+
+                <h3 style="margin: 20px 0; color: #667eea;">📦 Kubernetes Scenarios - Full Production Deployment</h3>
+                <p>Continue your journey with our comprehensive Kubernetes deployment scenarios:</p>
+
+                <div class="navigation-grid">
+                    <div class="nav-card">
+                        <h3>🐍 Scenario 1</h3>
+                        <p><strong>Python App Deployment</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Deploy FastAPI apps to K8s</p>
+                    </div>
+
+                    <div class="nav-card">
+                        <h3>🔐 Scenario 2</h3>
+                        <p><strong>Secret Automation</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Manage secrets securely</p>
+                    </div>
+
+                    <div class="nav-card">
+                        <h3>📈 Scenario 3</h3>
+                        <p><strong>Auto-Scaling</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Handle traffic spikes</p>
+                    </div>
+
+                    <div class="nav-card">
+                        <h3>🔵 Scenario 4</h3>
+                        <p><strong>Blue-Green Deploy</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Zero-downtime releases</p>
+                    </div>
+                </div>
+
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                    <h4 style="color: #1976d2; margin-bottom: 10px;">💡 Pro Tip</h4>
+                    <p>The Kubernetes scenarios directory contains production-ready examples that implement all the patterns you've learned here!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentProgress = 0;
+        let completedCount = 0;
+        let completedLessons = new Set();
+        let currentLesson = null;
+
+        function showTab(tabName) {{
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {{
+                tab.classList.remove('active');
+            }});
+            document.querySelectorAll('.tab-button').forEach(btn => {{
+                btn.classList.remove('active');
+            }});
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load lessons if lessons tab
+            if (tabName === 'lessons') {{
+                loadLessons();
+            }}
+        }}
+
+        function loadLessons() {{
+            fetch('/api/lessons')
+                .then(response => response.json())
+                .then(data => {{
+                    const container = document.getElementById('lessonsContainer');
+                    if (data.modules) {{
+                        container.innerHTML = '<h3 style="margin-bottom: 15px;">' + data.title + '</h3>';
+                        data.modules.forEach((module, index) => {{
+                            const moduleHtml = `
+                                <div class="lesson-module" onclick="startLesson(${{module.id}})">
+                                    <h4>${{index + 1}}. ${{module.name}}</h4>
+                                    <p>⏱️ ${{module.duration}} • <span style="color: #4CAF50;">✓ ${{module.status}}</span></p>
+                                </div>
+                            `;
+                            container.innerHTML += moduleHtml;
+                        }});
+                    }}
+                }});
+        }}
+
+        function startLesson(lessonId) {{
+            currentLesson = lessonId;
+            fetch('/api/lesson/' + lessonId)
+                .then(response => response.json())
+                .then(data => {{
+                    showLessonContent(data);
+                    // Mark as completed
+                    if (!completedLessons.has(lessonId)) {{
+                        completedLessons.add(lessonId);
+                        completedCount++;
+                        updateProgress();
+                    }}
+                }})
+                .catch(error => {{
+                    console.error('Error loading lesson:', error);
+                    alert('Error loading lesson content. Please try again.');
+                }});
+        }}
+
+        function showLessonContent(lesson) {{
+            const container = document.getElementById('lessonsContainer');
+            let html = `
+                <div class="lesson-viewer">
+                    <div class="lesson-header">
+                        <button onclick="backToLessonList()" class="btn" style="margin-bottom: 15px;">
+                            ← Back to Lessons
+                        </button>
+                        <h2>${{lesson.title}}</h2>
+                        <p style="color: #666;">⏱️ ${{lesson.duration}}</p>
+                    </div>
+                    <div class="lesson-content">
+            `;
+
+            lesson.sections.forEach((section, index) => {{
+                if (section.type === 'intro') {{
+                    html += `
+                        <div class="lesson-section intro-section">
+                            <p style="font-size: 1.1em; line-height: 1.6;">${{section.content}}</p>
+                        </div>
+                    `;
+                }} else if (section.type === 'concept') {{
+                    html += `
+                        <div class="lesson-section concept-section">
+                            <h3>${{section.title}}</h3>
+                            <ul style="list-style: none; padding-left: 0;">
+                                ${{section.points.map(point => `
+                                    <li style="padding: 10px; margin: 8px 0; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 4px;">
+                                        ${{point}}
+                                    </li>
+                                `).join('')}}
+                            </ul>
+                        </div>
+                    `;
+                }} else if (section.type === 'yaml') {{
+                    html += `
+                        <div class="lesson-section yaml-section">
+                            <h3>${{section.title}}</h3>
+                            <div class="code-block">
+                                <pre style="margin: 0;">${{section.code}}</pre>
+                            </div>
+                            <button onclick="copyCode(this)" class="btn" style="margin-top: 10px;">
+                                📋 Copy YAML
+                            </button>
+                        </div>
+                    `;
+                }} else if (section.type === 'command') {{
+                    html += `
+                        <div class="lesson-section command-section">
+                            <h3>${{section.title}}</h3>
+                            ${{section.commands.map(cmd => `
+                                <div class="kubectl-command" style="position: relative;">
+                                    <code>$ ${{cmd}}</code>
+                                    <button onclick="copyCommand('${{cmd}}')"
+                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                                                   background: #4CAF50; color: white; border: none; padding: 5px 10px;
+                                                   border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                                        Copy
+                                    </button>
+                                </div>
+                            `).join('')}}
+                        </div>
+                    `;
+                }} else if (section.type === 'production') {{
+                    html += `
+                        <div class="lesson-section production-section" style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                            <h3 style="color: #856404; margin-bottom: 10px;">💡 ${{section.title}}</h3>
+                            <p style="color: #856404;">${{section.content}}</p>
+                        </div>
+                    `;
+                }}
+            }});
+
+            html += `
+                    </div>
+                    <div class="lesson-navigation" style="margin-top: 30px; display: flex; justify-content: space-between;">
+                        <button onclick="previousLesson()" class="btn" id="prevBtn">
+                            ← Previous Lesson
+                        </button>
+                        <button onclick="nextLesson()" class="btn" id="nextBtn">
+                            Next Lesson →
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // Update navigation buttons
+            const lessonNum = parseInt(currentLesson);
+            document.getElementById('prevBtn').disabled = lessonNum === 1;
+            document.getElementById('nextBtn').disabled = lessonNum === 5;
+        }}
+
+        function backToLessonList() {{
+            loadLessons();
+            currentLesson = null;
+        }}
+
+        function previousLesson() {{
+            if (currentLesson && parseInt(currentLesson) > 1) {{
+                startLesson((parseInt(currentLesson) - 1).toString());
+            }}
+        }}
+
+        function nextLesson() {{
+            if (currentLesson && parseInt(currentLesson) < 5) {{
+                startLesson((parseInt(currentLesson) + 1).toString());
+            }}
+        }}
+
+        function copyCode(button) {{
+            const codeBlock = button.previousElementSibling.querySelector('pre');
+            const code = codeBlock.textContent;
+            navigator.clipboard.writeText(code).then(() => {{
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {{
+                    button.textContent = '📋 Copy YAML';
+                }}, 2000);
+            }});
+        }}
+
+        function copyCommand(command) {{
+            navigator.clipboard.writeText(command).then(() => {{
+                // Visual feedback handled by button
+            }});
+        }}
+
+        function updateProgress() {{
+            currentProgress = (completedCount / 5) * 100;
+            document.getElementById('overallProgress').style.width = currentProgress + '%';
+            document.getElementById('progressText').textContent = Math.round(currentProgress) + '%';
+            document.getElementById('completedModules').textContent = completedCount;
+        }}
+
+        function downloadYAML() {{
+            alert('In production, this would download YAML files from k8s-demo/ directory');
+        }}
+
+        // Update time and stats
+        function updateTime() {{
+            const now = new Date();
+            // Update any time-based elements
+        }}
+
+        function updateStats() {{
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {{
+                    // Update stats based on API data
+                }});
+        }}
+
+        // Initialize UI based on parameters
+        function initializeUI() {{
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(config => {{
+                    // Hide Labs tab if hands_on_lab is false
+                    if (config.hands_on_lab === 'false') {{
+                        const labsTab = document.querySelector('button[onclick*="labs"]');
+                        const labsContent = document.getElementById('labs');
+                        if (labsTab) labsTab.style.display = 'none';
+                        if (labsContent) labsContent.style.display = 'none';
+                    }}
+
+                    // Show notice if interactive_demo is false
+                    if (config.interactive_demo === 'false') {{
+                        const overview = document.getElementById('overview');
+                        const notice = document.createElement('div');
+                        notice.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px;';
+                        notice.innerHTML = '<strong>ℹ️ Note:</strong> Interactive demonstrations are disabled. Enable INTERACTIVE_DEMO parameter for full interactivity.';
+                        overview.insertBefore(notice, overview.firstChild);
+                    }}
+                }})
+                .catch(error => console.error('Error initializing UI:', error));
+        }}
+
+        setInterval(updateTime, 1000);
+        setInterval(updateStats, 5000);
+
+        // Initialize
+        initializeUI();
+        updateTime();
+        updateStats();
+    </script>
+</body>
+</html>
+"""
+            self.wfile.write(html_content.encode())
+    
+    def log_message(self, format, *args):
+        # Suppress default logging
+        pass
+
+# Start the server
+start_time = time.time()
+server = HTTPServer(('0.0.0.0', int(os.environ.get('EXPOSE_PORT', '8080'))), K8sCommanderHandler)
+print(f"K8s Commander server starting on port {os.environ.get('EXPOSE_PORT', '8080')}")
+server.serve_forever()
+PYEOF
+
+# Set environment variables (will be passed at runtime)
+ENV K8S_CONCEPT=Pods
+ENV LEARNING_LEVEL=Beginner
+ENV NAMESPACE=k8s-learning
+ENV K8S_VERSION=1.28
+ENV INTERACTIVE_DEMO=true
+ENV HANDS_ON_LAB=true
+ENV EXPOSE_PORT=8080
+
+# Expose port (ALWAYS 8080 inside container)
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:8080/api/status || exit 1
+
+# Run the application
+CMD ["python3", "app.py"]
+EOF
+                        
+                        echo "║     ✅ Dockerfile created"
+                        
+                        # Build Docker image
+                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
+                        echo "║  🏗️  Building image: $IMAGE_NAME"
+                        docker build -t $IMAGE_NAME .
+                        
+                        echo "║     ✅ Docker image built successfully"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('🚀 K8s Commander Deployment') {
+            steps {
+                script {
+                    echo "🚀 Deploying K8s Commander application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🚀 K8S COMMANDER DEPLOYMENT                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                        sh '''
+                        # Clean up any existing k8s-commander containers first
+                        echo "║  🧹 Cleaning up existing containers..."
+                        docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                        docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+
+                        # Wait a moment for cleanup to complete
+                        sleep 2
+
+                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
+                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
+
+                        # Retry loop to handle TOCTTOU (Time-Of-Check-Time-Of-Use) race conditions
+                        echo "║  🔄 Starting deployment with retry logic..."
+                        EXTERNAL_PORT=8081
+                        MAX_PORT_ATTEMPTS=50
+                        PORT_ATTEMPT=0
+                        DEPLOY_SUCCESS=false
+
+                        while [ $PORT_ATTEMPT -lt $MAX_PORT_ATTEMPTS ] && [ "$DEPLOY_SUCCESS" = false ]; do
+                            # Check if port is available
+                            PORT_IN_USE=false
+
+                            # Check netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$EXTERNAL_PORT "; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check lsof
+                            if lsof -i :$EXTERNAL_PORT 2>/dev/null | grep -q LISTEN; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check Docker containers
+                            if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$EXTERNAL_PORT->"; then
+                                PORT_IN_USE=true
+                            fi
+
+                            if [ "$PORT_IN_USE" = true ]; then
+                                echo "║     • Port $EXTERNAL_PORT in use, skipping..."
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
+                                continue
+                            fi
+
+                            # Port appears available, try to start container immediately
+                            echo "║     • Attempting deployment on port $EXTERNAL_PORT (attempt $((PORT_ATTEMPT + 1)))..."
+
+                            if docker run -d \\
+                                --name $CONTAINER_NAME \\
+                                -p $EXTERNAL_PORT:8080 \\
+                                -e K8S_CONCEPT="${K8S_CONCEPT}" \\
+                                -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
+                                -e NAMESPACE="${NAMESPACE}" \\
+                                -e K8S_VERSION="${K8S_VERSION}" \\
+                                -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
+                                -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
+                                -e EXPOSE_PORT=8080 \\
+                                $IMAGE_NAME > /dev/null 2>&1; then
+
+                                # Container started successfully
+                                echo "║     ✅ Container started on port $EXTERNAL_PORT"
+                                DEPLOY_SUCCESS=true
+                                break
+                            else
+                                # Container failed to start (likely port conflict race condition)
+                                echo "║     ⚠️  Port $EXTERNAL_PORT taken during deployment, trying next..."
+
+                                # Clean up failed container attempt
+                                docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
+                                # Try next port
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
+                            fi
+                        done
+
+                        # Check if deployment succeeded
+                        if [ "$DEPLOY_SUCCESS" = false ]; then
+                            echo "║     ❌ Failed to deploy after $PORT_ATTEMPT attempts"
+                            echo "║     • Tried ports 8081-$EXTERNAL_PORT"
+                            echo "║     • All ports were in use or conflicts occurred"
+                            exit 1
+                        fi
+
+                        # Wait for container to fully start
+                        echo "║     • Waiting for container to fully start..."
+                        sleep 3
+
+                        # Verify container is actually running
+                        if docker ps | grep -q $CONTAINER_NAME; then
+                            echo "║     ✅ Container deployed: $CONTAINER_NAME"
+                            echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
+                            echo "║     ✅ Port mapping: $EXTERNAL_PORT:8080"
+
+                            # Save port for monitoring stage
+                            echo $EXTERNAL_PORT > webapp.port
+                        else
+                            echo "║     ❌ Container failed to start properly"
+                            echo "║     • Container logs:"
+                            docker logs $CONTAINER_NAME 2>&1 || true
+                            exit 1
+                        fi
+
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+        
+        stage('📊 K8s Commander Monitoring') {
+            steps {
+                script {
+                    echo "📊 Monitoring K8s Commander application..."
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    📊 K8S COMMANDER MONITORING                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                    sh '''
+                        # Find the running container
+                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
+                        
+                        # Check if container is running and get its port
+                        if docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
+                            # Get the port from the running container
+                            WEBAPP_PORT=$(docker port $CONTAINER_NAME | head -1 | cut -d: -f2)
+                            echo "║  ✅ Found running container on port: $WEBAPP_PORT"
+                        else
+                            echo "║  ❌ Container $CONTAINER_NAME is not running"
+                            exit 1
+                        fi
+                        
+                        echo "║  🔍 Checking application health..."
+                        
+                        # Test API endpoints
+                        if curl -s http://localhost:$WEBAPP_PORT/api/status > /dev/null 2>&1; then
+                            echo "║     ✅ API Status: Healthy"
+                            
+                            # Get status data
+                            STATUS_DATA=$(curl -s http://localhost:$WEBAPP_PORT/api/status)
+                            echo "║     📊 Status Data:"
+                            echo "$STATUS_DATA" | jq -r 'to_entries[] | "║        • " + .key + ": " + (.value | tostring)' 2>/dev/null || echo "║        • Raw: $STATUS_DATA"
+                        else
+                            echo "║     ❌ API Status: Unhealthy"
+                        fi
+                        
+                        if curl -s http://localhost:$WEBAPP_PORT/api/concept > /dev/null 2>&1; then
+                            echo "║     ✅ Concept API: Working"
+                        else
+                            echo "║     ❌ Concept API: Failed"
+                        fi
+                        
+                        if curl -s http://localhost:$WEBAPP_PORT/api/learning-path > /dev/null 2>&1; then
+                            echo "║     ✅ Learning Path API: Working"
+                        else
+                            echo "║     ❌ Learning Path API: Failed"
+                        fi
+                        
+                        echo "║"
+                        echo "║  🌐 Access Information:"
+                        echo "║     • Main App: http://localhost:$WEBAPP_PORT"
+                        echo "║     • API Status: http://localhost:$WEBAPP_PORT/api/status"
+                        echo "║     • Concept Info: http://localhost:$WEBAPP_PORT/api/concept"
+                        echo "║     • Learning Path: http://localhost:$WEBAPP_PORT/api/learning-path"
+                        echo "║"
+                        echo "║  🎯 Learning Resources:"
+                        echo "║     • YAML Files: k8s-demo/ directory"
+                        echo "║     • Lab Exercises: k8s-lab/ directory"
+                        echo "║     • Interactive Demo: Web application above"
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo ""
+                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                echo "║                    🎉 K8S COMMANDER COMPLETED!                               ║"
+                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                echo "║  🎯 Learning Journey Summary:"
+                echo "║     • Concept Explored: ${params.K8S_CONCEPT}"
+                echo "║     • Learning Level: ${params.LEARNING_LEVEL}"
+                echo "║     • Namespace: ${params.NAMESPACE}"
+                echo "║     • K8s Version: ${params.K8S_VERSION}"
+                echo "║     • Interactive Demo: ${params.INTERACTIVE_DEMO}"
+                echo "║     • Hands-on Lab: ${params.HANDS_ON_LAB}"
+                echo "║"
+                echo "║  🌐 Application Access:"
+                echo "║     • Web Application: Available during pipeline execution"
+                echo "║     • API Endpoints: Status, Concept, Learning Path"
+                echo "║     • YAML Resources: k8s-demo/ directory"
+                echo "║     • Lab Materials: k8s-lab/ directory"
+                echo "║"
+                echo "║  🚀 Ready for Next Level:"
+                echo "║     • Scenario 5: Jenkins CI/CD Mastery"
+                echo "║     • Advanced Jenkins features"
+                echo "║     • Production-ready CI/CD patterns"
+                echo "║     • Then: Full Kubernetes deployment"
+                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+            }
+        }
+        success {
+            script {
+                echo "🎉 K8s Commander learning journey completed successfully!"
+                echo "🏆 You've mastered ${params.K8S_CONCEPT} concepts through Jenkins!"
+            }
+        }
+        failure {
+            script {
+                echo "❌ K8s Commander encountered issues, but learning continues!"
+                echo "🔄 Retry the pipeline to continue your journey."
+                
+                // Clean up on failure
+                sh '''
+                    echo "🧹 Cleaning up after failure..."
+                    docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                    docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+                    if [ -f "cleanup.py" ]; then
+                        python3 cleanup.py > /dev/null 2>&1 || true
+                    fi
+                '''
+            }
+        }
+    }
+}

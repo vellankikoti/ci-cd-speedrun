@@ -1,0 +1,675 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '10'))
+    }
+
+    parameters {
+        choice(
+            name: 'DEPLOYMENT_STRATEGY',
+            choices: ['Blue-Green', 'Canary', 'Rolling', 'Recreate'],
+            description: '🎯 Deployment Strategy to Learn'
+        )
+        choice(
+            name: 'APP_COMPLEXITY',
+            choices: ['Simple', 'Advanced', 'Production'],
+            description: '📊 Application Complexity Level'
+        )
+        string(
+            name: 'INITIAL_VERSION',
+            defaultValue: '1.0.0',
+            description: '📦 Starting Application Version'
+        )
+        booleanParam(
+            name: 'REQUIRE_APPROVAL',
+            defaultValue: false,
+            description: '✋ Require manual approval before deployment (recommended for Production)'
+        )
+        string(
+            name: 'APPROVER_EMAIL',
+            defaultValue: 'devops@company.com',
+            description: '📧 Email address for deployment notifications'
+        )
+    }
+
+    environment {
+        WORKSPACE_DIR = "${WORKSPACE}"
+        BUILD_NUM = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('🎯 Initialize') {
+            steps {
+                script {
+                    echo "╔═══════════════════════════════════════════════════════════════════════╗"
+                    echo "║    🎯 CI/CD MASTERY - LIVE DEPLOYMENT SIMULATOR                      ║"
+                    echo "╠═══════════════════════════════════════════════════════════════════════╣"
+                    echo "║  Strategy: ${params.DEPLOYMENT_STRATEGY}"
+                    echo "║  Complexity: ${params.APP_COMPLEXITY}"
+                    echo "║  Version: ${params.INITIAL_VERSION}"
+                    echo "║  Build: #${BUILD_NUMBER}"
+                    echo "╚═══════════════════════════════════════════════════════════════════════╝"
+                }
+                checkout scm
+            }
+        }
+
+        stage('🏗️ Build Application') {
+            steps {
+                script {
+                    echo "║"
+                    echo "║  📦 Preparing live CI/CD simulator..."
+                    echo "║"
+
+                    // Copy app.py from the repo
+                    sh '''#!/bin/bash
+                        cd Jenkins/jenkins-scenarios/scenario_05_ci_cd_mastery
+
+                        if [ ! -f app.py ]; then
+                            echo "❌ Error: app.py not found!"
+                            exit 1
+                        fi
+
+                        # Copy to workspace root for Docker build
+                        cp app.py ${WORKSPACE}/
+                        chmod +x ${WORKSPACE}/app.py
+
+                        echo "║     ✅ Application ready"
+                    '''
+
+                    // Create Dockerfile
+                    writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir flask flask-cors
+
+COPY app.py .
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \\
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')" || exit 1
+
+CMD ["python3", "app.py"]
+'''
+
+                    echo "║     ✅ Dockerfile created"
+
+                    // Create deployment metadata
+                    sh '''#!/bin/bash
+                        mkdir -p deployment-artifacts
+                        cat > deployment-artifacts/metadata.json << EOF
+{
+  "build_number": "${BUILD_NUMBER}",
+  "deployment_strategy": "${DEPLOYMENT_STRATEGY}",
+  "app_complexity": "${APP_COMPLEXITY}",
+  "version": "${INITIAL_VERSION}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "git_commit": "${GIT_COMMIT:-unknown}",
+  "git_branch": "${GIT_BRANCH:-unknown}",
+  "jenkins_url": "${BUILD_URL}",
+  "triggered_by": "${BUILD_USER:-system}"
+}
+EOF
+                        echo "║     ✅ Deployment metadata created"
+                    '''
+                }
+            }
+        }
+
+        stage('✋ Approval Gate') {
+            when {
+                expression { params.REQUIRE_APPROVAL == true }
+            }
+            steps {
+                script {
+                    echo ""
+                    echo "╔═══════════════════════════════════════════════════════════════════════╗"
+                    echo "║             ✋ MANUAL APPROVAL REQUIRED                               ║"
+                    echo "╠═══════════════════════════════════════════════════════════════════════╣"
+                    echo "║  Strategy: ${params.DEPLOYMENT_STRATEGY}"
+                    echo "║  Complexity: ${params.APP_COMPLEXITY}"
+                    echo "║  Version: ${params.INITIAL_VERSION}"
+                    echo "║  Build: #${BUILD_NUMBER}"
+                    echo "║"
+                    echo "║  ⏸️  Waiting for approval..."
+                    echo "║  📧 Notification sent to: ${params.APPROVER_EMAIL}"
+                    echo "╚═══════════════════════════════════════════════════════════════════════╝"
+
+                    def deploymentInfo = """
+Deployment Details:
+• Strategy: ${params.DEPLOYMENT_STRATEGY}
+• Complexity: ${params.APP_COMPLEXITY}
+• Version: ${params.INITIAL_VERSION}
+• Build: #${BUILD_NUMBER}
+• Time: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
+
+Please review and approve to continue.
+                    """
+
+                    try {
+                        timeout(time: 15, unit: 'MINUTES') {
+                            input(
+                                message: 'Approve deployment to Production?',
+                                ok: 'Deploy',
+                                submitter: 'admin,devops',
+                                parameters: [
+                                    choice(
+                                        name: 'APPROVAL_ACTION',
+                                        choices: ['Approve and Deploy', 'Reject'],
+                                        description: 'Approve or reject this deployment'
+                                    ),
+                                    text(
+                                        name: 'APPROVAL_NOTES',
+                                        defaultValue: '',
+                                        description: 'Optional: Add approval notes or comments'
+                                    )
+                                ]
+                            )
+                        }
+
+                        sh '''#!/bin/bash
+                            cat > deployment-artifacts/approval.txt << EOF
+DEPLOYMENT APPROVED
+===================
+Approved at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Build: ${BUILD_NUMBER}
+Strategy: ${DEPLOYMENT_STRATEGY}
+Version: ${INITIAL_VERSION}
+EOF
+                        '''
+
+                        echo ""
+                        echo "✅ Deployment approved! Proceeding..."
+                    } catch (err) {
+                        sh '''#!/bin/bash
+                            cat > deployment-artifacts/approval.txt << EOF
+DEPLOYMENT REJECTED
+===================
+Rejected at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Build: ${BUILD_NUMBER}
+Reason: ${err.message}
+EOF
+                        '''
+                        error("Deployment rejected or timed out: ${err.message}")
+                    }
+                }
+            }
+        }
+
+        stage('🐳 Build & Deploy') {
+            steps {
+                script {
+                    echo "║"
+                    echo "║  🐳 Building and deploying live simulator..."
+                    echo "║"
+
+                    sh '''#!/bin/bash
+                        set -e
+
+                        # Cleanup
+                        echo "║  🧹 Cleaning up old containers..."
+                        docker ps -a --filter "name=cicd-live" --format "{{.Names}}" | xargs -r docker rm -f || true
+                        sleep 2
+
+                        # Build
+                        IMAGE_NAME="cicd-live-${BUILD_NUMBER}"
+                        echo "║  🔨 Building image: $IMAGE_NAME"
+                        docker build -t $IMAGE_NAME .
+                        echo "║     ✅ Image built"
+
+                        # Find port and deploy
+                        echo "║  🔍 Finding available port..."
+                        EXTERNAL_PORT=8081
+                        MAX_ATTEMPTS=50
+                        ATTEMPT=0
+                        DEPLOY_SUCCESS=false
+
+                        while [ $ATTEMPT -lt $MAX_ATTEMPTS ] && [ "$DEPLOY_SUCCESS" = "false" ]; do
+                            PORT_IN_USE=false
+
+                            if netstat -tuln 2>/dev/null | grep -q ":$EXTERNAL_PORT " || \\
+                               lsof -i :$EXTERNAL_PORT 2>/dev/null | grep -q LISTEN || \\
+                               docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$EXTERNAL_PORT->"; then
+                                PORT_IN_USE=true
+                            fi
+
+                            if [ "$PORT_IN_USE" = "true" ]; then
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                ATTEMPT=$((ATTEMPT + 1))
+                                continue
+                            fi
+
+                            # Deploy
+                            CONTAINER_NAME="cicd-live-${BUILD_NUMBER}"
+                            docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
+                            if docker run -d \\
+                                --name $CONTAINER_NAME \\
+                                -p $EXTERNAL_PORT:8080 \\
+                                -e DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY}" \\
+                                -e APP_COMPLEXITY="${APP_COMPLEXITY}" \\
+                                -e INITIAL_VERSION="${INITIAL_VERSION}" \\
+                                -e BUILD_NUMBER="${BUILD_NUMBER}" \\
+                                $IMAGE_NAME 2>&1; then
+
+                                echo "║     ✅ Deployed on port $EXTERNAL_PORT"
+                                DEPLOY_SUCCESS=true
+                                echo $EXTERNAL_PORT > webapp.port
+                                break
+                            else
+                                echo "║     ⚠️  Port $EXTERNAL_PORT failed, trying next port..."
+                                docker rm -f $CONTAINER_NAME 2>/dev/null || true
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                ATTEMPT=$((ATTEMPT + 1))
+                            fi
+                        done
+
+                        if [ "$DEPLOY_SUCCESS" = "false" ]; then
+                            echo "║     ❌ Deployment failed after $MAX_ATTEMPTS attempts"
+                            exit 1
+                        fi
+
+                        # Health check
+                        echo "║  ⏳ Waiting for application to be ready..."
+                        sleep 5
+                        MAX_CHECKS=30
+                        CHECK=0
+                        while [ $CHECK -lt $MAX_CHECKS ]; do
+                            if curl -f http://localhost:$EXTERNAL_PORT/api/health > /dev/null 2>&1; then
+                                echo "║     ✅ Application healthy and ready!"
+                                break
+                            fi
+                            sleep 1
+                            CHECK=$((CHECK + 1))
+                        done
+
+                        echo "║"
+                        echo "║  🎉 Live simulator deployed successfully!"
+                        echo "║"
+                        echo "║  🌐 Access your LIVE CI/CD simulator at:"
+                        echo "║     👉 http://localhost:$EXTERNAL_PORT"
+                        echo "║"
+                        echo "║  🎮 Try these actions:"
+                        echo "║     • Click 'Deploy' to trigger ${DEPLOYMENT_STRATEGY} deployment"
+                        echo "║     • Watch live traffic switching in real-time"
+                        echo "║     • Click 'Rollback' to see instant rollback"
+                        echo "║     • Click 'Simulate Failure' to test failure scenarios"
+                        echo "║     • Watch metrics update live (requests, health, traffic)"
+                        echo "║"
+
+                        # Save deployment report
+                        cat > deployment-artifacts/deployment-report.txt << EOF
+╔═══════════════════════════════════════════════════════════════════════╗
+║                   DEPLOYMENT REPORT                                   ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║  Build: #${BUILD_NUMBER}
+║  Strategy: ${DEPLOYMENT_STRATEGY}
+║  Complexity: ${APP_COMPLEXITY}
+║  Version: ${INITIAL_VERSION}
+║  Port: $EXTERNAL_PORT
+║  Container: $CONTAINER_NAME
+║  Image: $IMAGE_NAME
+║  Status: SUCCESS ✅
+║  Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+║
+║  🌐 Access URL: http://localhost:$EXTERNAL_PORT
+║  📊 Health Check: http://localhost:$EXTERNAL_PORT/api/health
+║  📈 Metrics: http://localhost:$EXTERNAL_PORT/api/state
+╚═══════════════════════════════════════════════════════════════════════╝
+EOF
+
+                        # Create deployment summary HTML
+                        cat > deployment-artifacts/deployment-summary.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Deployment Report - Build #${BUILD_NUMBER}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .success { color: #27ae60; font-weight: bold; }
+        .info { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .metric { display: inline-block; margin: 10px 20px 10px 0; }
+        .metric-label { font-weight: bold; color: #7f8c8d; }
+        .metric-value { color: #2c3e50; font-size: 1.1em; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Deployment Report</h1>
+        <p class="success">✅ Deployment Successful</p>
+
+        <div class="info">
+            <h3>Build Information</h3>
+            <div class="metric"><span class="metric-label">Build:</span> <span class="metric-value">#${BUILD_NUMBER}</span></div>
+            <div class="metric"><span class="metric-label">Strategy:</span> <span class="metric-value">${DEPLOYMENT_STRATEGY}</span></div>
+            <div class="metric"><span class="metric-label">Complexity:</span> <span class="metric-value">${APP_COMPLEXITY}</span></div>
+            <div class="metric"><span class="metric-label">Version:</span> <span class="metric-value">${INITIAL_VERSION}</span></div>
+            <div class="metric"><span class="metric-label">Timestamp:</span> <span class="metric-value">$(date)</span></div>
+        </div>
+
+        <div class="info">
+            <h3>Deployment Details</h3>
+            <div class="metric"><span class="metric-label">Container:</span> <span class="metric-value">$CONTAINER_NAME</span></div>
+            <div class="metric"><span class="metric-label">Image:</span> <span class="metric-value">$IMAGE_NAME</span></div>
+            <div class="metric"><span class="metric-label">Port:</span> <span class="metric-value">$EXTERNAL_PORT</span></div>
+        </div>
+
+        <div class="info">
+            <h3>Access URLs</h3>
+            <p>🌐 <strong>Application:</strong> <a href="http://localhost:$EXTERNAL_PORT">http://localhost:$EXTERNAL_PORT</a></p>
+            <p>📊 <strong>Health:</strong> <a href="http://localhost:$EXTERNAL_PORT/api/health">http://localhost:$EXTERNAL_PORT/api/health</a></p>
+            <p>📈 <strong>Metrics:</strong> <a href="http://localhost:$EXTERNAL_PORT/api/state">http://localhost:$EXTERNAL_PORT/api/state</a></p>
+        </div>
+
+        <div class="info">
+            <h3>🎮 Quick Actions</h3>
+            <ul>
+                <li>Click 'Deploy' to trigger ${DEPLOYMENT_STRATEGY} deployment</li>
+                <li>Watch live traffic switching in real-time</li>
+                <li>Click 'Rollback' to see instant rollback</li>
+                <li>Click 'Simulate Failure' to test failure scenarios</li>
+                <li>Monitor live metrics and health status</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+HTMLEOF
+
+                        echo "║     ✅ Deployment artifacts created"
+                    '''
+                }
+            }
+        }
+
+        stage('📦 Archive Artifacts') {
+            steps {
+                script {
+                    echo ""
+                    echo "╔═══════════════════════════════════════════════════════════════════════╗"
+                    echo "║             📦 ARCHIVING DEPLOYMENT ARTIFACTS                         ║"
+                    echo "╠═══════════════════════════════════════════════════════════════════════╣"
+
+                    // Archive deployment artifacts
+                    archiveArtifacts artifacts: 'deployment-artifacts/**/*',
+                                   allowEmptyArchive: false,
+                                   fingerprint: true,
+                                   onlyIfSuccessful: true
+
+                    // Archive Dockerfile
+                    archiveArtifacts artifacts: 'Dockerfile',
+                                   allowEmptyArchive: false,
+                                   fingerprint: true
+
+                    // Archive app.py
+                    archiveArtifacts artifacts: 'app.py',
+                                   allowEmptyArchive: false,
+                                   fingerprint: true
+
+                    echo "║  ✅ Artifacts archived successfully"
+                    echo "║     • Deployment metadata (metadata.json)"
+                    echo "║     • Deployment report (deployment-report.txt)"
+                    echo "║     • HTML summary (deployment-summary.html)"
+                    if (params.REQUIRE_APPROVAL) {
+                        echo "║     • Approval record (approval.txt)"
+                    }
+                    echo "║     • Application files (app.py, Dockerfile)"
+                    echo "║"
+                    echo "║  📊 View artifacts in Jenkins UI under 'Build Artifacts'"
+                    echo "╚═══════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo ""
+                echo "╔═══════════════════════════════════════════════════════════════════════╗"
+                echo "║                   🎓 BUILD COMPLETE                                   ║"
+                echo "╠═══════════════════════════════════════════════════════════════════════╣"
+                echo "║  Strategy: ${params.DEPLOYMENT_STRATEGY}"
+                echo "║  Build: #${BUILD_NUMBER}"
+                echo "║"
+                echo "║  🚀 What you can do:"
+                echo "║     ✓ Trigger live deployments with different versions"
+                echo "║     ✓ Watch real-time traffic switching"
+                echo "║     ✓ Experience instant rollbacks"
+                echo "║     ✓ Simulate failures and recoveries"
+                echo "║     ✓ Monitor live metrics and health status"
+                echo "║     ✓ See deployment logs in real-time"
+                echo "║"
+                echo "║  💡 This is a LIVE simulator - everything you see updates in real-time!"
+                echo "║  🎯 Perfect for understanding production CI/CD patterns interactively!"
+                echo "╚═══════════════════════════════════════════════════════════════════════╝"
+
+                // Generate email notification body
+                def buildStatus = currentBuild.result ?: 'SUCCESS'
+                def deploymentUrl = "http://localhost:${sh(script: 'cat webapp.port 2>/dev/null || echo "8081"', returnStdout: true).trim()}"
+
+                sh """#!/bin/bash
+                    cat > deployment-artifacts/email-notification.html << 'EMAILEOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .section { background: white; margin: 15px 0; padding: 15px; border-left: 4px solid #667eea; }
+        .success { color: #27ae60; font-weight: bold; }
+        .pending { color: #f39c12; font-weight: bold; }
+        .failed { color: #e74c3c; font-weight: bold; }
+        .metric { display: inline-block; margin: 5px 15px 5px 0; }
+        .label { font-weight: bold; color: #666; }
+        .value { color: #333; }
+        a { color: #667eea; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .footer { text-align: center; padding: 15px; color: #999; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 CI/CD Deployment Notification</h1>
+        <p>Build #${BUILD_NUMBER} - ${DEPLOYMENT_STRATEGY} Strategy</p>
+    </div>
+
+    <div class="content">
+        <div class="section">
+            <h2>📊 Deployment Status: <span class="success">SUCCESS ✅</span></h2>
+            <p>Your deployment has completed successfully!</p>
+        </div>
+
+        <div class="section">
+            <h3>🎯 Build Information</h3>
+            <div class="metric"><span class="label">Build Number:</span> <span class="value">#${BUILD_NUMBER}</span></div><br>
+            <div class="metric"><span class="label">Strategy:</span> <span class="value">${DEPLOYMENT_STRATEGY}</span></div><br>
+            <div class="metric"><span class="label">Complexity:</span> <span class="value">${APP_COMPLEXITY}</span></div><br>
+            <div class="metric"><span class="label">Version:</span> <span class="value">${INITIAL_VERSION}</span></div><br>
+            <div class="metric"><span class="label">Timestamp:</span> <span class="value">\$(date)</span></div>
+        </div>
+
+        <div class="section">
+            <h3>🌐 Access Information</h3>
+            <p>🔗 <strong>Application URL:</strong> <a href="${deploymentUrl}">${deploymentUrl}</a></p>
+            <p>📊 <strong>Health Check:</strong> <a href="${deploymentUrl}/api/health">${deploymentUrl}/api/health</a></p>
+            <p>📈 <strong>Metrics API:</strong> <a href="${deploymentUrl}/api/state">${deploymentUrl}/api/state</a></p>
+            <p>🔧 <strong>Jenkins Build:</strong> <a href="${BUILD_URL}">${BUILD_URL}</a></p>
+        </div>
+
+        <div class="section">
+            <h3>🎮 Available Actions</h3>
+            <ul>
+                <li>Click 'Deploy' to trigger ${DEPLOYMENT_STRATEGY} deployment</li>
+                <li>Watch live traffic switching in real-time</li>
+                <li>Click 'Rollback' to see instant rollback mechanism</li>
+                <li>Click 'Simulate Failure' to test failure scenarios</li>
+                <li>Monitor live metrics and health status updates</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>📦 Artifacts Available</h3>
+            <p>Download deployment artifacts from: <a href="${BUILD_URL}artifact/">${BUILD_URL}artifact/</a></p>
+            <ul>
+                <li>Deployment metadata (JSON)</li>
+                <li>Deployment report (TXT)</li>
+                <li>HTML summary</li>
+                <li>Application files (Dockerfile, app.py)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated notification from Jenkins CI/CD Mastery pipeline.</p>
+        <p>For questions or issues, contact the DevOps team.</p>
+    </div>
+</body>
+</html>
+EMAILEOF
+                """
+
+                echo ""
+                echo "║  📧 Email notification prepared"
+                echo "║     Recipient: ${params.APPROVER_EMAIL}"
+                echo "║     Status: ${buildStatus}"
+            }
+        }
+        success {
+            script {
+                echo ""
+                echo "📧 Sending SUCCESS notification to ${params.APPROVER_EMAIL}"
+
+                // Email notification for successful deployment
+                emailext(
+                    subject: "✅ SUCCESS: Deployment #${BUILD_NUMBER} - ${params.DEPLOYMENT_STRATEGY} Strategy",
+                    body: '''
+╔═══════════════════════════════════════════════════════════════════════╗
+║                 🎉 DEPLOYMENT SUCCESSFUL                              ║
+╠═══════════════════════════════════════════════════════════════════════╣
+
+Build Information:
+• Build Number: #${BUILD_NUMBER}
+• Strategy: ${DEPLOYMENT_STRATEGY}
+• Complexity: ${APP_COMPLEXITY}
+• Version: ${INITIAL_VERSION}
+• Duration: ${BUILD_DURATION}
+• Status: SUCCESS ✅
+
+Deployment Details:
+• Timestamp: ${BUILD_TIMESTAMP}
+• Jenkins URL: ${BUILD_URL}
+• Artifacts: ${BUILD_URL}artifact/
+
+Access Your Application:
+🌐 Check the build artifacts for the deployment URL
+📊 Health Check: Available at /api/health endpoint
+📈 Metrics: Available at /api/state endpoint
+
+Quick Actions:
+• Click 'Deploy' to trigger live deployment
+• Watch real-time traffic switching
+• Test instant rollback capability
+• Simulate failure scenarios
+• Monitor live metrics
+
+View detailed deployment report in Jenkins artifacts.
+
+╚═══════════════════════════════════════════════════════════════════════╝
+                    ''',
+                    to: "${params.APPROVER_EMAIL}",
+                    from: 'jenkins@cicd-mastery.local',
+                    replyTo: 'devops@cicd-mastery.local',
+                    mimeType: 'text/plain',
+                    attachLog: false,
+                    compressLog: false,
+                    attachmentsPattern: 'deployment-artifacts/deployment-report.txt,deployment-artifacts/deployment-summary.html'
+                )
+
+                echo "✅ SUCCESS notification sent to ${params.APPROVER_EMAIL}"
+            }
+        }
+        failure {
+            script {
+                echo ""
+                echo "📧 Sending FAILURE notification to ${params.APPROVER_EMAIL}"
+
+                // Email notification for failed deployment
+                emailext(
+                    subject: "❌ FAILED: Deployment #${BUILD_NUMBER} - ${params.DEPLOYMENT_STRATEGY} Strategy",
+                    body: '''
+╔═══════════════════════════════════════════════════════════════════════╗
+║                 ❌ DEPLOYMENT FAILED                                  ║
+╠═══════════════════════════════════════════════════════════════════════╣
+
+Build Information:
+• Build Number: #${BUILD_NUMBER}
+• Strategy: ${DEPLOYMENT_STRATEGY}
+• Complexity: ${APP_COMPLEXITY}
+• Version: ${INITIAL_VERSION}
+• Duration: ${BUILD_DURATION}
+• Status: FAILED ❌
+
+Failure Details:
+• Check Jenkins console output for detailed error logs
+• Jenkins URL: ${BUILD_URL}console
+• Build artifacts (if any): ${BUILD_URL}artifact/
+
+Recommended Actions:
+1. Review the console output for error details
+2. Check Docker container logs if deployment reached that stage
+3. Verify all prerequisites and dependencies
+4. Review recent code changes that may have caused the failure
+5. Contact the DevOps team if issue persists
+
+Troubleshooting:
+• Verify Docker is running and accessible
+• Check port availability (8081-8131 range)
+• Ensure sufficient system resources
+• Review security and firewall settings
+• Validate application dependencies
+
+╚═══════════════════════════════════════════════════════════════════════╝
+                    ''',
+                    to: "${params.APPROVER_EMAIL}",
+                    from: 'jenkins@cicd-mastery.local',
+                    replyTo: 'devops@cicd-mastery.local',
+                    mimeType: 'text/plain',
+                    attachLog: true,
+                    compressLog: true
+                )
+
+                echo "✅ FAILURE notification sent to ${params.APPROVER_EMAIL}"
+            }
+        }
+        unstable {
+            script {
+                echo ""
+                echo "📧 Sending UNSTABLE notification to ${params.APPROVER_EMAIL}"
+
+                emailext(
+                    subject: "⚠️ UNSTABLE: Deployment #${BUILD_NUMBER} - ${params.DEPLOYMENT_STRATEGY}",
+                    body: "Build #${BUILD_NUMBER} is unstable. Please review: ${BUILD_URL}",
+                    to: "${params.APPROVER_EMAIL}",
+                    from: 'jenkins@cicd-mastery.local',
+                    mimeType: 'text/plain',
+                    attachLog: true
+                )
+
+                echo "✅ UNSTABLE notification sent"
+            }
+        }
+    }
+}

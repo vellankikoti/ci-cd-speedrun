@@ -289,6 +289,7 @@ pipeline {
                                 FEATURE_MEM="512MB"
                                 FEATURE_PRICE="Free"
                                 FEATURE_SCALING="Manual"
+                                FEATURE_LIST="<li>User Auth</li><li>Basic CRUD</li><li>Simple Dashboard</li>"
                                 ;;
                             "Advanced")
                                 FEATURE_CAPS="Analytics,API Integration,Custom Dashboards"
@@ -296,6 +297,7 @@ pipeline {
                                 FEATURE_MEM="1GB"
                                 FEATURE_PRICE="$99/month"
                                 FEATURE_SCALING="Auto"
+                                FEATURE_LIST="<li>Analytics</li><li>API Integration</li><li>Custom Dashboards</li>"
                                 ;;
                             "Enterprise")
                                 FEATURE_CAPS="AI/ML,Multi-tenant,Custom Workflows"
@@ -303,6 +305,7 @@ pipeline {
                                 FEATURE_MEM="4GB"
                                 FEATURE_PRICE="Custom"
                                 FEATURE_SCALING="Auto"
+                                FEATURE_LIST="<li>AI/ML</li><li>Multi-tenant</li><li>Custom Workflows</li>"
                                 ;;
                         esac
                         
@@ -451,7 +454,7 @@ pipeline {
                 <div class="info-card">
                     <h3>🎛️ Features: ${FEATURES}</h3>
                     <ul class="feature-list">
-                        $(echo "${FEATURE_CAPS}" | tr ',' '\n' | sed 's/^/                        <li>/' | sed 's/$/<\/li>/')
+                        ${FEATURE_LIST}
                     </ul>
                     <div style="margin-top: 15px;">
                         <strong>Scaling:</strong> ${FEATURE_SCALING}<br>
@@ -751,10 +754,16 @@ EOF
                         docker stop $CONTAINER_NAME 2>/dev/null || true
                         docker rm $CONTAINER_NAME 2>/dev/null || true
                         
+                        # Find available port for webapp
+                        WEBAPP_PORT=8081
+                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; do
+                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                        done
+                        
                         # Run new container
                         docker run -d \\
                             --name $CONTAINER_NAME \\
-                            -p 8080:8080 \\
+                            -p $WEBAPP_PORT:8080 \\
                             -e ENVIRONMENT=${ENVIRONMENT} \\
                             -e VERSION=${VERSION} \\
                             -e FEATURES=${FEATURES} \\
@@ -763,8 +772,11 @@ EOF
                             exit 1
                         }
                         
+                        # Save port info
+                        echo $WEBAPP_PORT > webapp.port
+                        
                         echo "║     ✅ Container deployed: $CONTAINER_NAME"
-                        echo "║     ✅ Access: http://localhost:8080"
+                        echo "║     ✅ Access: http://localhost:$WEBAPP_PORT"
                     '''
                     
                     // Feature-specific deployment info
@@ -1022,11 +1034,12 @@ EOF
             sh '''
                 CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
                 IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
+                WEBAPP_PORT=$(cat webapp.port 2>/dev/null || echo "8081")
                 
                 echo "║     • Docker Container: $CONTAINER_NAME"
                 echo "║     • Docker Image: $IMAGE_NAME"
-                echo "║     • Primary URL: http://localhost:8080"
-                echo "║     • API Status: http://localhost:8080/api/status"
+                echo "║     • Primary URL: http://localhost:$WEBAPP_PORT"
+                echo "║     • API Status: http://localhost:$WEBAPP_PORT/api/status"
                 echo "║     • Environment: ${ENVIRONMENT}"
                 echo "║     • Features: ${FEATURES}"
                 echo "║     • Version: ${VERSION}"

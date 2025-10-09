@@ -15,10 +15,29 @@ def test_dynamic_webapp():
     """Test if webapp shows dynamic content based on parameters"""
     print("🧪 Testing dynamic webapp...")
     
+    # Find the correct port
+    webapp_port = "8081"  # Default
+    try:
+        with open("webapp.port", "r") as f:
+            webapp_port = f.read().strip()
+    except:
+        # Try to find running container port
+        try:
+            result = subprocess.run(['docker', 'ps', '--filter', 'name=.*-app', '--format', '{{.Ports}}'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0 and result.stdout.strip():
+                # Extract port from output like "0.0.0.0:8081->8080/tcp"
+                import re
+                match = re.search(r':(\d+)->8080/tcp', result.stdout)
+                if match:
+                    webapp_port = match.group(1)
+        except:
+            pass
+    
     # Test URLs
     test_urls = [
-        "http://localhost:8080",
-        "http://localhost:8080/api/status"
+        f"http://localhost:{webapp_port}",
+        f"http://localhost:{webapp_port}/api/status"
     ]
     
     for url in test_urls:

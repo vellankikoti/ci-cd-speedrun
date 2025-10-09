@@ -484,13 +484,25 @@ EOF
 
                         # Wait for container to fully start
                         echo "║     • Waiting for container to fully start..."
-                        sleep 3
+                        sleep 10
+                        
+                        # Check container logs for debugging
+                        echo "║     • Container logs:"
+                        docker logs $CONTAINER_NAME 2>&1 | head -20
 
                         # Verify container is actually running
                         if docker ps | grep -q $CONTAINER_NAME; then
                             echo "║     ✅ Container deployed: $CONTAINER_NAME"
                             echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
                             echo "║     ✅ Port mapping: $EXTERNAL_PORT:5000"
+                            
+                            # Test if port is accessible
+                            echo "║     • Testing port accessibility..."
+                            if timeout 5 bash -c "echo > /dev/tcp/localhost/$EXTERNAL_PORT" 2>/dev/null; then
+                                echo "║     ✅ Port $EXTERNAL_PORT is accessible"
+                            else
+                                echo "║     ⚠️  Port $EXTERNAL_PORT not accessible yet, but container is running"
+                            fi
 
                             # Save port for testing stage
                             echo $EXTERNAL_PORT > dashboard.port
@@ -529,15 +541,41 @@ EOF
                     echo "║  🔍 Test 1: Health Check API"
                     sh """
                         echo "║     Testing health endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/health
-                        echo "║     ✅ Health check passed"
+                        
+                        # Retry health check with timeout
+                        MAX_RETRIES=10
+                        RETRY_COUNT=0
+                        HEALTH_SUCCESS=false
+                        
+                        while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$HEALTH_SUCCESS" = false ]; do
+                            echo "║     • Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+                            
+                            if curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
+                                echo "║     ✅ Health check passed"
+                                HEALTH_SUCCESS=true
+                                break
+                            else
+                                echo "║     ⚠️  Health check failed, retrying in 3 seconds..."
+                                sleep 3
+                                RETRY_COUNT=$((RETRY_COUNT + 1))
+                            fi
+                        done
+                        
+                        if [ "$HEALTH_SUCCESS" = false ]; then
+                            echo "║     ❌ Health check failed after $MAX_RETRIES attempts"
+                            echo "║     • Container status:"
+                            docker ps | grep ci-cd-dashboard || echo "║     • Container not running"
+                            echo "║     • Container logs:"
+                            docker logs ci-cd-dashboard-${BUILD_NUMBER} 2>&1 | tail -20
+                            exit 1
+                        fi
                     """
                     
                     // Test 2: Metrics API
                     echo "║  📊 Test 2: Metrics API"
                     sh """
                         echo "║     Testing metrics endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/metrics
+                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/metrics
                         echo "║     ✅ Metrics API working"
                     """
                     
@@ -545,7 +583,7 @@ EOF
                     echo "║  🚀 Test 3: Pipelines API"
                     sh """
                         echo "║     Testing pipelines endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/pipelines
+                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/pipelines
                         echo "║     ✅ Pipelines API working"
                     """
                     
@@ -553,7 +591,7 @@ EOF
                     echo "║  🌐 Test 4: Main Dashboard"
                     sh """
                         echo "║     Testing main dashboard..."
-                        curl -f http://localhost:$WEBAPP_PORT/
+                        curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/
                         echo "║     ✅ Main dashboard accessible"
                     """
                     

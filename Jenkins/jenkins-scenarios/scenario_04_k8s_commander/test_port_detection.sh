@@ -42,13 +42,58 @@ check_port() {
     fi
 }
 
-echo "Testing ports 8081-8085:"
-for port in {8081..8085}; do
-    echo "Checking port $port:"
-    check_port $port
-    echo ""
+# Test the port finding logic from the Jenkinsfile
+echo "Testing port finding logic (like in Jenkinsfile):"
+WEBAPP_PORT=8081
+MAX_ATTEMPTS=10
+ATTEMPTS=0
+
+while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+    echo "Checking port $WEBAPP_PORT..."
+    
+    # Check if port is in use by netstat
+    if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+        echo "   • Port $WEBAPP_PORT in use by netstat, trying next..."
+        WEBAPP_PORT=$((WEBAPP_PORT + 1))
+        ATTEMPTS=$((ATTEMPTS + 1))
+        continue
+    fi
+    
+    # Check if port is in use by ss command
+    if ss -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+        echo "   • Port $WEBAPP_PORT in use by ss, trying next..."
+        WEBAPP_PORT=$((WEBAPP_PORT + 1))
+        ATTEMPTS=$((ATTEMPTS + 1))
+        continue
+    fi
+    
+    # Check if port is in use by lsof
+    if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
+        echo "   • Port $WEBAPP_PORT in use by lsof, trying next..."
+        WEBAPP_PORT=$((WEBAPP_PORT + 1))
+        ATTEMPTS=$((ATTEMPTS + 1))
+        continue
+    fi
+    
+    # Check if port is in use by Docker containers
+    if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
+        echo "   • Port $WEBAPP_PORT in use by Docker, trying next..."
+        WEBAPP_PORT=$((WEBAPP_PORT + 1))
+        ATTEMPTS=$((ATTEMPTS + 1))
+        continue
+    fi
+    
+    # Port is available
+    echo "   ✅ Found available port: $WEBAPP_PORT"
+    break
 done
 
+if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+    echo "   ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+    exit 1
+fi
+
+echo ""
 echo "Current port usage:"
 echo "netstat:"
 netstat -tuln 2>/dev/null | grep ":808" || echo "  No ports 808x in use"

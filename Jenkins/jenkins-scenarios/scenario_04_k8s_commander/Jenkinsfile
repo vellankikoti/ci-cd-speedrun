@@ -646,7 +646,8 @@ EOF
                         
                         # Also clean up any processes using ports 8081-8090
                         echo "║  🧹 Cleaning up port usage..."
-                        for port in {8081..8090}; do
+                        port=8081
+                        while [ $port -le 8090 ]; do
                             port_in_use=false
                             
                             # Check if port is in use by any method
@@ -663,8 +664,10 @@ EOF
                                 # Try multiple methods to free the port
                                 lsof -ti:$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
                                 fuser -k $port/tcp 2>/dev/null || true
-                                sleep 2
+                                sleep 1
                             fi
+                            
+                            port=$((port + 1))
                         done
                         
                         # Wait for cleanup to complete
@@ -737,22 +740,36 @@ EOF
                         
                         # Verify port is still available before starting container
                         echo "║  🔍 Verifying port availability..."
+                        
+                        # Force kill any processes using the port
+                        echo "║     🔫 Force killing any processes on port $WEBAPP_PORT..."
+                        lsof -ti:$WEBAPP_PORT 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+                        fuser -k $WEBAPP_PORT/tcp 2>/dev/null || true
+                        sleep 1
+                        
                         if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || \
                            ss -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || \
                            lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN || \
                            docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
-                            echo "║     ❌ Port $WEBAPP_PORT is no longer available, finding new port..."
-                            # Find a new port
-                            for new_port in {8081..8090}; do
-                                if ! netstat -tuln 2>/dev/null | grep -q ":$new_port " && \
-                                   ! ss -tuln 2>/dev/null | grep -q ":$new_port " && \
-                                   ! lsof -i :$new_port 2>/dev/null | grep -q LISTEN && \
-                                   ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$new_port->"; then
-                                    WEBAPP_PORT=$new_port
+                            echo "║     ❌ Port $WEBAPP_PORT is still in use, finding new port..."
+                            # Find a new port using simple loop
+                            NEW_PORT=8081
+                            while [ $NEW_PORT -le 8090 ]; do
+                                if ! netstat -tuln 2>/dev/null | grep -q ":$NEW_PORT " && \
+                                   ! ss -tuln 2>/dev/null | grep -q ":$NEW_PORT " && \
+                                   ! lsof -i :$NEW_PORT 2>/dev/null | grep -q LISTEN && \
+                                   ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$NEW_PORT->"; then
+                                    WEBAPP_PORT=$NEW_PORT
                                     echo "║     ✅ Found new available port: $WEBAPP_PORT"
                                     break
                                 fi
+                                NEW_PORT=$((NEW_PORT + 1))
                             done
+                            
+                            if [ $NEW_PORT -gt 8090 ]; then
+                                echo "║     ❌ No available ports found in range 8081-8090"
+                                exit 1
+                            fi
                         else
                             echo "║     ✅ Port $WEBAPP_PORT is confirmed available"
                         fi
@@ -785,17 +802,26 @@ EOF
                                     echo "║     🔄 Cleaning up and retrying..."
                                     docker rm -f $CONTAINER_NAME 2>/dev/null || true
                                     
-                                    # Find a new port for retry
-                                    for new_port in {8081..8090}; do
-                                        if ! netstat -tuln 2>/dev/null | grep -q ":$new_port " && \
-                                           ! ss -tuln 2>/dev/null | grep -q ":$new_port " && \
-                                           ! lsof -i :$new_port 2>/dev/null | grep -q LISTEN && \
-                                           ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$new_port->"; then
-                                            WEBAPP_PORT=$new_port
+                                    # Find a new port for retry - use a simple loop
+                                    echo "║     🔍 Finding new available port..."
+                                    NEW_PORT=8081
+                                    while [ $NEW_PORT -le 8090 ]; do
+                                        # Check if port is available
+                                        if ! netstat -tuln 2>/dev/null | grep -q ":$NEW_PORT " && \
+                                           ! ss -tuln 2>/dev/null | grep -q ":$NEW_PORT " && \
+                                           ! lsof -i :$NEW_PORT 2>/dev/null | grep -q LISTEN && \
+                                           ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$NEW_PORT->"; then
+                                            WEBAPP_PORT=$NEW_PORT
                                             echo "║     🔄 Trying new port: $WEBAPP_PORT"
                                             break
                                         fi
+                                        NEW_PORT=$((NEW_PORT + 1))
                                     done
+                                    
+                                    if [ $NEW_PORT -gt 8090 ]; then
+                                        echo "║     ❌ No available ports found for retry"
+                                        exit 1
+                                    fi
                                     
                                     sleep 2
                                 else

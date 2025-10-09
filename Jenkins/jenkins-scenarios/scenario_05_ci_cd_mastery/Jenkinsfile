@@ -547,6 +547,9 @@ EOF
                     sh '''
                         echo "║     Testing health endpoint..."
                         
+                        # Read port from file
+                        WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
+                        
                         # Retry health check with timeout
                         MAX_RETRIES=10
                         RETRY_COUNT=0
@@ -580,6 +583,7 @@ EOF
                     echo "║  📊 Test 2: Metrics API"
                     sh '''
                         echo "║     Testing metrics endpoint..."
+                        WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/metrics
                         echo "║     ✅ Metrics API working"
                     '''
@@ -588,6 +592,7 @@ EOF
                     echo "║  🚀 Test 3: Pipelines API"
                     sh '''
                         echo "║     Testing pipelines endpoint..."
+                        WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/pipelines
                         echo "║     ✅ Pipelines API working"
                     '''
@@ -596,6 +601,7 @@ EOF
                     echo "║  🌐 Test 4: Main Dashboard"
                     sh '''
                         echo "║     Testing main dashboard..."
+                        WEBAPP_PORT=$(cat dashboard.port 2>/dev/null || echo "8082")
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/
                         echo "║     ✅ Main dashboard accessible"
                     '''

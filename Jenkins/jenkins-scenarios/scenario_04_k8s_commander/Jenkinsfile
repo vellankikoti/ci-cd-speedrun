@@ -308,9 +308,17 @@ EOF
                         ATTEMPTS=0
                         
                         while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-                            # Check if port is in use by netstat
+                            # Check if port is in use by netstat (both IPv4 and IPv6)
                             if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
                                 echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by lsof (catches all processes)
+                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
+                                echo "║     • Port $WEBAPP_PORT in use by process, trying next..."
                                 WEBAPP_PORT=$((WEBAPP_PORT + 1))
                                 ATTEMPTS=$((ATTEMPTS + 1))
                                 continue
@@ -638,9 +646,17 @@ EOF
                         ATTEMPTS=0
                         
                         while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-                            # Check if port is in use by netstat
+                            # Check if port is in use by netstat (both IPv4 and IPv6)
                             if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
                                 echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by lsof (catches all processes)
+                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
+                                echo "║     • Port $WEBAPP_PORT in use by process, trying next..."
                                 WEBAPP_PORT=$((WEBAPP_PORT + 1))
                                 ATTEMPTS=$((ATTEMPTS + 1))
                                 continue

@@ -798,11 +798,14 @@ html_content = f"""<!DOCTYPE html>
 </body>
 </html>"""
         
-        # Write HTML file
-        with open('webapp/index.html', 'w') as f:
-            f.write(html_content)
-        
-        print("✅ Advanced web application generated successfully!")
+# Create webapp directory if it doesn't exist
+os.makedirs('webapp', exist_ok=True)
+
+# Write HTML file
+with open('webapp/index.html', 'w') as f:
+    f.write(html_content)
+
+print("✅ Advanced web application generated successfully!")
 PYEOF
                         
                         # Run the Python script

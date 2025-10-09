@@ -167,9 +167,9 @@ pipeline {
                     def imageTag = "${env.BUILD_NUMBER}-${gitCommit}"
                     
                     withEnv(["IMAGE_TAG=${imageTag}"]) {
-                        sh """
+                        sh '''
                             echo "🐳 Building production container..."
-                            echo "Building image: ${APP_NAME}:\${IMAGE_TAG}"
+                            echo "Building image: ${APP_NAME}:${IMAGE_TAG}"
                         
                         # Get actual system information
                         echo "📊 Container Build Analysis:"
@@ -195,7 +195,7 @@ pipeline {
                         echo "  • Step 5: Image optimization"
                         
                         echo "✅ Container build simulation completed"
-                        """
+                        '''
                     }
                 }
             }

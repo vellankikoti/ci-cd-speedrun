@@ -1,0 +1,617 @@
+pipeline {
+    agent any
+    
+    // Production-grade options - Jenkins best practices
+    options {
+        timeout(time: 5, unit: 'MINUTES')           // 5-minute challenge!
+        timestamps()                                  // Every log line timestamped
+        buildDiscarder(logRotator(numToKeepStr: '5')) // Keep only last 5 builds
+        skipDefaultCheckout()                         // We'll checkout manually
+    }
+    
+    // Environment variables for the challenge
+    environment {
+        CHALLENGE_NAME = 'CI/CD Mastery Challenge'
+        BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
+        CHALLENGE_DURATION = '5 minutes'
+        MAX_SCORE = 1000
+    }
+    
+    // Challenge parameters - attendees can customize
+    parameters {
+        choice(
+            name: 'SKILL_LEVEL',
+            choices: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+            description: 'Select your CI/CD skill level'
+        )
+        choice(
+            name: 'CHALLENGE_TYPE',
+            choices: ['Speed Run', 'Quality Focus', 'Security First', 'Performance Optimized'],
+            description: 'Choose your challenge approach'
+        )
+        booleanParam(
+            name: 'ENABLE_NOTIFICATIONS',
+            defaultValue: true,
+            description: 'Enable real-time challenge notifications?'
+        )
+        booleanParam(
+            name: 'SHOW_LEADERBOARD',
+            defaultValue: true,
+            description: 'Display live leaderboard?'
+        )
+    }
+    
+    stages {
+        stage('🚀 Challenge Setup') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🎮 JENKINS CI/CD MASTERY CHALLENGE                       ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Challenge: ${CHALLENGE_NAME}"
+                    echo "║  ⏱️  Duration: ${CHALLENGE_DURATION}"
+                    echo "║  🏆 Max Score: ${MAX_SCORE} points"
+                    echo "║  👤 Skill Level: ${SKILL_LEVEL}"
+                    echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
+                    echo "║"
+                    echo "║  🎮 Ready to become a CI/CD Master?"
+                    echo "║"
+                    echo "║  🎯 Learning Objectives:"
+                    echo "║     • Master Jenkins pipeline fundamentals"
+                    echo "║     • Implement production CI/CD patterns"
+                    echo "║     • Experience gamified learning"
+                    echo "║     • Compete for the highest score"
+                    echo "║     • Build real-world skills"
+                    echo "║"
+                    echo "║  🚀 Let's begin your CI/CD mastery journey!"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Initialize challenge scoring
+                    env.CHALLENGE_SCORE = 0
+                    env.START_TIME = System.currentTimeMillis()
+                    
+                    // Show challenge parameters
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    ⚙️  CHALLENGE CONFIGURATION                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Skill Level: ${SKILL_LEVEL}"
+                    echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
+                    echo "║  🔔 Notifications: ${ENABLE_NOTIFICATIONS ? 'Enabled' : 'Disabled'}"
+                    echo "║  🏆 Leaderboard: ${SHOW_LEADERBOARD ? 'Enabled' : 'Disabled'}"
+                    echo "║  ⏱️  Time Limit: 5 minutes"
+                    echo "║  🎮 Mode: Interactive Gamified Learning"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+        
+        stage('📋 Code Quality Gate') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    📋 CHALLENGE 1: CODE QUALITY GATE                        ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Implement automated quality checks"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🏆 Max Points: ${SKILL_LEVEL == 'Expert' ? '200' : SKILL_LEVEL == 'Advanced' ? '150' : SKILL_LEVEL == 'Intermediate' ? '100' : '50'}"
+                    echo "║"
+                    
+                    // Checkout code
+                    checkout scm
+                    
+                    // Simulate code quality checks
+                    echo "║  🔍 Running code quality analysis..."
+                    echo "║"
+                    
+                    // Simulate different quality checks based on skill level
+                    def qualityChecks = [
+                        'Beginner': [
+                            ['Syntax Check', 'Validating code syntax', 25],
+                            ['Basic Linting', 'Checking code style', 25]
+                        ],
+                        'Intermediate': [
+                            ['Syntax Check', 'Validating code syntax', 30],
+                            ['Linting', 'Checking code style and standards', 30],
+                            ['Code Coverage', 'Analyzing test coverage', 40]
+                        ],
+                        'Advanced': [
+                            ['Syntax Check', 'Validating code syntax', 40],
+                            ['Linting', 'Checking code style and standards', 40],
+                            ['Code Coverage', 'Analyzing test coverage', 40],
+                            ['Security Scan', 'Detecting security vulnerabilities', 30]
+                        ],
+                        'Expert': [
+                            ['Syntax Check', 'Validating code syntax', 40],
+                            ['Linting', 'Checking code style and standards', 40],
+                            ['Code Coverage', 'Analyzing test coverage', 40],
+                            ['Security Scan', 'Detecting security vulnerabilities', 40],
+                            ['Performance Analysis', 'Optimizing code performance', 40]
+                        ]
+                    ]
+                    
+                    def checks = qualityChecks[SKILL_LEVEL] ?: qualityChecks['Beginner']
+                    def totalPoints = 0
+                    
+                    checks.each { check ->
+                        def checkName = check[0]
+                        def checkDesc = check[1]
+                        def checkPoints = check[2]
+                        
+                        echo "║  🔍 ${checkName}..."
+                        echo "║     ${checkDesc}"
+                        
+                        // Simulate processing with progress
+                        for (int i = 1; i <= 3; i++) {
+                            echo "║     ${'█' * i}${'░' * (3 - i)} Processing... (${i * 33}%)"
+                            sleep(0.5)
+                        }
+                        
+                        echo "║     ✅ ${checkName} - PASSED (+${checkPoints} points)"
+                        totalPoints += checkPoints
+                        echo "║"
+                    }
+                    
+                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    
+                    echo "║  🏆 Quality Gate Complete!"
+                    echo "║     Points Earned: +${totalPoints}"
+                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
+                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║"
+                    echo "║  🎯 Next: Testing Strategy Challenge"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+        
+        stage('🧪 Testing Strategy') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🧪 CHALLENGE 2: TESTING STRATEGY                         ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Implement comprehensive testing approach"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🎲 Strategy: ${CHALLENGE_TYPE}"
+                    echo "║  🏆 Max Points: ${CHALLENGE_TYPE == 'Quality Focus' ? '250' : CHALLENGE_TYPE == 'Security First' ? '200' : CHALLENGE_TYPE == 'Performance Optimized' ? '180' : '120'}"
+                    echo "║"
+                    
+                    // Simulate different testing strategies based on challenge type
+                    def testStrategies = [
+                        'Speed Run': [
+                            ['Unit Tests', 'Fast, isolated component tests', 60],
+                            ['Smoke Tests', 'Basic functionality verification', 60]
+                        ],
+                        'Quality Focus': [
+                            ['Unit Tests', 'Fast, isolated component tests', 80],
+                            ['Integration Tests', 'Component interaction testing', 80],
+                            ['E2E Tests', 'End-to-end user journey testing', 90]
+                        ],
+                        'Security First': [
+                            ['Unit Tests', 'Fast, isolated component tests', 70],
+                            ['Security Tests', 'Authentication and authorization', 70],
+                            ['Vulnerability Scans', 'Dependency and code security', 60]
+                        ],
+                        'Performance Optimized': [
+                            ['Unit Tests', 'Fast, isolated component tests', 60],
+                            ['Load Tests', 'High-traffic performance testing', 70],
+                            ['Performance Tests', 'Response time and resource usage', 50]
+                        ]
+                    ]
+                    
+                    def tests = testStrategies[CHALLENGE_TYPE] ?: testStrategies['Speed Run']
+                    def totalPoints = 0
+                    
+                    echo "║  🧪 Executing ${CHALLENGE_TYPE} testing strategy..."
+                    echo "║"
+                    
+                    tests.each { test ->
+                        def testName = test[0]
+                        def testDesc = test[1]
+                        def testPoints = test[2]
+                        
+                        echo "║  🧪 Running ${testName}..."
+                        echo "║     ${testDesc}"
+                        
+                        // Simulate test execution with progress
+                        for (int i = 1; i <= 4; i++) {
+                            echo "║     ${'█' * i}${'░' * (4 - i)} Executing... (${i * 25}%)"
+                            sleep(0.4)
+                        }
+                        
+                        echo "║     ✅ ${testName} - PASSED (+${testPoints} points)"
+                        totalPoints += testPoints
+                        echo "║"
+                    }
+                    
+                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    
+                    echo "║  🏆 Testing Strategy Complete!"
+                    echo "║     Points Earned: +${totalPoints}"
+                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
+                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║"
+                    echo "║  🎯 Next: Containerization Challenge"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+        
+        stage('🐳 Containerization') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🐳 CHALLENGE 3: CONTAINERIZATION                          ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Containerize application with Docker best practices"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🏆 Max Points: 150"
+                    echo "║"
+                    
+                    // Create a simple Dockerfile dynamically
+                    writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
+WORKDIR /app
+COPY . .
+RUN pip install --no-cache-dir -r requirements.txt
+EXPOSE 8080
+CMD ["python", "app.py"]'''
+                    
+                    // Create a simple requirements.txt
+                    writeFile file: 'requirements.txt', text: 'flask==2.3.3\nrequests==2.31.0'
+                    
+                    // Create a simple app.py
+                    writeFile file: 'app.py', text: '''from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "🚀 CI/CD Mastery Challenge - Containerized!"
+
+@app.route('/health')
+def health():
+    return "✅ Healthy", 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)'''
+                    
+                    echo "║  📦 Building Docker image..."
+                    echo "║"
+                    
+                    // Simulate Docker build with detailed steps
+                    def buildSteps = [
+                        ['Analyzing Dockerfile', 'Validating Docker configuration', 30],
+                        ['Downloading base image', 'Pulling python:3.11-slim', 30],
+                        ['Installing dependencies', 'Running pip install', 30],
+                        ['Copying application code', 'Adding source files to container', 30],
+                        ['Setting up container', 'Configuring runtime environment', 30]
+                    ]
+                    
+                    def totalPoints = 0
+                    buildSteps.each { step ->
+                        def stepName = step[0]
+                        def stepDesc = step[1]
+                        def stepPoints = step[2]
+                        
+                        echo "║  🔨 ${stepName}..."
+                        echo "║     ${stepDesc}"
+                        
+                        // Simulate build progress
+                        for (int i = 1; i <= 3; i++) {
+                            echo "║     ${'█' * i}${'░' * (3 - i)} Building... (${i * 33}%)"
+                            sleep(0.5)
+                        }
+                        
+                        echo "║     ✅ ${stepName} - COMPLETE (+${stepPoints} points)"
+                        totalPoints += stepPoints
+                        echo "║"
+                    }
+                    
+                    echo "║  🐳 Docker image built successfully!"
+                    echo "║     Image: ci-cd-challenge:latest"
+                    echo "║     Size: ~150MB (optimized)"
+                    echo "║     Layers: 5 (efficient)"
+                    echo "║"
+                    
+                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    
+                    echo "║  🏆 Containerization Complete!"
+                    echo "║     Points Earned: +${totalPoints}"
+                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
+                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║"
+                    echo "║  🎯 Next: Deployment Strategy Challenge"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+        
+        stage('🚀 Deployment Strategy') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🚀 CHALLENGE 4: DEPLOYMENT STRATEGY                       ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Deploy application with production strategy"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🎲 Strategy: ${CHALLENGE_TYPE}"
+                    echo "║"
+                    
+                    // Simulate different deployment strategies
+                    def deploymentStrategies = [
+                        'Speed Run': ['Direct Deployment', 'Fast, simple deployment', 100],
+                        'Quality Focus': ['Blue-Green Deployment', 'Zero-downtime with instant rollback', 200],
+                        'Security First': ['Canary Deployment', 'Gradual rollout with monitoring', 180],
+                        'Performance Optimized': ['Rolling Update', 'Smooth updates with load balancing', 160]
+                    ]
+                    
+                    def strategy = deploymentStrategies[CHALLENGE_TYPE] ?: deploymentStrategies['Speed Run']
+                    def strategyName = strategy[0]
+                    def strategyDesc = strategy[1]
+                    def strategyPoints = strategy[2]
+                    
+                    echo "║  🎯 Selected Strategy: ${strategyName}"
+                    echo "║     ${strategyDesc}"
+                    echo "║  🏆 Max Points: ${strategyPoints}"
+                    echo "║"
+                    
+                    // Simulate deployment steps
+                    def deploySteps = [
+                        ['Pre-deployment validation', 'Checking environment readiness', 40],
+                        ['Environment preparation', 'Setting up deployment infrastructure', 40],
+                        ['Application deployment', 'Deploying new version', 40],
+                        ['Health checks', 'Verifying application health', 40],
+                        ['Traffic routing', 'Switching traffic to new version', 40]
+                    ]
+                    
+                    def totalPoints = 0
+                    deploySteps.each { step ->
+                        def stepName = step[0]
+                        def stepDesc = step[1]
+                        def stepPoints = step[2]
+                        
+                        echo "║  🚀 ${stepName}..."
+                        echo "║     ${stepDesc}"
+                        
+                        // Simulate deployment progress
+                        for (int i = 1; i <= 4; i++) {
+                            echo "║     ${'█' * i}${'░' * (4 - i)} Deploying... (${i * 25}%)"
+                            sleep(0.4)
+                        }
+                        
+                        echo "║     ✅ ${stepName} - COMPLETE (+${stepPoints} points)"
+                        totalPoints += stepPoints
+                        echo "║"
+                    }
+                    
+                    echo "║  🚀 Deployment completed successfully!"
+                    echo "║     Strategy: ${strategyName}"
+                    echo "║     Status: ✅ Healthy"
+                    echo "║     Uptime: 99.9%"
+                    echo "║     Response Time: <100ms"
+                    echo "║"
+                    
+                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    
+                    echo "║  🏆 Deployment Strategy Complete!"
+                    echo "║     Points Earned: +${totalPoints}"
+                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
+                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║"
+                    echo "║  🎯 Next: Monitoring & Observability Challenge"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+        
+        stage('📊 Monitoring & Observability') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    📊 CHALLENGE 5: MONITORING & OBSERVABILITY                ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Set up comprehensive monitoring and observability"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🏆 Max Points: 100"
+                    echo "║"
+                    
+                    // Simulate monitoring setup
+                    def monitoringChecks = [
+                        ['Application Health Monitoring', 'Setting up health check endpoints', 20],
+                        ['Performance Metrics Collection', 'Configuring metrics gathering', 20],
+                        ['Log Aggregation Setup', 'Centralizing log collection', 20],
+                        ['Alert Configuration', 'Setting up proactive alerts', 20],
+                        ['Dashboard Creation', 'Building monitoring dashboards', 20]
+                    ]
+                    
+                    def totalPoints = 0
+                    monitoringChecks.each { check ->
+                        def checkName = check[0]
+                        def checkDesc = check[1]
+                        def checkPoints = check[2]
+                        
+                        echo "║  📊 Setting up ${checkName}..."
+                        echo "║     ${checkDesc}"
+                        
+                        // Simulate setup progress
+                        for (int i = 1; i <= 3; i++) {
+                            echo "║     ${'█' * i}${'░' * (3 - i)} Configuring... (${i * 33}%)"
+                            sleep(0.4)
+                        }
+                        
+                        echo "║     ✅ ${checkName} - ACTIVE (+${checkPoints} points)"
+                        totalPoints += checkPoints
+                        echo "║"
+                    }
+                    
+                    // Simulate real-time metrics
+                    echo "║  📈 Live Metrics Dashboard:"
+                    echo "║     • CPU Usage: 45% (Normal)"
+                    echo "║     • Memory Usage: 67% (Normal)"
+                    echo "║     • Response Time: 120ms (Excellent)"
+                    echo "║     • Error Rate: 0.1% (Very Low)"
+                    echo "║     • Uptime: 99.9% (Excellent)"
+                    echo "║     • Active Connections: 1,247"
+                    echo "║     • Requests/min: 2,340"
+                    echo "║"
+                    
+                    echo "║  🚨 Alert Status:"
+                    echo "║     • Critical: 0"
+                    echo "║     • Warning: 0"
+                    echo "║     • Info: 3"
+                    echo "║     • All systems operational ✅"
+                    echo "║"
+                    
+                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    
+                    echo "║  🏆 Monitoring & Observability Complete!"
+                    echo "║     Points Earned: +${totalPoints}"
+                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
+                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║"
+                    echo "║  🎯 All Challenges Complete! 🎉"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            script {
+                def endTime = System.currentTimeMillis()
+                def duration = (endTime - env.START_TIME.toLong()) / 1000
+                
+                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                echo "║                    🎉 CHALLENGE COMPLETED! 🎉                                ║"
+                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                echo "║  🏆 Final Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE} points"
+                echo "║  ⏱️  Completion Time: ${duration} seconds"
+                echo "║  🎯 Skill Level: ${SKILL_LEVEL}"
+                echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
+                echo "║  📊 Completion Rate: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                echo "║"
+                
+                // Calculate performance rating
+                def performanceRating = "🥉 Bronze"
+                def ratingDescription = "Good effort! Keep practicing to improve."
+                if (env.CHALLENGE_SCORE.toInteger() >= 900) {
+                    performanceRating = "🏆 Legendary"
+                    ratingDescription = "Outstanding! You're a CI/CD master!"
+                } else if (env.CHALLENGE_SCORE.toInteger() >= 800) {
+                    performanceRating = "🥇 Gold"
+                    ratingDescription = "Excellent! You've mastered CI/CD!"
+                } else if (env.CHALLENGE_SCORE.toInteger() >= 600) {
+                    performanceRating = "🥈 Silver"
+                    ratingDescription = "Great job! You're well on your way!"
+                }
+                
+                echo "║  🏅 Performance Rating: ${performanceRating}"
+                echo "║  💬 ${ratingDescription}"
+                echo "║"
+                
+                // Show achievements
+                echo "║  🎖️  Achievements Unlocked:"
+                if (env.CHALLENGE_SCORE.toInteger() >= 100) {
+                    echo "║     ✅ First Steps - Completed your first challenge"
+                }
+                if (env.CHALLENGE_SCORE.toInteger() >= 300) {
+                    echo "║     ✅ Quality Guardian - Mastered code quality"
+                }
+                if (env.CHALLENGE_SCORE.toInteger() >= 500) {
+                    echo "║     ✅ Test Master - Conquered testing strategies"
+                }
+                if (env.CHALLENGE_SCORE.toInteger() >= 700) {
+                    echo "║     ✅ Container Expert - Mastered containerization"
+                }
+                if (env.CHALLENGE_SCORE.toInteger() >= 800) {
+                    echo "║     ✅ Deployment Pro - Conquered deployment strategies"
+                }
+                if (env.CHALLENGE_SCORE.toInteger() >= 900) {
+                    echo "║     ✅ Monitoring Master - Achieved full observability"
+                }
+                echo "║"
+                
+                echo "║  🎮 You've mastered Jenkins CI/CD!"
+                echo "║  🚀 Ready for production deployments!"
+                echo "║  💡 Continue learning with advanced Jenkins features!"
+                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                
+                // Show leaderboard if enabled
+                if (params.SHOW_LEADERBOARD) {
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🏆 LIVE LEADERBOARD                                       ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  #1 🥇 Alex Chen     - 950 points (Expert, Performance Optimized)"
+                    echo "║  #2 🥈 Sarah Kim     - 875 points (Advanced, Quality Focus)"
+                    echo "║  #3 🥉 Mike Johnson  - 820 points (Intermediate, Security First)"
+                    echo "║  #4    You           - ${env.CHALLENGE_SCORE} points (${SKILL_LEVEL}, ${CHALLENGE_TYPE})"
+                    echo "║  #5    Emma Wilson   - 750 points (Beginner, Speed Run)"
+                    echo "║"
+                    echo "║  🎯 Challenge Statistics:"
+                    echo "║     • Total Participants: 1,247"
+                    echo "║     • Average Score: 720 points"
+                    echo "║     • Your Rank: Top ${env.CHALLENGE_SCORE.toInteger() >= 800 ? '10%' : env.CHALLENGE_SCORE.toInteger() >= 600 ? '25%' : '50%'}"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                }
+                
+                // Show next steps
+                echo ""
+                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                echo "║                    🚀 NEXT STEPS & LEARNING PATH                              ║"
+                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                echo "║  📚 Continue Your CI/CD Journey:"
+                echo "║     • Explore Jenkins plugins and integrations"
+                echo "║     • Learn advanced pipeline patterns"
+                echo "║     • Implement real-world CI/CD pipelines"
+                echo "║     • Join the Jenkins community"
+                echo "║     • Contribute to open source projects"
+                echo "║"
+                echo "║  🎯 Recommended Next Scenarios:"
+                echo "║     • Kubernetes Deployment Scenarios"
+                echo "║     • Advanced Jenkins Patterns"
+                echo "║     • Production CI/CD Strategies"
+                echo "║     • Security and Compliance"
+                echo "║"
+                echo "║  💡 Pro Tip: Practice makes perfect! Try different skill levels"
+                echo "║     and challenge types to master all aspects of CI/CD."
+                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+            }
+        }
+        
+        failure {
+            script {
+                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                echo "║                    💪 CHALLENGE FAILED - BUT DON'T GIVE UP!                  ║"
+                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                echo "║  🎯 Current Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE} points"
+                echo "║  📊 Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
+                echo "║  👤 Skill Level: ${SKILL_LEVEL}"
+                echo "║"
+                echo "║  💡 Learning Opportunities:"
+                echo "║     • Review the failed stage carefully"
+                echo "║     • Try a different skill level or challenge type"
+                echo "║     • Practice the fundamentals first"
+                echo "║     • Ask for help from the community"
+                echo "║"
+                echo "║  🔄 Retry the challenge to improve your score!"
+                echo "║  📚 Learn from the failure and come back stronger!"
+                echo "║  🚀 Every master was once a beginner!"
+                echo "║"
+                echo "║  🎖️  Remember: Failure is just feedback!"
+                echo "║  💪 You've got this! Try again! 💪"
+                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+            }
+        }
+        
+        always {
+            script {
+                // Cleanup
+                echo "🧹 Cleaning up challenge artifacts..."
+                sh 'rm -f Dockerfile requirements.txt app.py 2>/dev/null || true'
+            }
+        }
+    }
+}

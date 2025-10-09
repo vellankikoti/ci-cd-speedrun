@@ -644,78 +644,34 @@ This dashboard demonstrates:
                         echo "║     ✅ Cleanup completed"
                     '''
                     
-                    // Dynamic port detection - find next available port
-                    echo "║  🔍 Scanning for available ports..."
-                    
-                    // Get list of used ports
-                    def usedPorts = sh(
-                        script: '''
-                            # Get ports from netstat (listening ports)
-                            netstat -tuln | grep -E ":[0-9]+ " | sed "s/.*:\\([0-9]*\\) .*/\\1/" | sort -n | uniq
-                            # Get ports from docker containers
-                            docker ps --format "{{.Ports}}" | grep -oE ":[0-9]+->" | sed "s/://g" | sed "s/->//g" | sort -n | uniq
-                            # Get ports from lsof (additional check)
-                            lsof -i -P -n | grep LISTEN | grep -oE ":[0-9]+ " | sed "s/://g" | sort -n | uniq
-                        ''',
-                        returnStdout: true
-                    ).trim().split('\n').findAll { it.isNumber() && it.toInteger() > 0 }.collect { it.toInteger() }.unique()
-                    
-                    echo "║  📊 Found ${usedPorts.size()} used ports: ${usedPorts.take(10).join(', ')}${usedPorts.size() > 10 ? '...' : ''}"
-                    
-                    // Find next available port starting from 8081 (avoid Jenkins 8080)
+                    // Simple port detection - try ports 8081-8090
+                    echo "║  🔍 Finding available port..."
                     def WEBAPP_PORT = 8081
-                    def MAX_ATTEMPTS = 50
-                    def ATTEMPTS = 0
+                    def foundPort = false
                     
-                    while (ATTEMPTS < MAX_ATTEMPTS) {
-                        ATTEMPTS++
-                        echo "║  🔍 Checking port $WEBAPP_PORT..."
+                    for (int port = 8081; port <= 8090; port++) {
+                        echo "║  🔍 Checking port $port..."
                         
-                        // Check if port is in our used ports list
-                        if (usedPorts.contains(WEBAPP_PORT)) {
-                            echo "║     Port $WEBAPP_PORT is in use, trying next..."
-                            WEBAPP_PORT++
-                            continue
-                        }
-                        
-                        // Double-check with netstat and docker
-                        def portCheck = sh(
-                            script: "netstat -tuln | grep ':$WEBAPP_PORT ' || true",
+                        // Test if port is available by trying to bind to it
+                        def portTest = sh(
+                            script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$port' 2>/dev/null || true",
                             returnStatus: true
                         )
                         
-                        def dockerCheck = sh(
-                            script: "docker ps --format '{{.Ports}}' | grep ':$WEBAPP_PORT->' || true",
-                            returnStatus: true
-                        )
-                        
-                        if (portCheck == 0 || dockerCheck == 0) {
-                            echo "║     Port $WEBAPP_PORT is in use, trying next..."
-                            WEBAPP_PORT++
-                            continue
+                        if (portTest != 0) {
+                            // Port is available
+                            WEBAPP_PORT = port
+                            foundPort = true
+                            echo "║     ✅ Found available port: $WEBAPP_PORT"
+                            break
+                        } else {
+                            echo "║     Port $port is in use, trying next..."
                         }
-                        
-                        // Final verification - test if port is actually available
-                        def finalCheck = sh(
-                            script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$WEBAPP_PORT' 2>/dev/null || true",
-                            returnStatus: true
-                        )
-                        
-                        if (finalCheck == 0) {
-                            echo "║     Port $WEBAPP_PORT is still in use, trying next..."
-                            WEBAPP_PORT++
-                            continue
-                        }
-                        
-                        // Port is truly available
-                        echo "║     ✅ Found available port: $WEBAPP_PORT"
-                        break
                     }
                     
-                    if (ATTEMPTS >= MAX_ATTEMPTS) {
-                        echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
-                        echo "║     💡 Try stopping some services or using a different port range"
-                        WEBAPP_PORT = 8081  // Use default as fallback
+                    if (!foundPort) {
+                        echo "║     ⚠️  No port found in range 8081-8090, using 8081"
+                        WEBAPP_PORT = 8081
                     }
                     
                     // Build Docker image

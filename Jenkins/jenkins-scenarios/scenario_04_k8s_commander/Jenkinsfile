@@ -482,8 +482,8 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
             concept = os.environ.get('K8S_CONCEPT', 'Pods')
 
             # Define lessons for each K8s concept
-            all_lessons = {{
-            'Pods': {{
+            all_lessons = {
+            'Pods': {
                 '1': {
                     'title': 'What are Pods?',
                     'duration': '5 min',
@@ -655,75 +655,75 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
                         }
                     ]
                 }
-            }},
-            'Services': {{
-                '1': {{
+            },
+            'Services': {
+                '1': {
                     'title': 'What are Services?',
                     'duration': '6 min',
                     'sections': [
-                        {{'type': 'intro', 'content': 'Services provide stable networking for Pods. They act as a load balancer and service discovery mechanism in Kubernetes.'}},
-                        {{'type': 'concept', 'title': 'Service Types', 'points': ['ClusterIP: Internal cluster communication', 'NodePort: Expose on each node port', 'LoadBalancer: Cloud provider integration', 'ExternalName: DNS CNAME record']}},
-                        {{'type': 'yaml', 'title': 'ClusterIP Service', 'code': 'apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: my-service\\nspec:\\n  type: ClusterIP\\n  selector:\\n    app: myapp\\n  ports:\\n  - port: 80\\n    targetPort: 8080'}},
-                        {{'type': 'production', 'title': 'Best Practice', 'content': 'Use ClusterIP for internal services and LoadBalancer for external access. NodePort is rarely used in production.'}}
+                        {'type': 'intro', 'content': 'Services provide stable networking for Pods. They act as a load balancer and service discovery mechanism in Kubernetes.'},
+                        {'type': 'concept', 'title': 'Service Types', 'points': ['ClusterIP: Internal cluster communication', 'NodePort: Expose on each node port', 'LoadBalancer: Cloud provider integration', 'ExternalName: DNS CNAME record']},
+                        {'type': 'yaml', 'title': 'ClusterIP Service', 'code': 'apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: my-service\\nspec:\\n  type: ClusterIP\\n  selector:\\n    app: myapp\\n  ports:\\n  - port: 80\\n    targetPort: 8080'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Use ClusterIP for internal services and LoadBalancer for external access. NodePort is rarely used in production.'}
                     ]
-                }},
-                '2': {{'title': 'ClusterIP Services', 'duration': '8 min', 'sections': [{{'type': 'intro', 'content': 'ClusterIP is the default Service type, providing internal cluster networking.'}}]}},
-                '3': {{'title': 'NodePort & LoadBalancer', 'duration': '10 min', 'sections': [{{'type': 'intro', 'content': 'These Service types expose your application outside the cluster.'}}]}},
-                '4': {{'title': 'Service Discovery', 'duration': '12 min', 'sections': [{{'type': 'intro', 'content': 'Kubernetes provides DNS-based service discovery automatically.'}}]}},
-                '5': {{'title': 'Production Networking', 'duration': '15 min', 'sections': [{{'type': 'intro', 'content': 'Learn production patterns for networking, ingress, and service mesh.'}}]}}
-            }},
-            'Deployments': {{
-                '1': {{
+                },
+                '2': {'title': 'ClusterIP Services', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'ClusterIP is the default Service type, providing internal cluster networking.'}]},
+                '3': {'title': 'NodePort & LoadBalancer', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'These Service types expose your application outside the cluster.'}]},
+                '4': {'title': 'Service Discovery', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Kubernetes provides DNS-based service discovery automatically.'}]},
+                '5': {'title': 'Production Networking', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Learn production patterns for networking, ingress, and service mesh.'}]}
+            },
+            'Deployments': {
+                '1': {
                     'title': 'What are Deployments?',
                     'duration': '6 min',
                     'sections': [
-                        {{'type': 'intro', 'content': 'Deployments manage ReplicaSets and provide declarative updates for Pods. They are the standard way to run applications in Kubernetes.'}},
-                        {{'type': 'concept', 'title': 'Key Features', 'points': ['Declarative updates', 'Rolling updates', 'Rollback capability', 'Scaling', 'Self-healing']}},
-                        {{'type': 'yaml', 'title': 'Basic Deployment', 'code': 'apiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: nginx-deployment\\nspec:\\n  replicas: 3\\n  selector:\\n    matchLabels:\\n      app: nginx\\n  template:\\n    metadata:\\n      labels:\\n        app: nginx\\n    spec:\\n      containers:\\n      - name: nginx\\n        image: nginx:1.21\\n        ports:\\n        - containerPort: 80'}},
-                        {{'type': 'production', 'title': 'Best Practice', 'content': 'Always use Deployments instead of creating Pods directly. Deployments provide built-in reliability and zero-downtime updates.'}}
+                        {'type': 'intro', 'content': 'Deployments manage ReplicaSets and provide declarative updates for Pods. They are the standard way to run applications in Kubernetes.'},
+                        {'type': 'concept', 'title': 'Key Features', 'points': ['Declarative updates', 'Rolling updates', 'Rollback capability', 'Scaling', 'Self-healing']},
+                        {'type': 'yaml', 'title': 'Basic Deployment', 'code': 'apiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: nginx-deployment\\nspec:\\n  replicas: 3\\n  selector:\\n    matchLabels:\\n      app: nginx\\n  template:\\n    metadata:\\n      labels:\\n        app: nginx\\n    spec:\\n      containers:\\n      - name: nginx\\n        image: nginx:1.21\\n        ports:\\n        - containerPort: 80'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Always use Deployments instead of creating Pods directly. Deployments provide built-in reliability and zero-downtime updates.'}
                     ]
-                }},
-                '2': {{'title': 'Rolling Updates', 'duration': '8 min', 'sections': [{{'type': 'intro', 'content': 'Rolling updates allow you to update applications with zero downtime.'}}]}},
-                '3': {{'title': 'Scaling', 'duration': '10 min', 'sections': [{{'type': 'intro', 'content': 'Scale your application horizontally with simple commands or autoscaling.'}}]}},
-                '4': {{'title': 'Rollback', 'duration': '12 min', 'sections': [{{'type': 'intro', 'content': 'Quickly rollback to previous versions when issues occur.'}}]}},
-                '5': {{'title': 'Production Strategies', 'duration': '15 min', 'sections': [{{'type': 'intro', 'content': 'Learn blue-green and canary deployment patterns.'}}]}}
-            }},
-            'ConfigMaps': {{
-                '1': {{
+                },
+                '2': {'title': 'Rolling Updates', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Rolling updates allow you to update applications with zero downtime.'}]},
+                '3': {'title': 'Scaling', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Scale your application horizontally with simple commands or autoscaling.'}]},
+                '4': {'title': 'Rollback', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Quickly rollback to previous versions when issues occur.'}]},
+                '5': {'title': 'Production Strategies', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Learn blue-green and canary deployment patterns.'}]}
+            },
+            'ConfigMaps': {
+                '1': {
                     'title': 'What are ConfigMaps?',
                     'duration': '5 min',
                     'sections': [
-                        {{'type': 'intro', 'content': 'ConfigMaps store non-sensitive configuration data as key-value pairs, making apps portable and environment-agnostic.'}},
-                        {{'type': 'concept', 'title': 'Use Cases', 'points': ['Application configuration', 'Command-line arguments', 'Environment variables', 'Configuration files']}},
-                        {{'type': 'yaml', 'title': 'ConfigMap Example', 'code': 'apiVersion: v1\\nkind: ConfigMap\\nmetadata:\\n  name: app-config\\ndata:\\n  DATABASE_HOST: postgres.default.svc\\n  DATABASE_PORT: "5432"\\n  LOG_LEVEL: info'}},
-                        {{'type': 'production', 'title': 'Best Practice', 'content': 'Use ConfigMaps for all non-sensitive config. Never put passwords or API keys in ConfigMaps - use Secrets instead.'}}
+                        {'type': 'intro', 'content': 'ConfigMaps store non-sensitive configuration data as key-value pairs, making apps portable and environment-agnostic.'},
+                        {'type': 'concept', 'title': 'Use Cases', 'points': ['Application configuration', 'Command-line arguments', 'Environment variables', 'Configuration files']},
+                        {'type': 'yaml', 'title': 'ConfigMap Example', 'code': 'apiVersion: v1\\nkind: ConfigMap\\nmetadata:\\n  name: app-config\\ndata:\\n  DATABASE_HOST: postgres.default.svc\\n  DATABASE_PORT: "5432"\\n  LOG_LEVEL: info'},
+                        {'type': 'production', 'title': 'Best Practice', 'content': 'Use ConfigMaps for all non-sensitive config. Never put passwords or API keys in ConfigMaps - use Secrets instead.'}
                     ]
-                }},
-                '2': {{'title': 'Using ConfigMaps', 'duration': '8 min', 'sections': [{{'type': 'intro', 'content': 'Mount ConfigMaps as environment variables or volumes.'}}]}},
-                '3': {{'title': 'Configuration Patterns', 'duration': '10 min', 'sections': [{{'type': 'intro', 'content': 'Learn patterns for managing configuration across environments.'}}]}},
-                '4': {{'title': 'Dynamic Updates', 'duration': '12 min', 'sections': [{{'type': 'intro', 'content': 'Update configuration without restarting Pods.'}}]}},
-                '5': {{'title': 'Production Config Management', 'duration': '15 min', 'sections': [{{'type': 'intro', 'content': 'Manage configuration at scale with GitOps and automation.'}}]}}
-            }},
-            'Secrets': {{
-                '1': {{
+                },
+                '2': {'title': 'Using ConfigMaps', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Mount ConfigMaps as environment variables or volumes.'}]},
+                '3': {'title': 'Configuration Patterns', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Learn patterns for managing configuration across environments.'}]},
+                '4': {'title': 'Dynamic Updates', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Update configuration without restarting Pods.'}]},
+                '5': {'title': 'Production Config Management', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Manage configuration at scale with GitOps and automation.'}]}
+            },
+            'Secrets': {
+                '1': {
                     'title': 'What are Secrets?',
                     'duration': '6 min',
                     'sections': [
-                        {{'type': 'intro', 'content': 'Secrets store sensitive data like passwords, OAuth tokens, and SSH keys. They provide encryption and access control.'}},
-                        {{'type': 'concept', 'title': 'Secret Types', 'points': ['Opaque: arbitrary data', 'kubernetes.io/dockerconfigjson: Docker credentials', 'kubernetes.io/tls: TLS certificates', 'kubernetes.io/service-account-token: Service account tokens']}},
-                        {{'type': 'yaml', 'title': 'Secret Example', 'code': 'apiVersion: v1\\nkind: Secret\\nmetadata:\\n  name: db-secret\\ntype: Opaque\\nstringData:\\n  username: admin\\n  password: super-secret-password'}},
-                        {{'type': 'production', 'title': 'Security Warning', 'content': 'Secrets are base64 encoded, NOT encrypted at rest by default. Use encryption at rest and external secret managers (Vault, AWS Secrets Manager) for production.'}}
+                        {'type': 'intro', 'content': 'Secrets store sensitive data like passwords, OAuth tokens, and SSH keys. They provide encryption and access control.'},
+                        {'type': 'concept', 'title': 'Secret Types', 'points': ['Opaque: arbitrary data', 'kubernetes.io/dockerconfigjson: Docker credentials', 'kubernetes.io/tls: TLS certificates', 'kubernetes.io/service-account-token: Service account tokens']},
+                        {'type': 'yaml', 'title': 'Secret Example', 'code': 'apiVersion: v1\\nkind: Secret\\nmetadata:\\n  name: db-secret\\ntype: Opaque\\nstringData:\\n  username: admin\\n  password: super-secret-password'},
+                        {'type': 'production', 'title': 'Security Warning', 'content': 'Secrets are base64 encoded, NOT encrypted at rest by default. Use encryption at rest and external secret managers (Vault, AWS Secrets Manager) for production.'}
                     ]
-                }},
-                '2': {{'title': 'Using Secrets Securely', 'duration': '8 min', 'sections': [{{'type': 'intro', 'content': 'Best practices for mounting and accessing secrets.'}}]}},
-                '3': {{'title': 'Secret Rotation', 'duration': '10 min', 'sections': [{{'type': 'intro', 'content': 'Rotate secrets without downtime.'}}]}},
-                '4': {{'title': 'External Secret Managers', 'duration': '12 min', 'sections': [{{'type': 'intro', 'content': 'Integrate with Vault, AWS Secrets Manager, Azure Key Vault.'}}]}},
-                '5': {{'title': 'Production Security', 'duration': '15 min', 'sections': [{{'type': 'intro', 'content': 'Complete security strategy for secrets management.'}}]}}
-            }}
-            }}
+                },
+                '2': {'title': 'Using Secrets Securely', 'duration': '8 min', 'sections': [{'type': 'intro', 'content': 'Best practices for mounting and accessing secrets.'}]},
+                '3': {'title': 'Secret Rotation', 'duration': '10 min', 'sections': [{'type': 'intro', 'content': 'Rotate secrets without downtime.'}]},
+                '4': {'title': 'External Secret Managers', 'duration': '12 min', 'sections': [{'type': 'intro', 'content': 'Integrate with Vault, AWS Secrets Manager, Azure Key Vault.'}]},
+                '5': {'title': 'Production Security', 'duration': '15 min', 'sections': [{'type': 'intro', 'content': 'Complete security strategy for secrets management.'}]}
+            }
+            }
 
             # Get lessons for the current concept
-            lesson_content = all_lessons.get(concept, {{}})
+            lesson_content = all_lessons.get(concept, {})
             lesson_data = lesson_content.get(lesson_id, {})
             self.wfile.write(json.dumps(lesson_data, indent=2).encode())
         else:

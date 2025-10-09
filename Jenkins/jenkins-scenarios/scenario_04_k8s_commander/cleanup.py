@@ -65,10 +65,27 @@ def cleanup_ports():
     
     print_step("Cleaning up ports 8081-8090...")
     for port in range(8081, 8091):
-        if run_command(f"netstat -tuln 2>/dev/null | grep -q ':{port} '", f"Checking port {port}"):
+        # Check multiple ways if port is in use
+        port_in_use = False
+        
+        # Check netstat
+        if run_command(f"netstat -tuln 2>/dev/null | grep -q ':{port} '", f"Checking port {port} with netstat"):
+            port_in_use = True
+        
+        # Check ss
+        if run_command(f"ss -tuln 2>/dev/null | grep -q ':{port} '", f"Checking port {port} with ss"):
+            port_in_use = True
+            
+        # Check lsof
+        if run_command(f"lsof -i :{port} 2>/dev/null | grep -q LISTEN", f"Checking port {port} with lsof"):
+            port_in_use = True
+        
+        if port_in_use:
             print(f"   • Port {port} is in use, attempting to free it...")
+            # Try multiple methods to free the port
             run_command(f"lsof -ti:{port} | xargs -r kill -9", f"Killing processes on port {port}")
-            time.sleep(1)
+            run_command(f"fuser -k {port}/tcp 2>/dev/null", f"Using fuser to kill port {port}")
+            time.sleep(2)
     
     print_success("Port cleanup completed!")
 

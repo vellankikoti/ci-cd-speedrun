@@ -316,6 +316,22 @@ EOF
                                 continue
                             fi
                             
+                            # Check if port is in use by ss command
+                            if ss -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                echo "║     • Port $WEBAPP_PORT in use by ss, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by lsof
+                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
+                                echo "║     • Port $WEBAPP_PORT in use by lsof, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
                             # Check if port is in use by Docker containers
                             if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
                                 echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
@@ -631,10 +647,22 @@ EOF
                         # Also clean up any processes using ports 8081-8090
                         echo "║  🧹 Cleaning up port usage..."
                         for port in {8081..8090}; do
+                            port_in_use=false
+                            
+                            # Check if port is in use by any method
                             if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+                                port_in_use=true
+                            elif ss -tuln 2>/dev/null | grep -q ":$port "; then
+                                port_in_use=true
+                            elif lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+                                port_in_use=true
+                            fi
+                            
+                            if [ "$port_in_use" = true ]; then
                                 echo "║     • Port $port is in use, attempting to free it..."
-                                # Try to find and kill processes using this port
+                                # Try multiple methods to free the port
                                 lsof -ti:$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+                                fuser -k $port/tcp 2>/dev/null || true
                                 sleep 2
                             fi
                         done
@@ -658,6 +686,22 @@ EOF
                             # Check if port is in use by netstat
                             if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
                                 echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by ss command
+                            if ss -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                echo "║     • Port $WEBAPP_PORT in use by ss, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by lsof
+                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
+                                echo "║     • Port $WEBAPP_PORT in use by lsof, trying next..."
                                 WEBAPP_PORT=$((WEBAPP_PORT + 1))
                                 ATTEMPTS=$((ATTEMPTS + 1))
                                 continue
@@ -691,18 +735,75 @@ EOF
                         echo "║     • Container: $CONTAINER_NAME"
                         echo "║     • Port: $WEBAPP_PORT"
                         
-                        # Run the container
-                        docker run -d \\
-                            --name $CONTAINER_NAME \\
-                            -p $WEBAPP_PORT:$WEBAPP_PORT \\
-                            -e K8S_CONCEPT="${K8S_CONCEPT}" \\
-                            -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
-                            -e NAMESPACE="${NAMESPACE}" \\
-                            -e K8S_VERSION="${K8S_VERSION}" \\
-                            -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
-                            -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
-                            -e EXPOSE_PORT="$WEBAPP_PORT" \\
-                            $IMAGE_NAME
+                        # Verify port is still available before starting container
+                        echo "║  🔍 Verifying port availability..."
+                        if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || \
+                           ss -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || \
+                           lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN || \
+                           docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
+                            echo "║     ❌ Port $WEBAPP_PORT is no longer available, finding new port..."
+                            # Find a new port
+                            for new_port in {8081..8090}; do
+                                if ! netstat -tuln 2>/dev/null | grep -q ":$new_port " && \
+                                   ! ss -tuln 2>/dev/null | grep -q ":$new_port " && \
+                                   ! lsof -i :$new_port 2>/dev/null | grep -q LISTEN && \
+                                   ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$new_port->"; then
+                                    WEBAPP_PORT=$new_port
+                                    echo "║     ✅ Found new available port: $WEBAPP_PORT"
+                                    break
+                                fi
+                            done
+                        else
+                            echo "║     ✅ Port $WEBAPP_PORT is confirmed available"
+                        fi
+                        
+                        # Run the container with retry mechanism
+                        MAX_RETRIES=3
+                        RETRY_COUNT=0
+                        
+                        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                            echo "║  🚀 Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES to start container..."
+                            
+                            if docker run -d \\
+                                --name $CONTAINER_NAME \\
+                                -p $WEBAPP_PORT:$WEBAPP_PORT \\
+                                -e K8S_CONCEPT="${K8S_CONCEPT}" \\
+                                -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
+                                -e NAMESPACE="${NAMESPACE}" \\
+                                -e K8S_VERSION="${K8S_VERSION}" \\
+                                -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
+                                -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
+                                -e EXPOSE_PORT="$WEBAPP_PORT" \\
+                                $IMAGE_NAME; then
+                                echo "║     ✅ Container started successfully"
+                                break
+                            else
+                                echo "║     ❌ Container start failed, attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+                                RETRY_COUNT=$((RETRY_COUNT + 1))
+                                
+                                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                                    echo "║     🔄 Cleaning up and retrying..."
+                                    docker rm -f $CONTAINER_NAME 2>/dev/null || true
+                                    
+                                    # Find a new port for retry
+                                    for new_port in {8081..8090}; do
+                                        if ! netstat -tuln 2>/dev/null | grep -q ":$new_port " && \
+                                           ! ss -tuln 2>/dev/null | grep -q ":$new_port " && \
+                                           ! lsof -i :$new_port 2>/dev/null | grep -q LISTEN && \
+                                           ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$new_port->"; then
+                                            WEBAPP_PORT=$new_port
+                                            echo "║     🔄 Trying new port: $WEBAPP_PORT"
+                                            break
+                                        fi
+                                    done
+                                    
+                                    sleep 2
+                                else
+                                    echo "║     ❌ All retry attempts failed"
+                                    exit 1
+                                fi
+                            fi
+                        done
                         
                         # Wait for container to start
                         sleep 5

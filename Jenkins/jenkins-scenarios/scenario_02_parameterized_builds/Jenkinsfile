@@ -242,15 +242,71 @@ pipeline {
                     echo "║     • Features: ${params.FEATURES}"
                     echo "║     • Run Tests: ${params.RUN_TESTS}"
                     
-                    // Generate web application using simple approach
+                    // Generate dynamic web application and Docker image
                     sh '''
                         echo "║"
-                        echo "║  🔧 Generating web application..."
+                        echo "║  🔧 Generating dynamic web application..."
                         
                         # Create webapp directory
                         mkdir -p webapp
                         
-                        # Generate HTML based on parameters
+                        # Environment-specific configurations
+                        case "${ENVIRONMENT}" in
+                            "Development")
+                                ENV_COLOR="#28a745"
+                                ENV_ICON="🛠️"
+                                ENV_DESC="Development Environment"
+                                ENV_DB="Local SQLite"
+                                ENV_LOGGING="Debug"
+                                ENV_MONITORING="Basic"
+                                ENV_SECURITY="Relaxed"
+                                ;;
+                            "Staging")
+                                ENV_COLOR="#ffc107"
+                                ENV_ICON="🧪"
+                                ENV_DESC="Staging Environment"
+                                ENV_DB="PostgreSQL"
+                                ENV_LOGGING="Info"
+                                ENV_MONITORING="Full"
+                                ENV_SECURITY="Standard"
+                                ;;
+                            "Production")
+                                ENV_COLOR="#dc3545"
+                                ENV_ICON="🚀"
+                                ENV_DESC="Production Environment"
+                                ENV_DB="PostgreSQL Cluster"
+                                ENV_LOGGING="Warning"
+                                ENV_MONITORING="Advanced"
+                                ENV_SECURITY="Strict"
+                                ;;
+                        esac
+                        
+                        # Feature-specific configurations
+                        case "${FEATURES}" in
+                            "Basic")
+                                FEATURE_CAPS="User Auth,Basic CRUD,Simple Dashboard"
+                                FEATURE_CPU="1 Core"
+                                FEATURE_MEM="512MB"
+                                FEATURE_PRICE="Free"
+                                FEATURE_SCALING="Manual"
+                                ;;
+                            "Advanced")
+                                FEATURE_CAPS="Analytics,API Integration,Custom Dashboards"
+                                FEATURE_CPU="2 Cores"
+                                FEATURE_MEM="1GB"
+                                FEATURE_PRICE="$99/month"
+                                FEATURE_SCALING="Auto"
+                                ;;
+                            "Enterprise")
+                                FEATURE_CAPS="AI/ML,Multi-tenant,Custom Workflows"
+                                FEATURE_CPU="4 Cores"
+                                FEATURE_MEM="4GB"
+                                FEATURE_PRICE="Custom"
+                                FEATURE_SCALING="Auto"
+                                ;;
+                        esac
+                        
+                        # Generate dynamic HTML
                         cat > webapp/index.html << EOF
 <!DOCTYPE html>
 <html lang="en">
@@ -262,12 +318,12 @@ pipeline {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #28a74520 0%, #f8f9fa 100%);
+            background: linear-gradient(135deg, ${ENV_COLOR}20 0%, #f8f9fa 100%);
             min-height: 100vh;
             padding: 20px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -275,7 +331,7 @@ pipeline {
             overflow: hidden;
         }
         .header {
-            background: linear-gradient(135deg, #28a745 0%, #2c3e50 100%);
+            background: linear-gradient(135deg, ${ENV_COLOR} 0%, #2c3e50 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -291,13 +347,13 @@ pipeline {
         }
         .info-card {
             background: #f8f9fa;
-            border: 2px solid #28a74530;
+            border: 2px solid ${ENV_COLOR}30;
             border-radius: 10px;
             padding: 20px;
             transition: all 0.3s ease;
         }
         .info-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .info-card h3 { color: #28a745; margin-bottom: 15px; font-size: 1.3em; }
+        .info-card h3 { color: ${ENV_COLOR}; margin-bottom: 15px; font-size: 1.3em; }
         .feature-list { list-style: none; padding: 0; }
         .feature-list li { padding: 8px 0; border-bottom: 1px solid #e9ecef; }
         .feature-list li:before { content: '✅'; margin-right: 10px; }
@@ -307,25 +363,59 @@ pipeline {
             gap: 15px;
             margin-top: 15px;
         }
-        .metric { text-align: center; padding: 15px; background: white; border-radius: 8px; border: 2px solid #28a74520; }
-        .metric-value { font-size: 1.5em; font-weight: bold; color: #28a745; }
+        .metric { text-align: center; padding: 15px; background: white; border-radius: 8px; border: 2px solid ${ENV_COLOR}20; }
+        .metric-value { font-size: 1.5em; font-weight: bold; color: ${ENV_COLOR}; }
         .metric-label { font-size: 0.9em; color: #6c757d; margin-top: 5px; }
         .demo-section {
-            background: linear-gradient(135deg, #28a74510 0%, #f8f9fa 100%);
-            border: 2px solid #28a74530;
+            background: linear-gradient(135deg, ${ENV_COLOR}10 0%, #f8f9fa 100%);
+            border: 2px solid ${ENV_COLOR}30;
             border-radius: 15px;
             padding: 30px;
             margin: 30px 0;
             text-align: center;
         }
+        .docker-section {
+            background: #f8f9fa;
+            border: 2px solid ${ENV_COLOR}30;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        .docker-command {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
         .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛠️ Development Environment</h1>
+            <h1>${ENV_ICON} ${ENV_DESC}</h1>
             <p>Version ${VERSION} - Generated by Jenkins Parameterized Build</p>
+            <div style="margin-top: 10px;">
+                <span class="status-indicator"></span>
+                <span>LIVE - Real-time deployment</span>
+            </div>
         </div>
         
         <div class="content">
@@ -338,18 +428,21 @@ pipeline {
                         <li>Features: ${FEATURES}</li>
                         <li>Tests: ${RUN_TESTS}</li>
                         <li>Notes: ${DEPLOYMENT_NOTES}</li>
+                        <li>Database: ${ENV_DB}</li>
+                        <li>Logging: ${ENV_LOGGING}</li>
+                        <li>Security: ${ENV_SECURITY}</li>
                     </ul>
                     <div class="metrics">
                         <div class="metric">
-                            <div class="metric-value">1 Core</div>
+                            <div class="metric-value">${FEATURE_CPU}</div>
                             <div class="metric-label">CPU</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">512MB</div>
+                            <div class="metric-value">${FEATURE_MEM}</div>
                             <div class="metric-label">Memory</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">Free</div>
+                            <div class="metric-value">${FEATURE_PRICE}</div>
                             <div class="metric-label">Pricing</div>
                         </div>
                     </div>
@@ -358,32 +451,60 @@ pipeline {
                 <div class="info-card">
                     <h3>🎛️ Features: ${FEATURES}</h3>
                     <ul class="feature-list">
-                        <li>User Auth</li>
-                        <li>Basic CRUD</li>
-                        <li>Simple Dashboard</li>
+                        $(echo "${FEATURE_CAPS}" | tr ',' '\n' | sed 's/^/                        <li>/' | sed 's/$/<\/li>/')
                     </ul>
+                    <div style="margin-top: 15px;">
+                        <strong>Scaling:</strong> ${FEATURE_SCALING}<br>
+                        <strong>Monitoring:</strong> ${ENV_MONITORING}
+                    </div>
                 </div>
             </div>
             
+            <div class="docker-section">
+                <h3>🐳 Docker Integration</h3>
+                <p>This deployment creates a real Docker image based on your parameters:</p>
+                <div class="docker-command">
+                    docker build -t jenkins-demo-${ENVIRONMENT,,}-${VERSION} .<br>
+                    docker run -d -p 8080:8080 --name ${ENVIRONMENT,,}-app jenkins-demo-${ENVIRONMENT,,}-${VERSION}
+                </div>
+                <p><strong>Image Tag:</strong> jenkins-demo-${ENVIRONMENT,,}-${VERSION}</p>
+                <p><strong>Container Name:</strong> ${ENVIRONMENT,,}-app</p>
+            </div>
+            
             <div class="demo-section">
-                <h3>🎮 Interactive Demo</h3>
+                <h3>🎮 Real-time Interactive Demo</h3>
                 <p>This web application was generated by Jenkins parameterized builds!</p>
                 <p><strong>Parameters used:</strong> ${ENVIRONMENT} + ${FEATURES} + ${VERSION}</p>
-                <div style="background: #28a74520; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <div style="background: ${ENV_COLOR}20; padding: 15px; border-radius: 8px; margin-top: 15px;">
                     <strong>Jenkins Action:</strong> Successfully deployed ${FEATURES} features to ${ENVIRONMENT} environment
+                </div>
+                <div style="margin-top: 20px;">
+                    <button onclick="location.reload()" style="background: ${ENV_COLOR}; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        🔄 Refresh to see live updates
+                    </button>
                 </div>
             </div>
         </div>
         
         <div class="footer">
             <p>Generated by Jenkins Parameterized Build - $(date)</p>
+            <p>Build Number: ${BUILD_NUMBER} | Git Commit: ${GIT_COMMIT:0:8}</p>
         </div>
     </div>
+    
+    <script>
+        // Real-time updates
+        setInterval(function() {
+            const now = new Date();
+            document.querySelector('.footer p:last-child').innerHTML = 
+                'Last updated: ' + now.toLocaleTimeString() + ' | Build: ${BUILD_NUMBER}';
+        }, 1000);
+    </script>
 </body>
 </html>
 EOF
                         
-                        echo "║     • Web application generated successfully!"
+                        echo "║     • Dynamic web application generated successfully!"
                     '''
                     
                     // Show generated files
@@ -400,6 +521,170 @@ EOF
                     
                     echo "║"
                     echo "║  ✅ Web application generation completed successfully!"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    echo ""
+                }
+            }
+        }
+        
+        stage('🐳 Docker Image Creation') {
+            steps {
+                script {
+                    echo "🐳 Creating Docker image based on parameters..."
+                    
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🐳 DOCKER IMAGE CREATION                                 ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🏗️  Building Docker image for ${params.ENVIRONMENT} environment..."
+                    
+                    // Create Dockerfile based on parameters
+                    sh '''
+                        echo "║     • Creating Dockerfile for ${ENVIRONMENT} + ${FEATURES}..."
+                        
+                        # Environment-specific base image
+                        case "${ENVIRONMENT}" in
+                            "Development")
+                                BASE_IMAGE="python:3.11-slim"
+                                EXPOSE_PORT="8080"
+                                ;;
+                            "Staging")
+                                BASE_IMAGE="python:3.11-alpine"
+                                EXPOSE_PORT="8080"
+                                ;;
+                            "Production")
+                                BASE_IMAGE="python:3.11-slim"
+                                EXPOSE_PORT="8080"
+                                ;;
+                        esac
+                        
+                        # Feature-specific packages
+                        case "${FEATURES}" in
+                            "Basic")
+                                EXTRA_PACKAGES=""
+                                FEATURE_FLAGS="--basic"
+                                ;;
+                            "Advanced")
+                                EXTRA_PACKAGES="curl jq"
+                                FEATURE_FLAGS="--advanced"
+                                ;;
+                            "Enterprise")
+                                EXTRA_PACKAGES="curl jq redis-tools postgresql-client"
+                                FEATURE_FLAGS="--enterprise"
+                                ;;
+                        esac
+                        
+                        # Create Dockerfile
+                        cat > Dockerfile << EOF
+FROM ${BASE_IMAGE}
+
+# Set environment variables
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV VERSION=${VERSION}
+ENV FEATURES=${FEATURES}
+ENV RUN_TESTS=${RUN_TESTS}
+
+# Install system packages
+RUN apt-get update && apt-get install -y \\
+    ${EXTRA_PACKAGES} \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy webapp files
+COPY webapp/ ./webapp/
+
+# Create app.py based on parameters
+RUN cat > app.py << 'PYEOF'
+#!/usr/bin/env python3
+import os
+import time
+import json
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from datetime import datetime
+
+class ParameterizedHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/api/status':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            
+            status = {
+                "environment": "${ENVIRONMENT}",
+                "version": "${VERSION}",
+                "features": "${FEATURES}",
+                "run_tests": ${RUN_TESTS},
+                "timestamp": datetime.now().isoformat(),
+                "uptime": time.time(),
+                "status": "running"
+            }
+            self.wfile.write(json.dumps(status).encode())
+        else:
+            super().do_GET()
+
+if __name__ == "__main__":
+    os.chdir('/app/webapp')
+    server = HTTPServer(('0.0.0.0', ${EXPOSE_PORT}), ParameterizedHandler)
+    print(f"Starting server on port ${EXPOSE_PORT} for ${ENVIRONMENT} environment...")
+    server.serve_forever()
+PYEOF
+
+RUN chmod +x app.py
+
+# Expose port
+EXPOSE ${EXPOSE_PORT}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:${EXPOSE_PORT}/api/status || exit 1
+
+# Run the application
+CMD ["python3", "app.py"]
+EOF
+                        
+                        echo "║     • Dockerfile created successfully"
+                    '''
+                    
+                    // Build Docker image
+                    sh '''
+                        echo "║     • Building Docker image..."
+                        
+                        IMAGE_NAME="jenkins-demo-${ENVIRONMENT,,}-${VERSION}"
+                        CONTAINER_NAME="${ENVIRONMENT,,}-app"
+                        
+                        # Build the image
+                        docker build -t $IMAGE_NAME . || {
+                            echo "║     ❌ Docker build failed"
+                            exit 1
+                        }
+                        
+                        echo "║     ✅ Docker image built: $IMAGE_NAME"
+                        
+                        # Show image info
+                        docker images | grep $IMAGE_NAME
+                        
+                        # Save image info
+                        echo "$IMAGE_NAME" > docker.image
+                        echo "$CONTAINER_NAME" > docker.container
+                    '''
+                    
+                    echo "║"
+                    echo "║  🎯 Docker Image Details:"
+                    sh '''
+                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
+                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
+                        
+                        echo "║     • Image: $IMAGE_NAME"
+                        echo "║     • Container: $CONTAINER_NAME"
+                        echo "║     • Environment: ${ENVIRONMENT}"
+                        echo "║     • Features: ${FEATURES}"
+                        echo "║     • Version: ${VERSION}"
+                    '''
+                    
+                    echo "║"
+                    echo "║  ✅ Docker image creation completed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
                 }
@@ -454,7 +739,35 @@ EOF
                         echo "║     • Step 6: Rollback preparation"
                     }
                     
-                    // Feature-specific deployment
+                    // Deploy Docker container
+                    sh '''
+                        IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
+                        CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
+                        
+                        echo "║"
+                        echo "║  🐳 Deploying Docker container..."
+                        
+                        # Stop existing container if running
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm $CONTAINER_NAME 2>/dev/null || true
+                        
+                        # Run new container
+                        docker run -d \\
+                            --name $CONTAINER_NAME \\
+                            -p 8080:8080 \\
+                            -e ENVIRONMENT=${ENVIRONMENT} \\
+                            -e VERSION=${VERSION} \\
+                            -e FEATURES=${FEATURES} \\
+                            $IMAGE_NAME || {
+                            echo "║     ❌ Docker container deployment failed"
+                            exit 1
+                        }
+                        
+                        echo "║     ✅ Container deployed: $CONTAINER_NAME"
+                        echo "║     ✅ Access: http://localhost:8080"
+                    '''
+                    
+                    // Feature-specific deployment info
                     echo "║"
                     echo "║  🎛️  Feature Deployment:"
                     if (params.FEATURES == "Basic") {
@@ -477,8 +790,9 @@ EOF
                     echo "║  📊 Post-Deployment State:"
                     sh '''
                         RUNNING_PROCS=$(ps aux | wc -l)
+                        CONTAINER_STATUS=$(docker ps --filter "name=${ENVIRONMENT,,}-app" --format "table {{.Status}}" | tail -1)
                         echo "║     • Running processes: $RUNNING_PROCS"
-                        echo "║     • Service status: Running"
+                        echo "║     • Container status: $CONTAINER_STATUS"
                         echo "║     • Health check: ✅ PASSED"
                         echo "║     • Monitoring: Active"
                     '''
@@ -520,7 +834,7 @@ EOF
                         
                         # Find an available port starting from 8081
                         PORT=8081
-                        while netstat -tuln | grep -q ":$PORT "; do
+                        while netstat -tuln 2>/dev/null | grep -q ":$PORT "; do
                             PORT=$((PORT + 1))
                         done
                         
@@ -706,13 +1020,16 @@ EOF
             echo "║"
             echo "║  🌐 WEB APPLICATION ACCESS:"
             sh '''
-                PORT=$(cat webapp/webapp.port 2>/dev/null || echo "8081")
-                DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
-                CONTAINER_IP=$(hostname -I | awk '{print $1}')
-                echo "║     • Primary URL: http://localhost:$PORT"
-                echo "║     • Alternative: http://$DOCKER_HOST_IP:$PORT"
-                echo "║     • Container IP: http://$CONTAINER_IP:$PORT"
-                echo "║     • Port: $PORT (bound to 0.0.0.0)"
+                CONTAINER_NAME=$(cat docker.container 2>/dev/null || echo "${ENVIRONMENT,,}-app")
+                IMAGE_NAME=$(cat docker.image 2>/dev/null || echo "jenkins-demo-${ENVIRONMENT,,}-${VERSION}")
+                
+                echo "║     • Docker Container: $CONTAINER_NAME"
+                echo "║     • Docker Image: $IMAGE_NAME"
+                echo "║     • Primary URL: http://localhost:8080"
+                echo "║     • API Status: http://localhost:8080/api/status"
+                echo "║     • Environment: ${ENVIRONMENT}"
+                echo "║     • Features: ${FEATURES}"
+                echo "║     • Version: ${VERSION}"
                 echo "║     • Status: ✅ RUNNING"
             '''
             echo "╚══════════════════════════════════════════════════════════════════════════════╝"

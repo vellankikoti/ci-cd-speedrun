@@ -578,6 +578,13 @@ PYEOF
                                 ;;
                         esac
                         
+                        # Handle empty packages
+                        if [ -z "${EXTRA_PACKAGES}" ]; then
+                            PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_CLEANUP}"
+                        else
+                            PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} ${EXTRA_PACKAGES} && ${PACKAGE_CLEANUP}"
+                        fi
+                        
                         # Create Dockerfile
                         cat > Dockerfile << EOF
 FROM ${BASE_IMAGE}
@@ -589,9 +596,7 @@ ENV FEATURES=${FEATURES}
 ENV RUN_TESTS=${RUN_TESTS}
 
 # Install system packages
-RUN ${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} \\
-    ${EXTRA_PACKAGES} \\
-    ${PACKAGE_CLEANUP}
+RUN ${PACKAGE_INSTALL_CMD}
 
 # Create app directory
 WORKDIR /app

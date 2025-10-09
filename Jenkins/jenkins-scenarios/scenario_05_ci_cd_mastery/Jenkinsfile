@@ -774,6 +774,7 @@ This dashboard demonstrates:
                             
                             # Save port info
                             echo \$ACTUAL_PORT > dashboard.port
+                            echo "║     💾 Port saved to dashboard.port: \$ACTUAL_PORT"
                             
                             echo "║     ✅ Container deployed successfully"
                             echo "║     🌐 Dashboard URL: http://localhost:\$ACTUAL_PORT"
@@ -816,20 +817,34 @@ This dashboard demonstrates:
                     echo "║  🏆 Max Points: 150 points"
                     echo "║"
                     
-                    // Read port from file
-                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    // Read port from file or use default
+                    def WEBAPP_PORT = "8082"
+                    try {
+                        WEBAPP_PORT = readFile('dashboard.port').trim()
+                    } catch (Exception e) {
+                        echo "║     ⚠️  Could not read port from file, using default 8082"
+                    }
                     
                     echo "║  🧪 Running comprehensive tests..."
                     echo "║"
+                    echo "║     🔍 Using port: $WEBAPP_PORT"
+                    echo "║     📁 Checking dashboard.port file..."
+                    sh """
+                        if [ -f dashboard.port ]; then
+                            echo "║     ✅ dashboard.port exists: \$(cat dashboard.port)"
+                        else
+                            echo "║     ❌ dashboard.port not found"
+                        fi
+                    """
                     
                     // Test 1: Health Check with retries
                     echo "║  🔍 Test 1: Health Check API"
                     sh """
                         echo "║     Testing health endpoint..."
                         
-                        # First, test if port is accessible
+                        # First, test if port is accessible using curl
                         echo "║     🔍 Testing port accessibility..."
-                        if ! nc -z localhost $WEBAPP_PORT 2>/dev/null; then
+                        if ! curl -s --connect-timeout 5 http://localhost:$WEBAPP_PORT/ >/dev/null 2>&1; then
                             echo "║     ❌ Port $WEBAPP_PORT is not accessible"
                             echo "║     • Container status:"
                             docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
@@ -839,26 +854,12 @@ This dashboard demonstrates:
                         fi
                         echo "║     ✅ Port $WEBAPP_PORT is accessible"
                         
-                        # Wait for container to be ready with retries
-                        MAX_RETRIES=10
-                        RETRY_COUNT=0
-                        HEALTH_CHECK_PASSED=false
-                        
-                        while [ \$RETRY_COUNT -lt \$MAX_RETRIES ] && [ "\$HEALTH_CHECK_PASSED" = "false" ]; do
-                            RETRY_COUNT=\$((RETRY_COUNT + 1))
-                            echo "║     Health check attempt \$RETRY_COUNT/\$MAX_RETRIES..."
-                            
-                            if curl -f http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
-                                echo "║     ✅ Health check passed"
-                                HEALTH_CHECK_PASSED=true
-                            else
-                                echo "║     ⏳ Container not ready yet, waiting 3 seconds..."
-                                sleep 3
-                            fi
-                        done
-                        
-                        if [ "\$HEALTH_CHECK_PASSED" = "false" ]; then
-                            echo "║     ❌ Health check failed after \$MAX_RETRIES attempts"
+                        # Test health endpoint directly
+                        echo "║     🔍 Testing health endpoint..."
+                        if curl -f http://localhost:$WEBAPP_PORT/api/health; then
+                            echo "║     ✅ Health check passed"
+                        else
+                            echo "║     ❌ Health check failed"
                             echo "║     • Container status:"
                             docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
                             echo "║     • Container logs:"
@@ -942,8 +943,13 @@ This dashboard demonstrates:
                     echo "║  🏆 Max Points: 150 points"
                     echo "║"
                     
-                    // Read port from file
-                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    // Read port from file or use default
+                    def WEBAPP_PORT = "8082"
+                    try {
+                        WEBAPP_PORT = readFile('dashboard.port').trim()
+                    } catch (Exception e) {
+                        echo "║     ⚠️  Could not read port from file, using default 8082"
+                    }
                     
                     echo "║  🎮 Interactive Demo Features:"
                     echo "║"
@@ -1023,8 +1029,13 @@ This dashboard demonstrates:
                     echo "║  🏆 Max Points: 100 points"
                     echo "║"
                     
-                    // Read port from file
-                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    // Read port from file or use default
+                    def WEBAPP_PORT = "8082"
+                    try {
+                        WEBAPP_PORT = readFile('dashboard.port').trim()
+                    } catch (Exception e) {
+                        echo "║     ⚠️  Could not read port from file, using default 8082"
+                    }
                     
                     // Calculate final score and time
                     def endTime = System.currentTimeMillis()

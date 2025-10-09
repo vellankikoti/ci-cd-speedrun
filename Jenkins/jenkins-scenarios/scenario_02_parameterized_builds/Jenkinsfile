@@ -47,133 +47,137 @@ pipeline {
     stages {
         stage('📋 Parameter Validation') {
             steps {
-                sh '''
+                script {
+                    echo "🔍 Running parameter validation..."
+                    
+                    // Checkout with proper error handling
+                    checkout scm
+                    
+                    // Display parameters using Groovy
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    📋 PARAMETER VALIDATION                                  ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🎯 User Input Parameters:"
-                    echo "║     • Environment: ${ENVIRONMENT}"
-                    echo "║     • Version: ${VERSION}"
-                    echo "║     • Run Tests: ${RUN_TESTS}"
-                    echo "║     • Features: ${FEATURES}"
-                    echo "║     • Deployment Notes: ${DEPLOYMENT_NOTES}"
+                    echo "║     • Environment: ${params.ENVIRONMENT}"
+                    echo "║     • Version: ${params.VERSION}"
+                    echo "║     • Run Tests: ${params.RUN_TESTS}"
+                    echo "║     • Features: ${params.FEATURES}"
+                    echo "║     • Deployment Notes: ${params.DEPLOYMENT_NOTES}"
                     
-                    # System information
-                    HOSTNAME=$(hostname)
-                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
-                    CURRENT_TIME=$(date)
+                    // System information
+                    sh '''
+                        HOSTNAME=$(hostname)
+                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        CURRENT_TIME=$(date)
+                        
+                        echo "║"
+                        echo "║  🖥️  System Information:"
+                        echo "║     • Build host: $HOSTNAME"
+                        echo "║     • IP address: $IP_ADDRESS"
+                        echo "║     • Build time: $CURRENT_TIME"
+                        echo "║     • Build number: ${BUILD_NUMBER}"
+                    '''
                     
-                    echo "║"
-                    echo "║  🖥️  System Information:"
-                    echo "║     • Build host: $HOSTNAME"
-                    echo "║     • IP address: $IP_ADDRESS"
-                    echo "║     • Build time: $CURRENT_TIME"
-                    echo "║     • Build number: ${BUILD_NUMBER}"
-                    
-                    # Parameter validation
+                    // Parameter validation
                     echo "║"
                     echo "║  ✅ Parameter Validation:"
-                    if [ "${ENVIRONMENT}" = "Production" ]; then
+                    if (params.ENVIRONMENT == "Production") {
                         echo "║     • ⚠️  PRODUCTION DEPLOYMENT DETECTED"
                         echo "║     • Extra validation steps will be performed"
-                    else
-                        echo "║     • Environment: ${ENVIRONMENT} (Safe for testing)"
-                    fi
+                    } else {
+                        echo "║     • Environment: ${params.ENVIRONMENT} (Safe for testing)"
+                    }
                     
-                    if [ "${RUN_TESTS}" = "true" ]; then
+                    if (params.RUN_TESTS == true) {
                         echo "║     • Tests will be executed before deployment"
-                    else
+                    } else {
                         echo "║     • Tests will be skipped (user choice)"
-                    fi
+                    }
                     
-                    echo "║     • Feature set: ${FEATURES}"
-                    echo "║     • Version: ${VERSION}"
+                    echo "║     • Feature set: ${params.FEATURES}"
+                    echo "║     • Version: ${params.VERSION}"
                     
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
         
         stage('🔍 Environment Analysis') {
             steps {
-                sh '''
+                script {
+                    echo "🔍 Analyzing environment configuration..."
+                    
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    🔍 ENVIRONMENT ANALYSIS                                   ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    # Environment-specific configuration
-                    case "${ENVIRONMENT}" in
-                        "Development")
-                            echo "║  🛠️  Development Environment:"
-                            echo "║     • Purpose: Development and testing"
-                            echo "║     • Database: Local SQLite"
-                            echo "║     • Logging: Debug level"
-                            echo "║     • Monitoring: Basic"
-                            echo "║     • Security: Relaxed"
-                            ;;
-                        "Staging")
-                            echo "║  🧪 Staging Environment:"
-                            echo "║     • Purpose: Pre-production testing"
-                            echo "║     • Database: Production-like"
-                            echo "║     • Logging: Info level"
-                            echo "║     • Monitoring: Full"
-                            echo "║     • Security: Production-like"
-                            ;;
-                        "Production")
-                            echo "║  🚀 Production Environment:"
-                            echo "║     • Purpose: Live user traffic"
-                            echo "║     • Database: Production cluster"
-                            echo "║     • Logging: Warning level"
-                            echo "║     • Monitoring: Full + Alerts"
-                            echo "║     • Security: Maximum"
-                            ;;
-                    esac
+                    // Environment-specific configuration
+                    if (params.ENVIRONMENT == "Development") {
+                        echo "║  🛠️  Development Environment:"
+                        echo "║     • Purpose: Development and testing"
+                        echo "║     • Database: Local SQLite"
+                        echo "║     • Logging: Debug level"
+                        echo "║     • Monitoring: Basic"
+                        echo "║     • Security: Relaxed"
+                    } else if (params.ENVIRONMENT == "Staging") {
+                        echo "║  🧪 Staging Environment:"
+                        echo "║     • Purpose: Pre-production testing"
+                        echo "║     • Database: Production-like"
+                        echo "║     • Logging: Info level"
+                        echo "║     • Monitoring: Full"
+                        echo "║     • Security: Production-like"
+                    } else if (params.ENVIRONMENT == "Production") {
+                        echo "║  🚀 Production Environment:"
+                        echo "║     • Purpose: Live user traffic"
+                        echo "║     • Database: Production cluster"
+                        echo "║     • Logging: Warning level"
+                        echo "║     • Monitoring: Full + Alerts"
+                        echo "║     • Security: Maximum"
+                    }
                     
-                    # Feature-specific configuration
+                    // Feature-specific configuration
                     echo "║"
                     echo "║  🎛️  Feature Configuration:"
-                    case "${FEATURES}" in
-                        "Basic")
-                            echo "║     • Features: Core functionality only"
-                            echo "║     • Resources: 1 CPU, 512MB RAM"
-                            echo "║     • Scaling: Manual"
-                            echo "║     • Support: Community"
-                            ;;
-                        "Advanced")
-                            echo "║     • Features: Core + Advanced features"
-                            echo "║     • Resources: 2 CPU, 1GB RAM"
-                            echo "║     • Scaling: Auto-scaling"
-                            echo "║     • Support: Business hours"
-                            ;;
-                        "Enterprise")
-                            echo "║     • Features: All features + Premium"
-                            echo "║     • Resources: 4 CPU, 4GB RAM"
-                            echo "║     • Scaling: Multi-region"
-                            echo "║     • Support: 24/7"
-                            ;;
-                    esac
+                    if (params.FEATURES == "Basic") {
+                        echo "║     • Features: Core functionality only"
+                        echo "║     • Resources: 1 CPU, 512MB RAM"
+                        echo "║     • Scaling: Manual"
+                        echo "║     • Support: Community"
+                    } else if (params.FEATURES == "Advanced") {
+                        echo "║     • Features: Core + Advanced features"
+                        echo "║     • Resources: 2 CPU, 1GB RAM"
+                        echo "║     • Scaling: Auto-scaling"
+                        echo "║     • Support: Business hours"
+                    } else if (params.FEATURES == "Enterprise") {
+                        echo "║     • Features: All features + Premium"
+                        echo "║     • Resources: 4 CPU, 4GB RAM"
+                        echo "║     • Scaling: Multi-region"
+                        echo "║     • Support: 24/7"
+                    }
                     
-                    # System resources
+                    // System resources
                     echo "║"
                     echo "║  💻 Available Resources:"
-                    CPU_CORES=$(nproc)
-                    TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
-                    USED_MEM=$(free -h | grep Mem | awk '{print $3}')
-                    AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
-                    DISK_AVAIL=$(df -h . | tail -1 | awk '{print $4}')
-                    
-                    echo "║     • CPU cores: $CPU_CORES"
-                    echo "║     • Total memory: $TOTAL_MEM"
-                    echo "║     • Used memory: $USED_MEM"
-                    echo "║     • Available memory: $AVAIL_MEM"
-                    echo "║     • Available disk: $DISK_AVAIL"
+                    sh '''
+                        CPU_CORES=$(nproc)
+                        TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
+                        USED_MEM=$(free -h | grep Mem | awk '{print $3}')
+                        AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
+                        DISK_AVAIL=$(df -h . | tail -1 | awk '{print $4}')
+                        
+                        echo "║     • CPU cores: $CPU_CORES"
+                        echo "║     • Total memory: $TOTAL_MEM"
+                        echo "║     • Used memory: $USED_MEM"
+                        echo "║     • Available memory: $AVAIL_MEM"
+                        echo "║     • Available disk: $DISK_AVAIL"
+                    '''
                     
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
         
@@ -182,33 +186,31 @@ pipeline {
                 expression { params.RUN_TESTS == true }
             }
             steps {
-                sh '''
+                script {
+                    echo "🧪 Running conditional tests..."
+                    
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    🧪 CONDITIONAL TESTING                                   ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🚀 Running tests (user requested)..."
                     
-                    # Test execution based on environment
-                    case "${ENVIRONMENT}" in
-                        "Development")
-                            echo "║     • Running: Unit tests only"
-                            echo "║     • Test scope: Basic functionality"
-                            echo "║     • Coverage: 80% minimum"
-                            ;;
-                        "Staging")
-                            echo "║     • Running: Unit + Integration tests"
-                            echo "║     • Test scope: Full functionality"
-                            echo "║     • Coverage: 90% minimum"
-                            ;;
-                        "Production")
-                            echo "║     • Running: Full test suite"
-                            echo "║     • Test scope: All features + Performance"
-                            echo "║     • Coverage: 95% minimum"
-                            ;;
-                    esac
+                    // Test execution based on environment
+                    if (params.ENVIRONMENT == "Development") {
+                        echo "║     • Running: Unit tests only"
+                        echo "║     • Test scope: Basic functionality"
+                        echo "║     • Coverage: 80% minimum"
+                    } else if (params.ENVIRONMENT == "Staging") {
+                        echo "║     • Running: Unit + Integration tests"
+                        echo "║     • Test scope: Full functionality"
+                        echo "║     • Coverage: 90% minimum"
+                    } else if (params.ENVIRONMENT == "Production") {
+                        echo "║     • Running: Full test suite"
+                        echo "║     • Test scope: All features + Performance"
+                        echo "║     • Coverage: 95% minimum"
+                    }
                     
-                    # Simulate test execution
+                    // Simulate test execution
                     echo "║"
                     echo "║  📊 Test Results:"
                     echo "║     • Unit tests: ✅ PASSED (45/45)"
@@ -221,268 +223,260 @@ pipeline {
                     echo "║  ✅ All tests passed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
         
         stage('🐳 Dynamic Container Build') {
             steps {
-                sh '''
+                script {
+                    echo "🐳 Building dynamic container..."
+                    
+                    // Create dynamic image tag
+                    def imageTag = "${params.VERSION}-${params.ENVIRONMENT.toLowerCase()}-${params.FEATURES.toLowerCase()}-${env.BUILD_NUMBER}"
+                    
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                  🐳 DYNAMIC CONTAINER BUILD                                 ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🏗️  Building container with parameters..."
+                    echo "║     • Image: ${env.APP_NAME}:${imageTag}"
+                    echo "║     • Version: ${params.VERSION}"
+                    echo "║     • Environment: ${params.ENVIRONMENT}"
+                    echo "║     • Features: ${params.FEATURES}"
                     
-                    # Dynamic image tagging
-                    IMAGE_TAG="${VERSION}-${ENVIRONMENT,,}-${FEATURES,,}-${BUILD_NUMBER}"
-                    echo "║     • Image: ${APP_NAME}:${IMAGE_TAG}"
-                    echo "║     • Version: ${VERSION}"
-                    echo "║     • Environment: ${ENVIRONMENT}"
-                    echo "║     • Features: ${FEATURES}"
+                    // Build environment info
+                    sh '''
+                        BUILD_TIME=$(date)
+                        BUILD_HOST=$(hostname)
+                        DOCKER_VER=$(docker --version 2>/dev/null || echo 'Docker not available')
+                        
+                        echo "║"
+                        echo "║  📊 Build Environment:"
+                        echo "║     • Build time: $BUILD_TIME"
+                        echo "║     • Build host: $BUILD_HOST"
+                        echo "║     • Docker version: $DOCKER_VER"
+                    '''
                     
-                    # Build environment info
-                    BUILD_TIME=$(date)
-                    BUILD_HOST=$(hostname)
-                    DOCKER_VER=$(docker --version 2>/dev/null || echo 'Docker not available')
-                    
-                    echo "║"
-                    echo "║  📊 Build Environment:"
-                    echo "║     • Build time: $BUILD_TIME"
-                    echo "║     • Build host: $BUILD_HOST"
-                    echo "║     • Docker version: $DOCKER_VER"
-                    
-                    # Feature-specific build steps
+                    // Feature-specific build steps
                     echo "║"
                     echo "║  🔧 Build Configuration:"
-                    case "${FEATURES}" in
-                        "Basic")
-                            echo "║     • Base image: alpine:latest"
-                            echo "║     • Dependencies: Minimal"
-                            echo "║     • Size: ~50MB"
-                            ;;
-                        "Advanced")
-                            echo "║     • Base image: ubuntu:20.04"
-                            echo "║     • Dependencies: Standard"
-                            echo "║     • Size: ~200MB"
-                            ;;
-                        "Enterprise")
-                            echo "║     • Base image: ubuntu:20.04"
-                            echo "║     • Dependencies: Full stack"
-                            echo "║     • Size: ~500MB"
-                            ;;
-                    esac
+                    if (params.FEATURES == "Basic") {
+                        echo "║     • Base image: alpine:latest"
+                        echo "║     • Dependencies: Minimal"
+                        echo "║     • Size: ~50MB"
+                    } else if (params.FEATURES == "Advanced") {
+                        echo "║     • Base image: ubuntu:20.04"
+                        echo "║     • Dependencies: Standard"
+                        echo "║     • Size: ~200MB"
+                    } else if (params.FEATURES == "Enterprise") {
+                        echo "║     • Base image: ubuntu:20.04"
+                        echo "║     • Dependencies: Full stack"
+                        echo "║     • Size: ~500MB"
+                    }
                     
-                    # Environment-specific configuration
+                    // Environment-specific configuration
                     echo "║"
                     echo "║  🌍 Environment Configuration:"
-                    case "${ENVIRONMENT}" in
-                        "Development")
-                            echo "║     • Debug mode: Enabled"
-                            echo "║     • Logging: Verbose"
-                            echo "║     • Hot reload: Enabled"
-                            ;;
-                        "Staging")
-                            echo "║     • Debug mode: Disabled"
-                            echo "║     • Logging: Standard"
-                            echo "║     • Performance: Optimized"
-                            ;;
-                        "Production")
-                            echo "║     • Debug mode: Disabled"
-                            echo "║     • Logging: Minimal"
-                            echo "║     • Performance: Maximum"
-                            echo "║     • Security: Hardened"
-                            ;;
-                    esac
+                    if (params.ENVIRONMENT == "Development") {
+                        echo "║     • Debug mode: Enabled"
+                        echo "║     • Logging: Verbose"
+                        echo "║     • Hot reload: Enabled"
+                    } else if (params.ENVIRONMENT == "Staging") {
+                        echo "║     • Debug mode: Disabled"
+                        echo "║     • Logging: Standard"
+                        echo "║     • Performance: Optimized"
+                    } else if (params.ENVIRONMENT == "Production") {
+                        echo "║     • Debug mode: Disabled"
+                        echo "║     • Logging: Minimal"
+                        echo "║     • Performance: Maximum"
+                        echo "║     • Security: Hardened"
+                    }
                     
                     echo "║"
                     echo "║  ✅ Container build completed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
         
         stage('🚀 Smart Deployment') {
             steps {
-                sh '''
+                script {
+                    echo "🚀 Starting smart deployment..."
+                    
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    🚀 SMART DEPLOYMENT                                      ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Deploying to ${ENVIRONMENT} environment..."
+                    echo "║  🎯 Deploying to ${params.ENVIRONMENT} environment..."
                     
-                    # Deployment details
-                    DEPLOY_TIME=$(date)
-                    DEPLOY_USER=$(whoami)
-                    HOSTNAME=$(hostname)
-                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                    // Deployment details
+                    sh '''
+                        DEPLOY_TIME=$(date)
+                        DEPLOY_USER=$(whoami)
+                        HOSTNAME=$(hostname)
+                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        
+                        echo "║     • Target: ${ENVIRONMENT}"
+                        echo "║     • Version: ${VERSION}"
+                        echo "║     • Features: ${FEATURES}"
+                        echo "║     • Deploy time: $DEPLOY_TIME"
+                        echo "║     • Deploy user: $DEPLOY_USER"
+                        echo "║     • Target host: $HOSTNAME"
+                        echo "║     • IP address: $IP_ADDRESS"
+                    '''
                     
-                    echo "║     • Target: ${ENVIRONMENT}"
-                    echo "║     • Version: ${VERSION}"
-                    echo "║     • Features: ${FEATURES}"
-                    echo "║     • Deploy time: $DEPLOY_TIME"
-                    echo "║     • Deploy user: $DEPLOY_USER"
-                    echo "║     • Target host: $HOSTNAME"
-                    echo "║     • IP address: $IP_ADDRESS"
-                    
-                    # Environment-specific deployment steps
+                    // Environment-specific deployment steps
                     echo "║"
                     echo "║  🔄 Deployment Steps:"
-                    case "${ENVIRONMENT}" in
-                        "Development")
-                            echo "║     • Step 1: Quick deployment"
-                            echo "║     • Step 2: Basic health check"
-                            echo "║     • Step 3: Development tools setup"
-                            ;;
-                        "Staging")
-                            echo "║     • Step 1: Blue-green deployment"
-                            echo "║     • Step 2: Full health check"
-                            echo "║     • Step 3: Smoke tests"
-                            echo "║     • Step 4: Performance validation"
-                            ;;
-                        "Production")
-                            echo "║     • Step 1: Backup current version"
-                            echo "║     • Step 2: Blue-green deployment"
-                            echo "║     • Step 3: Comprehensive health check"
-                            echo "║     • Step 4: Load testing"
-                            echo "║     • Step 5: Monitoring setup"
-                            echo "║     • Step 6: Rollback preparation"
-                            ;;
-                    esac
+                    if (params.ENVIRONMENT == "Development") {
+                        echo "║     • Step 1: Quick deployment"
+                        echo "║     • Step 2: Basic health check"
+                        echo "║     • Step 3: Development tools setup"
+                    } else if (params.ENVIRONMENT == "Staging") {
+                        echo "║     • Step 1: Blue-green deployment"
+                        echo "║     • Step 2: Full health check"
+                        echo "║     • Step 3: Smoke tests"
+                        echo "║     • Step 4: Performance validation"
+                    } else if (params.ENVIRONMENT == "Production") {
+                        echo "║     • Step 1: Backup current version"
+                        echo "║     • Step 2: Blue-green deployment"
+                        echo "║     • Step 3: Comprehensive health check"
+                        echo "║     • Step 4: Load testing"
+                        echo "║     • Step 5: Monitoring setup"
+                        echo "║     • Step 6: Rollback preparation"
+                    }
                     
-                    # Feature-specific deployment
+                    // Feature-specific deployment
                     echo "║"
                     echo "║  🎛️  Feature Deployment:"
-                    case "${FEATURES}" in
-                        "Basic")
-                            echo "║     • Deploying: Core features only"
-                            echo "║     • Resources: 1 CPU, 512MB RAM"
-                            echo "║     • Scaling: Manual"
-                            ;;
-                        "Advanced")
-                            echo "║     • Deploying: Core + Advanced features"
-                            echo "║     • Resources: 2 CPU, 1GB RAM"
-                            echo "║     • Scaling: Auto-scaling enabled"
-                            ;;
-                        "Enterprise")
-                            echo "║     • Deploying: All features + Premium"
-                            echo "║     • Resources: 4 CPU, 4GB RAM"
-                            echo "║     • Scaling: Multi-region enabled"
-                            echo "║     • High availability: Enabled"
-                            ;;
-                    esac
+                    if (params.FEATURES == "Basic") {
+                        echo "║     • Deploying: Core features only"
+                        echo "║     • Resources: 1 CPU, 512MB RAM"
+                        echo "║     • Scaling: Manual"
+                    } else if (params.FEATURES == "Advanced") {
+                        echo "║     • Deploying: Core + Advanced features"
+                        echo "║     • Resources: 2 CPU, 1GB RAM"
+                        echo "║     • Scaling: Auto-scaling enabled"
+                    } else if (params.FEATURES == "Enterprise") {
+                        echo "║     • Deploying: All features + Premium"
+                        echo "║     • Resources: 4 CPU, 4GB RAM"
+                        echo "║     • Scaling: Multi-region enabled"
+                        echo "║     • High availability: Enabled"
+                    }
                     
-                    # System state after deployment
+                    // System state after deployment
                     echo "║"
                     echo "║  📊 Post-Deployment State:"
-                    RUNNING_PROCS=$(ps aux | wc -l)
-                    echo "║     • Running processes: $RUNNING_PROCS"
-                    echo "║     • Service status: Running"
-                    echo "║     • Health check: ✅ PASSED"
-                    echo "║     • Monitoring: Active"
+                    sh '''
+                        RUNNING_PROCS=$(ps aux | wc -l)
+                        echo "║     • Running processes: $RUNNING_PROCS"
+                        echo "║     • Service status: Running"
+                        echo "║     • Health check: ✅ PASSED"
+                        echo "║     • Monitoring: Active"
+                    '''
                     
                     echo "║"
-                    echo "║  ✅ Deployment to ${ENVIRONMENT} completed successfully!"
+                    echo "║  ✅ Deployment to ${params.ENVIRONMENT} completed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
         
         stage('📊 Parameterized Monitoring') {
             steps {
-                sh '''
+                script {
+                    echo "📊 Setting up parameterized monitoring..."
+                    
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                📊 PARAMETERIZED MONITORING                                 ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🔧 Monitoring Configuration:"
-                    echo "║     • Environment: ${ENVIRONMENT}"
-                    echo "║     • Version: ${VERSION}"
-                    echo "║     • Features: ${FEATURES}"
+                    echo "║     • Environment: ${params.ENVIRONMENT}"
+                    echo "║     • Version: ${params.VERSION}"
+                    echo "║     • Features: ${params.FEATURES}"
                     echo "║     • Health endpoints: /health, /ready"
                     
-                    # Environment-specific monitoring
+                    // Environment-specific monitoring
                     echo "║"
                     echo "║  📈 Environment-Specific Monitoring:"
-                    case "${ENVIRONMENT}" in
-                        "Development")
-                            echo "║     • Logging: Debug level"
-                            echo "║     • Metrics: Basic"
-                            echo "║     • Alerts: None"
-                            echo "║     • Dashboard: Simple"
-                            ;;
-                        "Staging")
-                            echo "║     • Logging: Info level"
-                            echo "║     • Metrics: Full"
-                            echo "║     • Alerts: Email only"
-                            echo "║     • Dashboard: Standard"
-                            ;;
-                        "Production")
-                            echo "║     • Logging: Warning level"
-                            echo "║     • Metrics: Full + Custom"
-                            echo "║     • Alerts: Email + SMS + PagerDuty"
-                            echo "║     • Dashboard: Advanced + Real-time"
-                            ;;
-                    esac
+                    if (params.ENVIRONMENT == "Development") {
+                        echo "║     • Logging: Debug level"
+                        echo "║     • Metrics: Basic"
+                        echo "║     • Alerts: None"
+                        echo "║     • Dashboard: Simple"
+                    } else if (params.ENVIRONMENT == "Staging") {
+                        echo "║     • Logging: Info level"
+                        echo "║     • Metrics: Full"
+                        echo "║     • Alerts: Email only"
+                        echo "║     • Dashboard: Standard"
+                    } else if (params.ENVIRONMENT == "Production") {
+                        echo "║     • Logging: Warning level"
+                        echo "║     • Metrics: Full + Custom"
+                        echo "║     • Alerts: Email + SMS + PagerDuty"
+                        echo "║     • Dashboard: Advanced + Real-time"
+                    }
                     
-                    # Feature-specific monitoring
+                    // Feature-specific monitoring
                     echo "║"
                     echo "║  🎛️  Feature-Specific Monitoring:"
-                    case "${FEATURES}" in
-                        "Basic")
-                            echo "║     • CPU monitoring: Basic"
-                            echo "║     • Memory monitoring: Basic"
-                            echo "║     • Custom metrics: None"
-                            ;;
-                        "Advanced")
-                            echo "║     • CPU monitoring: Advanced"
-                            echo "║     • Memory monitoring: Advanced"
-                            echo "║     • Custom metrics: Business metrics"
-                            echo "║     • Performance monitoring: Enabled"
-                            ;;
-                        "Enterprise")
-                            echo "║     • CPU monitoring: Enterprise"
-                            echo "║     • Memory monitoring: Enterprise"
-                            echo "║     • Custom metrics: Full suite"
-                            echo "║     • Performance monitoring: Advanced"
-                            echo "║     • Security monitoring: Enabled"
-                            echo "║     • Compliance monitoring: Enabled"
-                            ;;
-                    esac
+                    if (params.FEATURES == "Basic") {
+                        echo "║     • CPU monitoring: Basic"
+                        echo "║     • Memory monitoring: Basic"
+                        echo "║     • Custom metrics: None"
+                    } else if (params.FEATURES == "Advanced") {
+                        echo "║     • CPU monitoring: Advanced"
+                        echo "║     • Memory monitoring: Advanced"
+                        echo "║     • Custom metrics: Business metrics"
+                        echo "║     • Performance monitoring: Enabled"
+                    } else if (params.FEATURES == "Enterprise") {
+                        echo "║     • CPU monitoring: Enterprise"
+                        echo "║     • Memory monitoring: Enterprise"
+                        echo "║     • Custom metrics: Full suite"
+                        echo "║     • Performance monitoring: Advanced"
+                        echo "║     • Security monitoring: Enabled"
+                        echo "║     • Compliance monitoring: Enabled"
+                    }
                     
-                    # System status
+                    // System status
                     echo "║"
                     echo "║  🖥️  Current System Status:"
-                    SYSTEM_UPTIME=$(uptime -p)
-                    CURRENT_TIME=$(date)
-                    HOSTNAME=$(hostname)
-                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                    sh '''
+                        SYSTEM_UPTIME=$(uptime -p)
+                        CURRENT_TIME=$(date)
+                        HOSTNAME=$(hostname)
+                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        
+                        echo "║     • System uptime: $SYSTEM_UPTIME"
+                        echo "║     • Current time: $CURRENT_TIME"
+                        echo "║     • Hostname: $HOSTNAME"
+                        echo "║     • IP address: $IP_ADDRESS"
+                    '''
                     
-                    echo "║     • System uptime: $SYSTEM_UPTIME"
-                    echo "║     • Current time: $CURRENT_TIME"
-                    echo "║     • Hostname: $HOSTNAME"
-                    echo "║     • IP address: $IP_ADDRESS"
-                    
-                    # Resource usage
-                    CPU_CORES=$(nproc)
-                    TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
-                    USED_MEM=$(free -h | grep Mem | awk '{print $3}')
-                    AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
-                    
+                    // Resource usage
                     echo "║"
                     echo "║  💻 Resource Usage:"
-                    echo "║     • CPU cores: $CPU_CORES"
-                    echo "║     • Total memory: $TOTAL_MEM"
-                    echo "║     • Used memory: $USED_MEM"
-                    echo "║     • Available memory: $AVAIL_MEM"
+                    sh '''
+                        CPU_CORES=$(nproc)
+                        TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
+                        USED_MEM=$(free -h | grep Mem | awk '{print $3}')
+                        AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
+                        
+                        echo "║     • CPU cores: $CPU_CORES"
+                        echo "║     • Total memory: $TOTAL_MEM"
+                        echo "║     • Used memory: $USED_MEM"
+                        echo "║     • Available memory: $AVAIL_MEM"
+                    '''
                     
                     echo "║"
-                    echo "║  ✅ Monitoring configured for ${ENVIRONMENT} with ${FEATURES} features!"
+                    echo "║  ✅ Monitoring configured for ${params.ENVIRONMENT} with ${params.FEATURES} features!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
-                '''
+                }
             }
         }
     }

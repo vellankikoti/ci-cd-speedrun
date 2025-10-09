@@ -666,17 +666,82 @@ EOF
                         echo "║  🚀 Starting Flask web server on port $DASHBOARD_PORT..."
                         cd dashboard
                         chmod +x app.py
+                        
+                        # Set environment variables for Flask app
+                        export CURRENT_CONCEPT="${CURRENT_CONCEPT}"
+                        export LEARNING_LEVEL="${LEARNING_LEVEL}"
+                        export NAMESPACE="${NAMESPACE}"
+                        export K8S_VERSION="${K8S_VERSION}"
+                        export INTERACTIVE_DEMO="${INTERACTIVE_DEMO}"
+                        export HANDS_ON_LAB="${HANDS_ON_LAB}"
+                        
                         nohup python3 app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
                         echo $WEB_SERVER_PID > ../dashboard.pid
+                        
+                        # Test if Flask app can start
+                        echo "║  🧪 Testing Flask app startup..."
+                        python3 -c "import app; print('Flask app imports successfully')" 2>&1 || echo "Flask app import failed"
+                        
+                        # Create a simple fallback Flask app if the main one fails
+                        cat > simple_app.py << 'SIMPLE_EOF'
+#!/usr/bin/env python3
+from flask import Flask
+import sys
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return '''
+    <html>
+    <head><title>K8s Commander - Simple Dashboard</title></head>
+    <body style="font-family: Arial; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <h1>🚀 K8s Commander Dashboard</h1>
+        <p>Jenkins Pipeline: Working!</p>
+        <p>Port: ''' + str(sys.argv[1] if len(sys.argv) > 1 else 5000) + '''</p>
+        <p>Status: ✅ Active</p>
+    </body>
+    </html>
+    '''
+
+if __name__ == '__main__':
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+    app.run(host='0.0.0.0', port=port, debug=False)
+SIMPLE_EOF
                         
                         # Verify the server started
                         sleep 3
                         if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
                             echo "║  ✅ Flask server started successfully (PID: $WEB_SERVER_PID)"
+                            # Test if server responds
+                            sleep 2
+                            if curl -s http://localhost:$DASHBOARD_PORT/ > /dev/null 2>&1; then
+                                echo "║  ✅ Flask server is responding to requests"
+                            else
+                                echo "║  ⚠️  Flask server started but not responding to requests"
+                            fi
                         else
-                            echo "║  ❌ Flask server failed to start. Check dashboard.log for details."
+                            echo "║  ❌ Main Flask server failed to start. Trying fallback..."
                             cat ../dashboard.log
+                            
+                            # Kill any existing process and try simple app
+                            kill $WEB_SERVER_PID 2>/dev/null || true
+                            sleep 1
+                            
+                            echo "║  🔄 Starting simple fallback Flask app..."
+                            chmod +x simple_app.py
+                            nohup python3 simple_app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
+                            WEB_SERVER_PID=$!
+                            echo $WEB_SERVER_PID > ../dashboard.pid
+                            
+                            sleep 3
+                            if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
+                                echo "║  ✅ Fallback Flask server started successfully (PID: $WEB_SERVER_PID)"
+                            else
+                                echo "║  ❌ Both Flask servers failed to start"
+                                cat ../dashboard.log
+                            fi
                         fi
                         
                         # Wait a moment for server to start

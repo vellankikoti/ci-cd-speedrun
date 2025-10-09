@@ -118,7 +118,7 @@ By the end of this scenario, attendees will have:
 2. **Create Pipeline**: Set up new Jenkins pipeline job
 3. **Configure Parameters**: Choose dashboard type and style
 4. **Build Dashboard**: Run the pipeline to create your app
-5. **Access Dashboard**: Open http://localhost:8080
+5. **Access Dashboard**: Open http://localhost:8081 (or detected port)
 
 ## Learning Outcomes
 
@@ -139,11 +139,11 @@ By the end of this scenario, attendees will have:
 
 After successful build:
 
-- **Main Dashboard**: http://localhost:8080
-- **API Health**: http://localhost:8080/api/health
-- **Metrics API**: http://localhost:8080/api/metrics
-- **Pipelines API**: http://localhost:8080/api/pipelines
-- **Alerts API**: http://localhost:8080/api/alerts
+- **Main Dashboard**: http://localhost:8081 (or detected port)
+- **API Health**: http://localhost:8081/api/health
+- **Metrics API**: http://localhost:8081/api/metrics
+- **Pipelines API**: http://localhost:8081/api/pipelines
+- **Alerts API**: http://localhost:8081/api/alerts
 
 ## Customization Options
 

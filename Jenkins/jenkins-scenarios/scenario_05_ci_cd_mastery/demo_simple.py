@@ -168,7 +168,7 @@ def show_next_steps():
     print("   • Enable metrics and alerts")
     print()
     print("3. Access your dashboard:")
-    print("   • Open http://localhost:8080")
+    print("   • Open http://localhost:8081 (or detected port)")
     print("   • Explore the interactive features")
     print("   • Test the API endpoints")
     print("   • Customize the interface")

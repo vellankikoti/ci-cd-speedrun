@@ -635,16 +635,50 @@ This dashboard demonstrates:
                     echo "║  🐳 Building Docker image..."
                     echo "║"
                     
-                    // Find available port
-                    def WEBAPP_PORT = 8080
-                    def MAX_ATTEMPTS = 10
+                    // Clean up any existing dashboard containers
+                    echo "║  🧹 Cleaning up existing dashboard containers..."
+                    sh '''
+                        # Stop and remove any existing dashboard containers
+                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker stop
+                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker rm
+                        echo "║     ✅ Cleanup completed"
+                    '''
+                    
+                    // Dynamic port detection - find next available port
+                    echo "║  🔍 Scanning for available ports..."
+                    
+                    // Get list of used ports
+                    def usedPorts = sh(
+                        script: '''
+                            # Get ports from netstat (listening ports)
+                            netstat -tuln | grep -E ':[0-9]+ ' | sed 's/.*:\([0-9]*\) .*/\1/' | sort -n | uniq
+                            # Get ports from docker containers
+                            docker ps --format '{{.Ports}}' | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | sort -n | uniq
+                            # Get ports from lsof (additional check)
+                            lsof -i -P -n | grep LISTEN | grep -oE ':[0-9]+ ' | sed 's/://g' | sort -n | uniq
+                        ''',
+                        returnStdout: true
+                    ).trim().split('\n').findAll { it.isNumber() && it.toInteger() > 0 }.collect { it.toInteger() }.unique()
+                    
+                    echo "║  📊 Found ${usedPorts.size()} used ports: ${usedPorts.take(10).join(', ')}${usedPorts.size() > 10 ? '...' : ''}"
+                    
+                    // Find next available port starting from 8081 (avoid Jenkins 8080)
+                    def WEBAPP_PORT = 8081
+                    def MAX_ATTEMPTS = 50
                     def ATTEMPTS = 0
                     
                     while (ATTEMPTS < MAX_ATTEMPTS) {
                         ATTEMPTS++
                         echo "║  🔍 Checking port $WEBAPP_PORT..."
                         
-                        // Check if port is available
+                        // Check if port is in our used ports list
+                        if (usedPorts.contains(WEBAPP_PORT)) {
+                            echo "║     Port $WEBAPP_PORT is in use, trying next..."
+                            WEBAPP_PORT++
+                            continue
+                        }
+                        
+                        // Double-check with netstat and docker
                         def portCheck = sh(
                             script: "netstat -tuln | grep ':$WEBAPP_PORT ' || true",
                             returnStatus: true
@@ -661,14 +695,27 @@ This dashboard demonstrates:
                             continue
                         }
                         
-                        // Port is available
+                        // Final verification - test if port is actually available
+                        def finalCheck = sh(
+                            script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$WEBAPP_PORT' 2>/dev/null || true",
+                            returnStatus: true
+                        )
+                        
+                        if (finalCheck == 0) {
+                            echo "║     Port $WEBAPP_PORT is still in use, trying next..."
+                            WEBAPP_PORT++
+                            continue
+                        }
+                        
+                        // Port is truly available
                         echo "║     ✅ Found available port: $WEBAPP_PORT"
                         break
                     }
                     
                     if (ATTEMPTS >= MAX_ATTEMPTS) {
                         echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
-                        WEBAPP_PORT = 8080  // Use default
+                        echo "║     💡 Try stopping some services or using a different port range"
+                        WEBAPP_PORT = 8081  // Use default as fallback
                     }
                     
                     // Build Docker image
@@ -989,8 +1036,8 @@ This dashboard demonstrates:
                 echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
                 echo "║"
                 echo "║  🌐 Your CI/CD Dashboard is Live!"
-                echo "║     • Access: http://localhost:$(cat dashboard.port 2>/dev/null || echo '8080')"
-                echo "║     • API Health: http://localhost:$(cat dashboard.port 2>/dev/null || echo '8080')/api/health"
+                echo "║     • Access: http://localhost:\$(cat dashboard.port 2>/dev/null || echo '8081')"
+                echo "║     • API Health: http://localhost:\$(cat dashboard.port 2>/dev/null || echo '8081')/api/health"
                 echo "║"
                 echo "║  🎓 You've Mastered:"
                 echo "║     ✅ Jenkins Pipeline Development"

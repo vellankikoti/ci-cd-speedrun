@@ -9,468 +9,964 @@ pipeline {
         skipDefaultCheckout()                         // We'll checkout manually
     }
     
-    // Environment variables for the challenge
+    // Environment variables for the CI/CD Dashboard
     environment {
-        CHALLENGE_NAME = 'CI/CD Mastery Challenge'
+        APP_NAME = 'ci-cd-dashboard'
         BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
-        CHALLENGE_DURATION = '5 minutes'
-        MAX_SCORE = 1000
+        DASHBOARD_THEME = 'modern'
+        FEATURES_ENABLED = 'all'
     }
     
-    // Challenge parameters - attendees can customize
+    // CI/CD Dashboard parameters - attendees can customize
     parameters {
         choice(
-            name: 'SKILL_LEVEL',
-            choices: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
-            description: 'Select your CI/CD skill level'
+            name: 'DASHBOARD_TYPE',
+            choices: ['Basic', 'Advanced', 'Enterprise', 'Custom'],
+            description: 'Select CI/CD Dashboard complexity level'
         )
         choice(
-            name: 'CHALLENGE_TYPE',
-            choices: ['Speed Run', 'Quality Focus', 'Security First', 'Performance Optimized'],
-            description: 'Choose your challenge approach'
+            name: 'VISUALIZATION_STYLE',
+            choices: ['Minimal', 'Interactive', '3D', 'Real-time'],
+            description: 'Choose visualization style'
         )
         booleanParam(
-            name: 'ENABLE_NOTIFICATIONS',
+            name: 'ENABLE_METRICS',
             defaultValue: true,
-            description: 'Enable real-time challenge notifications?'
+            description: 'Enable real-time metrics collection?'
         )
         booleanParam(
-            name: 'SHOW_LEADERBOARD',
+            name: 'ENABLE_ALERTS',
             defaultValue: true,
-            description: 'Display live leaderboard?'
+            description: 'Enable alert notifications?'
+        )
+        string(
+            name: 'COMPANY_NAME',
+            defaultValue: 'Your Company',
+            description: 'Company name for dashboard branding'
         )
     }
     
     stages {
-        stage('🚀 Challenge Setup') {
+        stage('🚀 CI/CD Dashboard Setup') {
             steps {
                 script {
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🎮 JENKINS CI/CD MASTERY CHALLENGE                       ║"
+                    echo "║                    🎮 JENKINS CI/CD DASHBOARD BUILDER                        ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Challenge: ${CHALLENGE_NAME}"
-                    echo "║  ⏱️  Duration: ${CHALLENGE_DURATION}"
-                    echo "║  🏆 Max Score: ${MAX_SCORE} points"
-                    echo "║  👤 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
-                    echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                    echo "║  🎯 Building: Interactive CI/CD Dashboard Application"
+                    echo "║  ⏱️  Duration: 5 minutes"
+                    echo "║  🏗️  Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                    echo "║  🎨 Style: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                    echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
                     echo "║"
-                    echo "║  🎮 Ready to become a CI/CD Master?"
+                    echo "║  🎮 Ready to build the ultimate CI/CD Dashboard?"
                     echo "║"
-                    echo "║  🎯 Learning Objectives:"
-                    echo "║     • Master Jenkins pipeline fundamentals"
-                    echo "║     • Implement production CI/CD patterns"
-                    echo "║     • Experience gamified learning"
-                    echo "║     • Compete for the highest score"
-                    echo "║     • Build real-world skills"
+                    echo "║  🎯 Dashboard Features:"
+                    echo "║     • Real-time pipeline monitoring"
+                    echo "║     • Interactive build visualizations"
+                    echo "║     • Live metrics and analytics"
+                    echo "║     • Alert notifications system"
+                    echo "║     • Customizable themes and branding"
                     echo "║"
-                    echo "║  🚀 Let's begin your CI/CD mastery journey!"
+                    echo "║  🚀 Learning Objectives:"
+                    echo "║     • Master Jenkins pipeline creation"
+                    echo "║     • Build interactive web applications"
+                    echo "║     • Implement real-time data visualization"
+                    echo "║     • Learn modern web technologies"
+                    echo "║     • Create production-ready dashboards!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     
-                    // Initialize challenge scoring
-                    env.CHALLENGE_SCORE = 0
+                    // Initialize dashboard scoring
+                    env.DASHBOARD_SCORE = 0
                     env.START_TIME = System.currentTimeMillis()
                     
-                    // Show challenge parameters
+                    // Show dashboard configuration
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    ⚙️  CHALLENGE CONFIGURATION                              ║"
+                    echo "║                    ⚙️  DASHBOARD CONFIGURATION                               ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
-                    echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
-                    echo "║  🔔 Notifications: ${params.ENABLE_NOTIFICATIONS ? 'Enabled' : 'Disabled'}"
-                    echo "║  🏆 Leaderboard: ${params.SHOW_LEADERBOARD ? 'Enabled' : 'Disabled'}"
-                    echo "║  ⏱️  Time Limit: 5 minutes"
-                    echo "║  🎮 Mode: Interactive Gamified Learning"
+                    echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                    echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                    echo "║  📊 Metrics: ${params.ENABLE_METRICS ? 'Enabled' : 'Disabled'}"
+                    echo "║  🔔 Alerts: ${params.ENABLE_ALERTS ? 'Enabled' : 'Disabled'}"
+                    echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
+                    echo "║  ⏱️  Build Time: 5 minutes"
+                    echo "║  🎮 Mode: Interactive Dashboard Builder"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                 }
             }
         }
         
-        stage('📋 Code Quality Gate') {
+        stage('📊 Dashboard Application Creation') {
             steps {
                 script {
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    📋 CHALLENGE 1: CODE QUALITY GATE                        ║"
+                    echo "║                    📊 DASHBOARD APPLICATION CREATION                          ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Implement automated quality checks"
+                    echo "║  🎯 Objective: Build interactive CI/CD Dashboard web application"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🏆 Max Points: ${(params.SKILL_LEVEL ?: 'Beginner') == 'Expert' ? '200' : (params.SKILL_LEVEL ?: 'Beginner') == 'Advanced' ? '150' : (params.SKILL_LEVEL ?: 'Beginner') == 'Intermediate' ? '100' : '50'}"
+                    echo "║  🏆 Max Points: 200 points"
                     echo "║"
                     
                     // Checkout code
                     checkout scm
                     
-                    // Simulate code quality checks
-                    echo "║  🔍 Running code quality analysis..."
+                    echo "║  🔨 Creating dashboard application files..."
                     echo "║"
                     
-                    // Simulate different quality checks based on skill level
-                    def qualityChecks = [
-                        'Beginner': [
-                            ['Syntax Check', 'Validating code syntax', 25],
-                            ['Basic Linting', 'Checking code style', 25]
-                        ],
-                        'Intermediate': [
-                            ['Syntax Check', 'Validating code syntax', 30],
-                            ['Linting', 'Checking code style and standards', 30],
-                            ['Code Coverage', 'Analyzing test coverage', 40]
-                        ],
-                        'Advanced': [
-                            ['Syntax Check', 'Validating code syntax', 40],
-                            ['Linting', 'Checking code style and standards', 40],
-                            ['Code Coverage', 'Analyzing test coverage', 40],
-                            ['Security Scan', 'Detecting security vulnerabilities', 30]
-                        ],
-                        'Expert': [
-                            ['Syntax Check', 'Validating code syntax', 40],
-                            ['Linting', 'Checking code style and standards', 40],
-                            ['Code Coverage', 'Analyzing test coverage', 40],
-                            ['Security Scan', 'Detecting security vulnerabilities', 40],
-                            ['Performance Analysis', 'Optimizing code performance', 40]
-                        ]
-                    ]
-                    
-                    def checks = qualityChecks[params.SKILL_LEVEL ?: 'Beginner'] ?: qualityChecks['Beginner']
-                    def totalPoints = 0
-                    
-                    checks.each { check ->
-                        def checkName = check[0]
-                        def checkDesc = check[1]
-                        def checkPoints = check[2]
-                        
-                        echo "║  🔍 ${checkName}..."
-                        echo "║     ${checkDesc}"
-                        
-                        // Simulate processing with progress
-                        for (int i = 1; i <= 3; i++) {
-                            echo "║     ${'█' * i}${'░' * (3 - i)} Processing... (${i * 33}%)"
-                            sleep(0.5)
-                        }
-                        
-                        echo "║     ✅ ${checkName} - PASSED (+${checkPoints} points)"
-                        totalPoints += checkPoints
-                        echo "║"
-                    }
-                    
-                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
-                    
-                    echo "║  🏆 Quality Gate Complete!"
-                    echo "║     Points Earned: +${totalPoints}"
-                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
-                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                    echo "║"
-                    echo "║  🎯 Next: Testing Strategy Challenge"
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                }
-            }
+                    // Create the main dashboard HTML file
+                    writeFile file: 'dashboard.html', text: '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Dashboard - ''' + (params.COMPANY_NAME ?: 'Your Company') + '''</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; min-height: 100vh;
+        }
+        .header { 
+            background: rgba(0,0,0,0.2); padding: 20px; text-align: center; 
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .dashboard { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto;
+        }
+        .card { 
+            background: rgba(255,255,255,0.1); border-radius: 15px; 
+            padding: 20px; backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .metric { 
+            font-size: 2em; font-weight: bold; color: #4CAF50; 
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        .status { 
+            display: inline-block; padding: 5px 15px; border-radius: 20px; 
+            font-size: 0.9em; font-weight: bold; margin: 5px 0;
+        }
+        .success { background: #4CAF50; }
+        .warning { background: #FF9800; }
+        .error { background: #F44336; }
+        .progress-bar { 
+            width: 100%; height: 10px; background: rgba(255,255,255,0.2); 
+            border-radius: 5px; overflow: hidden; margin: 10px 0;
+        }
+        .progress-fill { 
+            height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); 
+            transition: width 0.3s ease; border-radius: 5px;
+        }
+        .pipeline-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); 
+            border-radius: 8px; border-left: 4px solid #4CAF50;
+        }
+        .chart-container { 
+            height: 200px; background: rgba(255,255,255,0.05); 
+            border-radius: 10px; display: flex; align-items: center; 
+            justify-content: center; margin: 10px 0;
+        }
+        .alert { 
+            background: rgba(255, 193, 7, 0.2); border: 1px solid #FFC107; 
+            padding: 10px; border-radius: 8px; margin: 10px 0;
+        }
+        .real-time { 
+            animation: pulse 2s infinite; 
+        }
+        @keyframes pulse { 
+            0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } 
+        }
+        .footer { 
+            text-align: center; padding: 20px; 
+            background: rgba(0,0,0,0.2); margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 CI/CD Dashboard</h1>
+        <p>''' + (params.COMPANY_NAME ?: 'Your Company') + ''' - Real-time Pipeline Monitoring</p>
+        <div class="status success real-time">● LIVE</div>
+    </div>
+    
+    <div class="dashboard">
+        <div class="card">
+            <h3>📊 Build Statistics</h3>
+            <div class="metric" id="totalBuilds">247</div>
+            <p>Total Builds Today</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 85%"></div>
+            </div>
+            <p>Success Rate: 85%</p>
+        </div>
+        
+        <div class="card">
+            <h3>⚡ Pipeline Status</h3>
+            <div class="pipeline-item">
+                <span>Frontend Pipeline</span>
+                <span class="status success">PASSING</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Backend API</span>
+                <span class="status success">PASSING</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Database Migration</span>
+                <span class="status warning">RUNNING</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Security Scan</span>
+                <span class="status error">FAILED</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📈 Performance Metrics</h3>
+            <div class="chart-container">
+                <div style="text-align: center;">
+                    <div class="metric">2.3s</div>
+                    <p>Avg Build Time</p>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 70%"></div>
+            </div>
+            <p>Performance Score: 70%</p>
+        </div>
+        
+        <div class="card">
+            <h3>🔔 Recent Alerts</h3>
+            <div class="alert">
+                <strong>⚠️ High CPU Usage</strong><br>
+                Build server CPU at 85%
+            </div>
+            <div class="alert">
+                <strong>✅ Deployment Success</strong><br>
+                Production deployment completed
+            </div>
+            <div class="alert">
+                <strong>🔍 Security Scan</strong><br>
+                New vulnerabilities detected
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🎯 Team Performance</h3>
+            <div class="metric">94%</div>
+            <p>Team Efficiency</p>
+            <div class="pipeline-item">
+                <span>Commits Today</span>
+                <span>23</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Code Reviews</span>
+                <span>15</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Deployments</span>
+                <span>8</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🌐 Environment Status</h3>
+            <div class="pipeline-item">
+                <span>Production</span>
+                <span class="status success">HEALTHY</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Staging</span>
+                <span class="status success">HEALTHY</span>
+            </div>
+            <div class="pipeline-item">
+                <span>Development</span>
+                <span class="status warning">MAINTENANCE</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Built with ❤️ using Jenkins CI/CD Pipeline</p>
+        <p>Last Updated: <span id="lastUpdate">''' + new Date().toLocaleString() + '''</span></p>
+    </div>
+    
+    <script>
+        // Real-time updates simulation
+        function updateMetrics() {
+            const totalBuilds = document.getElementById('totalBuilds');
+            const currentBuilds = parseInt(totalBuilds.textContent);
+            totalBuilds.textContent = currentBuilds + Math.floor(Math.random() * 3);
+            
+            const lastUpdate = document.getElementById('lastUpdate');
+            lastUpdate.textContent = new Date().toLocaleString();
         }
         
-        stage('🧪 Testing Strategy') {
-            steps {
-                script {
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🧪 CHALLENGE 2: TESTING STRATEGY                         ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Implement comprehensive testing approach"
-                    echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🎲 Strategy: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
-                    echo "║  🏆 Max Points: ${(params.CHALLENGE_TYPE ?: 'Speed Run') == 'Quality Focus' ? '250' : (params.CHALLENGE_TYPE ?: 'Speed Run') == 'Security First' ? '200' : (params.CHALLENGE_TYPE ?: 'Speed Run') == 'Performance Optimized' ? '180' : '120'}"
-                    echo "║"
-                    
-                    // Simulate different testing strategies based on challenge type
-                    def testStrategies = [
-                        'Speed Run': [
-                            ['Unit Tests', 'Fast, isolated component tests', 60],
-                            ['Smoke Tests', 'Basic functionality verification', 60]
-                        ],
-                        'Quality Focus': [
-                            ['Unit Tests', 'Fast, isolated component tests', 80],
-                            ['Integration Tests', 'Component interaction testing', 80],
-                            ['E2E Tests', 'End-to-end user journey testing', 90]
-                        ],
-                        'Security First': [
-                            ['Unit Tests', 'Fast, isolated component tests', 70],
-                            ['Security Tests', 'Authentication and authorization', 70],
-                            ['Vulnerability Scans', 'Dependency and code security', 60]
-                        ],
-                        'Performance Optimized': [
-                            ['Unit Tests', 'Fast, isolated component tests', 60],
-                            ['Load Tests', 'High-traffic performance testing', 70],
-                            ['Performance Tests', 'Response time and resource usage', 50]
-                        ]
-                    ]
-                    
-                    def tests = testStrategies[params.CHALLENGE_TYPE ?: 'Speed Run'] ?: testStrategies['Speed Run']
-                    def totalPoints = 0
-                    
-                    echo "║  🧪 Executing ${params.CHALLENGE_TYPE ?: 'Speed Run'} testing strategy..."
-                    echo "║"
-                    
-                    tests.each { test ->
-                        def testName = test[0]
-                        def testDesc = test[1]
-                        def testPoints = test[2]
-                        
-                        echo "║  🧪 Running ${testName}..."
-                        echo "║     ${testDesc}"
-                        
-                        // Simulate test execution with progress
-                        for (int i = 1; i <= 4; i++) {
-                            echo "║     ${'█' * i}${'░' * (4 - i)} Executing... (${i * 25}%)"
-                            sleep(0.4)
-                        }
-                        
-                        echo "║     ✅ ${testName} - PASSED (+${testPoints} points)"
-                        totalPoints += testPoints
-                        echo "║"
-                    }
-                    
-                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
-                    
-                    echo "║  🏆 Testing Strategy Complete!"
-                    echo "║     Points Earned: +${totalPoints}"
-                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
-                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                    echo "║"
-                    echo "║  🎯 Next: Containerization Challenge"
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                }
-            }
-        }
+        // Update every 5 seconds
+        setInterval(updateMetrics, 5000);
         
-        stage('🐳 Containerization') {
-            steps {
-                script {
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🐳 CHALLENGE 3: CONTAINERIZATION                          ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Containerize application with Docker best practices"
-                    echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🏆 Max Points: 150"
-                    echo "║"
+        // Add some interactivity
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+            });
+        });
+        
+        console.log('🚀 CI/CD Dashboard loaded successfully!');
+        console.log('📊 Dashboard Type: ''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''');
+        console.log('🎨 Visualization: ''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''');
+    </script>
+</body>
+</html>'''
                     
-                    // Create a simple Dockerfile dynamically
-                    writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
-WORKDIR /app
-COPY . .
-RUN pip install --no-cache-dir -r requirements.txt
-EXPOSE 8080
-CMD ["python", "app.py"]'''
+                    echo "║  ✅ Created dashboard.html - Interactive web application"
                     
-                    // Create a simple requirements.txt
-                    writeFile file: 'requirements.txt', text: 'flask==2.3.3\nrequests==2.31.0'
-                    
-                    // Create a simple app.py
-                    writeFile file: 'app.py', text: '''from flask import Flask
+                    // Create Python Flask backend for API
+                    writeFile file: 'dashboard_api.py', text: '''#!/usr/bin/env python3
+"""
+CI/CD Dashboard API Server
+Real-time metrics and pipeline monitoring
+"""
+
+from flask import Flask, jsonify, render_template_string
+import json
+import time
+import random
+from datetime import datetime, timedelta
+
 app = Flask(__name__)
 
-@app.route('/')
-def hello():
-    return "🚀 CI/CD Mastery Challenge - Containerized!"
+# Dashboard configuration
+DASHBOARD_CONFIG = {
+    "company_name": "''' + (params.COMPANY_NAME ?: 'Your Company') + '''",
+    "dashboard_type": "''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''",
+    "visualization_style": "''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''",
+    "metrics_enabled": ''' + (params.ENABLE_METRICS ? 'True' : 'False') + ''',
+    "alerts_enabled": ''' + (params.ENABLE_ALERTS ? 'True' : 'False') + '''
+}
 
-@app.route('/health')
-def health():
-    return "✅ Healthy", 200
+# Simulated pipeline data
+pipelines = [
+    {"name": "Frontend Pipeline", "status": "success", "duration": 120, "last_run": "2 minutes ago"},
+    {"name": "Backend API", "status": "success", "duration": 180, "last_run": "5 minutes ago"},
+    {"name": "Database Migration", "status": "running", "duration": 45, "last_run": "1 minute ago"},
+    {"name": "Security Scan", "status": "failed", "duration": 300, "last_run": "10 minutes ago"},
+    {"name": "Integration Tests", "status": "success", "duration": 240, "last_run": "15 minutes ago"}
+]
+
+@app.route('/')
+def dashboard():
+    """Serve the main dashboard"""
+    return render_template_string(open('dashboard.html').read())
+
+@app.route('/api/metrics')
+def get_metrics():
+    """Get real-time metrics"""
+    return jsonify({
+        "total_builds": random.randint(240, 260),
+        "success_rate": round(random.uniform(80, 95), 1),
+        "avg_build_time": round(random.uniform(2.0, 3.5), 1),
+        "active_pipelines": len([p for p in pipelines if p["status"] == "running"]),
+        "last_updated": datetime.now().isoformat()
+    })
+
+@app.route('/api/pipelines')
+def get_pipelines():
+    """Get pipeline status"""
+    return jsonify({
+        "pipelines": pipelines,
+        "total": len(pipelines),
+        "success": len([p for p in pipelines if p["status"] == "success"]),
+        "running": len([p for p in pipelines if p["status"] == "running"]),
+        "failed": len([p for p in pipelines if p["status"] == "failed"])
+    })
+
+@app.route('/api/alerts')
+def get_alerts():
+    """Get recent alerts"""
+    alerts = [
+        {
+            "id": 1,
+            "type": "warning",
+            "message": "High CPU usage detected on build server",
+            "timestamp": (datetime.now() - timedelta(minutes=5)).isoformat()
+        },
+        {
+            "id": 2,
+            "type": "success",
+            "message": "Production deployment completed successfully",
+            "timestamp": (datetime.now() - timedelta(minutes=15)).isoformat()
+        },
+        {
+            "id": 3,
+            "type": "error",
+            "message": "Security scan failed - vulnerabilities detected",
+            "timestamp": (datetime.now() - timedelta(minutes=30)).isoformat()
+        }
+    ]
+    return jsonify({"alerts": alerts})
+
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "config": DASHBOARD_CONFIG
+    })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)'''
+    print("🚀 Starting CI/CD Dashboard API Server...")
+    print(f"📊 Dashboard Type: {DASHBOARD_CONFIG['dashboard_type']}")
+    print(f"🎨 Visualization: {DASHBOARD_CONFIG['visualization_style']}")
+    print(f"🏢 Company: {DASHBOARD_CONFIG['company_name']}")
+    print("🌐 Server running on http://localhost:5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)
+'''
                     
-                    echo "║  📦 Building Docker image..."
+                    echo "║  ✅ Created dashboard_api.py - Flask API server"
+                    
+                    // Create requirements.txt
+                    writeFile file: 'requirements.txt', text: '''Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+itsdangerous==2.1.2
+click==8.1.7
+blinker==1.6.2
+'''
+                    
+                    echo "║  ✅ Created requirements.txt - Python dependencies"
+                    
+                    // Create Dockerfile for containerization
+                    writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \\
+    curl \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY dashboard.html .
+COPY dashboard_api.py .
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Run the application
+CMD ["python", "dashboard_api.py"]
+'''
+                    
+                    echo "║  ✅ Created Dockerfile - Container configuration"
+                    
+                    // Create docker-compose.yml for easy deployment
+                    writeFile file: 'docker-compose.yml', text: '''version: '3.8'
+
+services:
+  ci-cd-dashboard:
+    build: .
+    ports:
+      - "8080:5000"
+    environment:
+      - FLASK_ENV=production
+      - DASHBOARD_TYPE=''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''
+      - VISUALIZATION_STYLE=''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''
+      - COMPANY_NAME=''' + (params.COMPANY_NAME ?: 'Your Company') + '''
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.localhost`)"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=5000"
+'''
+                    
+                    echo "║  ✅ Created docker-compose.yml - Easy deployment"
+                    
+                    // Create README with instructions
+                    writeFile file: 'README.md', text: '''# CI/CD Dashboard
+
+A modern, interactive CI/CD monitoring dashboard built with Jenkins pipelines.
+
+## Features
+
+- 📊 **Real-time Metrics**: Live build statistics and performance data
+- 🚀 **Pipeline Monitoring**: Visual pipeline status and progress tracking
+- 🔔 **Alert System**: Real-time notifications and warnings
+- 🎨 **Customizable Themes**: Multiple visualization styles
+- 🏢 **Company Branding**: Customizable company information
+- 📱 **Responsive Design**: Works on desktop and mobile devices
+
+## Quick Start
+
+### Option 1: Docker Compose (Recommended)
+```bash
+docker-compose up -d
+```
+
+### Option 2: Python Direct
+```bash
+pip install -r requirements.txt
+python dashboard_api.py
+```
+
+### Option 3: Docker Build
+```bash
+docker build -t ci-cd-dashboard .
+docker run -p 8080:5000 ci-cd-dashboard
+```
+
+## Access
+
+- **Dashboard**: http://localhost:8080
+- **API Health**: http://localhost:8080/api/health
+- **Metrics API**: http://localhost:8080/api/metrics
+- **Pipelines API**: http://localhost:8080/api/pipelines
+- **Alerts API**: http://localhost:8080/api/alerts
+
+## Configuration
+
+The dashboard is configured through Jenkins pipeline parameters:
+
+- **Dashboard Type**: ''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''
+- **Visualization Style**: ''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''
+- **Company Name**: ''' + (params.COMPANY_NAME ?: 'Your Company') + '''
+- **Metrics Enabled**: ''' + (params.ENABLE_METRICS ?: 'true') + '''
+- **Alerts Enabled**: ''' + (params.ENABLE_ALERTS ?: 'true') + '''
+
+## API Endpoints
+
+- `GET /` - Main dashboard interface
+- `GET /api/health` - Health check
+- `GET /api/metrics` - Real-time metrics
+- `GET /api/pipelines` - Pipeline status
+- `GET /api/alerts` - Recent alerts
+
+## Built With
+
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Backend**: Python Flask
+- **Containerization**: Docker
+- **Orchestration**: Docker Compose
+- **CI/CD**: Jenkins Pipeline
+
+## Learning Objectives
+
+This dashboard demonstrates:
+
+1. **Jenkins Pipeline Creation**: Automated application building
+2. **Web Application Development**: Modern frontend and backend
+3. **Containerization**: Docker and Docker Compose
+4. **API Design**: RESTful API endpoints
+5. **Real-time Data**: Live metrics and updates
+6. **Production Patterns**: Health checks, monitoring, alerts
+
+## Next Steps
+
+1. Customize the dashboard for your specific needs
+2. Integrate with real CI/CD tools and metrics
+3. Add authentication and user management
+4. Implement data persistence
+5. Add more visualization types
+6. Deploy to cloud platforms
+
+---
+
+**Built with ❤️ using Jenkins CI/CD Pipeline**
+'''
+                    
+                    echo "║  ✅ Created README.md - Documentation and instructions"
                     echo "║"
-                    
-                    // Simulate Docker build with detailed steps
-                    def buildSteps = [
-                        ['Analyzing Dockerfile', 'Validating Docker configuration', 30],
-                        ['Downloading base image', 'Pulling python:3.11-slim', 30],
-                        ['Installing dependencies', 'Running pip install', 30],
-                        ['Copying application code', 'Adding source files to container', 30],
-                        ['Setting up container', 'Configuring runtime environment', 30]
-                    ]
-                    
-                    def totalPoints = 0
-                    buildSteps.each { step ->
-                        def stepName = step[0]
-                        def stepDesc = step[1]
-                        def stepPoints = step[2]
-                        
-                        echo "║  🔨 ${stepName}..."
-                        echo "║     ${stepDesc}"
-                        
-                        // Simulate build progress
-                        for (int i = 1; i <= 3; i++) {
-                            echo "║     ${'█' * i}${'░' * (3 - i)} Building... (${i * 33}%)"
-                            sleep(0.5)
-                        }
-                        
-                        echo "║     ✅ ${stepName} - COMPLETE (+${stepPoints} points)"
-                        totalPoints += stepPoints
-                        echo "║"
-                    }
-                    
-                    echo "║  🐳 Docker image built successfully!"
-                    echo "║     Image: ci-cd-challenge:latest"
-                    echo "║     Size: ~150MB (optimized)"
-                    echo "║     Layers: 5 (efficient)"
+                    echo "║  🎯 Dashboard Application Created Successfully!"
+                    echo "║  📁 Files Generated:"
+                    echo "║     • dashboard.html - Interactive web interface"
+                    echo "║     • dashboard_api.py - Flask API server"
+                    echo "║     • requirements.txt - Python dependencies"
+                    echo "║     • Dockerfile - Container configuration"
+                    echo "║     • docker-compose.yml - Easy deployment"
+                    echo "║     • README.md - Complete documentation"
                     echo "║"
-                    
-                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
-                    
-                    echo "║  🏆 Containerization Complete!"
-                    echo "║     Points Earned: +${totalPoints}"
-                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
-                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                    echo "║"
-                    echo "║  🎯 Next: Deployment Strategy Challenge"
+                    echo "║  🏆 Points Earned: 200/200"
+                    echo "║  ⏱️  Time Taken: 45 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Update dashboard score
+                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 200
                 }
             }
         }
         
-        stage('🚀 Deployment Strategy') {
+        stage('🐳 Containerization & Deployment') {
             steps {
                 script {
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🚀 CHALLENGE 4: DEPLOYMENT STRATEGY                       ║"
+                    echo "║                    🐳 CONTAINERIZATION & DEPLOYMENT                          ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Deploy application with production strategy"
+                    echo "║  🎯 Objective: Containerize and deploy the CI/CD Dashboard"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🎲 Strategy: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                    echo "║  🏆 Max Points: 200 points"
                     echo "║"
                     
-                    // Simulate different deployment strategies
-                    def deploymentStrategies = [
-                        'Speed Run': ['Direct Deployment', 'Fast, simple deployment', 100],
-                        'Quality Focus': ['Blue-Green Deployment', 'Zero-downtime with instant rollback', 200],
-                        'Security First': ['Canary Deployment', 'Gradual rollout with monitoring', 180],
-                        'Performance Optimized': ['Rolling Update', 'Smooth updates with load balancing', 160]
-                    ]
-                    
-                    def strategy = deploymentStrategies[params.CHALLENGE_TYPE ?: 'Speed Run'] ?: deploymentStrategies['Speed Run']
-                    def strategyName = strategy[0]
-                    def strategyDesc = strategy[1]
-                    def strategyPoints = strategy[2]
-                    
-                    echo "║  🎯 Selected Strategy: ${strategyName}"
-                    echo "║     ${strategyDesc}"
-                    echo "║  🏆 Max Points: ${strategyPoints}"
+                    echo "║  🐳 Building Docker image..."
                     echo "║"
                     
-                    // Simulate deployment steps
-                    def deploySteps = [
-                        ['Pre-deployment validation', 'Checking environment readiness', 40],
-                        ['Environment preparation', 'Setting up deployment infrastructure', 40],
-                        ['Application deployment', 'Deploying new version', 40],
-                        ['Health checks', 'Verifying application health', 40],
-                        ['Traffic routing', 'Switching traffic to new version', 40]
-                    ]
+                    // Find available port
+                    def WEBAPP_PORT = 8080
+                    def MAX_ATTEMPTS = 10
+                    def ATTEMPTS = 0
                     
-                    def totalPoints = 0
-                    deploySteps.each { step ->
-                        def stepName = step[0]
-                        def stepDesc = step[1]
-                        def stepPoints = step[2]
+                    while (ATTEMPTS < MAX_ATTEMPTS) {
+                        ATTEMPTS++
+                        echo "║  🔍 Checking port $WEBAPP_PORT..."
                         
-                        echo "║  🚀 ${stepName}..."
-                        echo "║     ${stepDesc}"
+                        // Check if port is available
+                        def portCheck = sh(
+                            script: "netstat -tuln | grep ':$WEBAPP_PORT ' || true",
+                            returnStatus: true
+                        )
                         
-                        // Simulate deployment progress
-                        for (int i = 1; i <= 4; i++) {
-                            echo "║     ${'█' * i}${'░' * (4 - i)} Deploying... (${i * 25}%)"
-                            sleep(0.4)
+                        def dockerCheck = sh(
+                            script: "docker ps --format '{{.Ports}}' | grep ':$WEBAPP_PORT->' || true",
+                            returnStatus: true
+                        )
+                        
+                        if (portCheck == 0 || dockerCheck == 0) {
+                            echo "║     Port $WEBAPP_PORT is in use, trying next..."
+                            WEBAPP_PORT++
+                            continue
                         }
                         
-                        echo "║     ✅ ${stepName} - COMPLETE (+${stepPoints} points)"
-                        totalPoints += stepPoints
-                        echo "║"
+                        // Port is available
+                        echo "║     ✅ Found available port: $WEBAPP_PORT"
+                        break
                     }
                     
-                    echo "║  🚀 Deployment completed successfully!"
-                    echo "║     Strategy: ${strategyName}"
-                    echo "║     Status: ✅ Healthy"
-                    echo "║     Uptime: 99.9%"
-                    echo "║     Response Time: <100ms"
-                    echo "║"
+                    if (ATTEMPTS >= MAX_ATTEMPTS) {
+                        echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+                        WEBAPP_PORT = 8080  // Use default
+                    }
                     
-                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
+                    // Build Docker image
+                    sh """
+                        echo "║  🔨 Building Docker image..."
+                        docker build -t ci-cd-dashboard:${BUILD_TIMESTAMP} . || {
+                            echo "║     ❌ Docker build failed"
+                            exit 1
+                        }
+                        echo "║     ✅ Docker image built successfully"
+                    """
                     
-                    echo "║  🏆 Deployment Strategy Complete!"
-                    echo "║     Points Earned: +${totalPoints}"
-                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
-                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                    echo "║  🚀 Deploying container..."
+                    
+                    // Run container
+                    sh """
+                        echo "║  🐳 Starting container on port $WEBAPP_PORT..."
+                        CONTAINER_ID=\$(docker run -d \\
+                            --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
+                            -p $WEBAPP_PORT:5000 \\
+                            -e DASHBOARD_TYPE='${params.DASHBOARD_TYPE ?: 'Basic'}' \\
+                            -e VISUALIZATION_STYLE='${params.VISUALIZATION_STYLE ?: 'Interactive'}' \\
+                            -e COMPANY_NAME='${params.COMPANY_NAME ?: 'Your Company'}' \\
+                            ci-cd-dashboard:${BUILD_TIMESTAMP}) || {
+                            echo "║     ❌ Container deployment failed"
+                            exit 1
+                        }
+                        
+                        echo "║     ✅ Container started: \$CONTAINER_ID"
+                        
+                        # Wait for container to start
+                        echo "║  ⏳ Waiting for container to start..."
+                        sleep 5
+                        
+                        # Check if container is running
+                        if ! docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
+                            echo "║     ❌ Container failed to start"
+                            echo "║     • Container logs:"
+                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
+                            exit 1
+                        fi
+                        
+                        # Save port info
+                        echo $WEBAPP_PORT > dashboard.port
+                        
+                        echo "║     ✅ Container deployed successfully"
+                        echo "║     🌐 Dashboard URL: http://localhost:$WEBAPP_PORT"
+                    """
+                    
                     echo "║"
-                    echo "║  🎯 Next: Monitoring & Observability Challenge"
+                    echo "║  🎯 Containerization Complete!"
+                    echo "║  📊 Deployment Details:"
+                    echo "║     • Image: ci-cd-dashboard:${BUILD_TIMESTAMP}"
+                    echo "║     • Container: ci-cd-dashboard-${BUILD_TIMESTAMP}"
+                    echo "║     • Port: $WEBAPP_PORT"
+                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
+                    echo "║"
+                    echo "║  🏆 Points Earned: 200/200"
+                    echo "║  ⏱️  Time Taken: 50 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Update dashboard score
+                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 200
                 }
             }
         }
         
-        stage('📊 Monitoring & Observability') {
+        stage('📊 Testing & Validation') {
             steps {
                 script {
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    📊 CHALLENGE 5: MONITORING & OBSERVABILITY                ║"
+                    echo "║                    📊 TESTING & VALIDATION                                   ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Set up comprehensive monitoring and observability"
+                    echo "║  🎯 Objective: Test and validate the CI/CD Dashboard"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🏆 Max Points: 100"
+                    echo "║  🏆 Max Points: 150 points"
                     echo "║"
                     
-                    // Simulate monitoring setup
-                    def monitoringChecks = [
-                        ['Application Health Monitoring', 'Setting up health check endpoints', 20],
-                        ['Performance Metrics Collection', 'Configuring metrics gathering', 20],
-                        ['Log Aggregation Setup', 'Centralizing log collection', 20],
-                        ['Alert Configuration', 'Setting up proactive alerts', 20],
-                        ['Dashboard Creation', 'Building monitoring dashboards', 20]
-                    ]
+                    // Read port from file
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
                     
-                    def totalPoints = 0
-                    monitoringChecks.each { check ->
-                        def checkName = check[0]
-                        def checkDesc = check[1]
-                        def checkPoints = check[2]
-                        
-                        echo "║  📊 Setting up ${checkName}..."
-                        echo "║     ${checkDesc}"
-                        
-                        // Simulate setup progress
-                        for (int i = 1; i <= 3; i++) {
-                            echo "║     ${'█' * i}${'░' * (3 - i)} Configuring... (${i * 33}%)"
-                            sleep(0.4)
+                    echo "║  🧪 Running comprehensive tests..."
+                    echo "║"
+                    
+                    // Test 1: Health Check
+                    echo "║  🔍 Test 1: Health Check API"
+                    sh """
+                        echo "║     Testing health endpoint..."
+                        curl -f http://localhost:$WEBAPP_PORT/api/health || {
+                            echo "║     ❌ Health check failed"
+                            exit 1
                         }
-                        
-                        echo "║     ✅ ${checkName} - ACTIVE (+${checkPoints} points)"
-                        totalPoints += checkPoints
-                        echo "║"
-                    }
+                        echo "║     ✅ Health check passed"
+                    """
                     
-                    // Simulate real-time metrics
-                    echo "║  📈 Live Metrics Dashboard:"
-                    echo "║     • CPU Usage: 45% (Normal)"
-                    echo "║     • Memory Usage: 67% (Normal)"
-                    echo "║     • Response Time: 120ms (Excellent)"
-                    echo "║     • Error Rate: 0.1% (Very Low)"
-                    echo "║     • Uptime: 99.9% (Excellent)"
-                    echo "║     • Active Connections: 1,247"
-                    echo "║     • Requests/min: 2,340"
+                    // Test 2: Metrics API
+                    echo "║  📊 Test 2: Metrics API"
+                    sh """
+                        echo "║     Testing metrics endpoint..."
+                        curl -f http://localhost:$WEBAPP_PORT/api/metrics || {
+                            echo "║     ❌ Metrics API failed"
+                            exit 1
+                        }
+                        echo "║     ✅ Metrics API working"
+                    """
+                    
+                    // Test 3: Pipelines API
+                    echo "║  🚀 Test 3: Pipelines API"
+                    sh """
+                        echo "║     Testing pipelines endpoint..."
+                        curl -f http://localhost:$WEBAPP_PORT/api/pipelines || {
+                            echo "║     ❌ Pipelines API failed"
+                            exit 1
+                        }
+                        echo "║     ✅ Pipelines API working"
+                    """
+                    
+                    // Test 4: Main Dashboard
+                    echo "║  🌐 Test 4: Main Dashboard"
+                    sh """
+                        echo "║     Testing main dashboard..."
+                        curl -f http://localhost:$WEBAPP_PORT/ || {
+                            echo "║     ❌ Main dashboard failed"
+                            exit 1
+                        }
+                        echo "║     ✅ Main dashboard accessible"
+                    """
+                    
+                    // Test 5: Container Status
+                    echo "║  🐳 Test 5: Container Status"
+                    sh """
+                        echo "║     Checking container health..."
+                        if docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
+                            echo "║     ✅ Container is running"
+                        else
+                            echo "║     ❌ Container is not running"
+                            exit 1
+                        fi
+                    """
+                    
                     echo "║"
-                    
-                    echo "║  🚨 Alert Status:"
-                    echo "║     • Critical: 0"
-                    echo "║     • Warning: 0"
-                    echo "║     • Info: 3"
-                    echo "║     • All systems operational ✅"
+                    echo "║  🎯 All Tests Passed!"
+                    echo "║  📊 Test Results:"
+                    echo "║     • Health Check API: ✅ PASS"
+                    echo "║     • Metrics API: ✅ PASS"
+                    echo "║     • Pipelines API: ✅ PASS"
+                    echo "║     • Main Dashboard: ✅ PASS"
+                    echo "║     • Container Status: ✅ PASS"
                     echo "║"
-                    
-                    env.CHALLENGE_SCORE = env.CHALLENGE_SCORE.toInteger() + totalPoints
-                    
-                    echo "║  🏆 Monitoring & Observability Complete!"
-                    echo "║     Points Earned: +${totalPoints}"
-                    echo "║     Total Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE}"
-                    echo "║     Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                    echo "║"
-                    echo "║  🎯 All Challenges Complete! 🎉"
+                    echo "║  🏆 Points Earned: 150/150"
+                    echo "║  ⏱️  Time Taken: 40 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Update dashboard score
+                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 150
+                }
+            }
+        }
+        
+        stage('🎯 Interactive Demo & Learning') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🎯 INTERACTIVE DEMO & LEARNING                            ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Demonstrate CI/CD Dashboard capabilities"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🏆 Max Points: 150 points"
+                    echo "║"
+                    
+                    // Read port from file
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    
+                    echo "║  🎮 Interactive Demo Features:"
+                    echo "║"
+                    
+                    // Demo 1: Real-time Updates
+                    echo "║  🔄 Demo 1: Real-time Metrics Updates"
+                    sh """
+                        echo "║     • Dashboard updates every 5 seconds"
+                        echo "║     • Live build statistics"
+                        echo "║     • Dynamic progress bars"
+                        echo "║     • Animated status indicators"
+                    """
+                    
+                    // Demo 2: API Endpoints
+                    echo "║  🌐 Demo 2: RESTful API Endpoints"
+                    sh """
+                        echo "║     • GET /api/health - Health monitoring"
+                        echo "║     • GET /api/metrics - Real-time metrics"
+                        echo "║     • GET /api/pipelines - Pipeline status"
+                        echo "║     • GET /api/alerts - Alert notifications"
+                    """
+                    
+                    // Demo 3: Responsive Design
+                    echo "║  📱 Demo 3: Responsive Design"
+                    sh """
+                        echo "║     • Mobile-friendly interface"
+                        echo "║     • Adaptive grid layout"
+                        echo "║     • Touch-friendly interactions"
+                        echo "║     • Modern CSS animations"
+                    """
+                    
+                    // Demo 4: Customization
+                    echo "║  🎨 Demo 4: Customization Features"
+                    sh """
+                        echo "║     • Company branding: ${params.COMPANY_NAME ?: 'Your Company'}"
+                        echo "║     • Dashboard type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                        echo "║     • Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                        echo "║     • Metrics enabled: ${params.ENABLE_METRICS ?: 'true'}"
+                        echo "║     • Alerts enabled: ${params.ENABLE_ALERTS ?: 'true'}"
+                    """
+                    
+                    // Demo 5: Production Features
+                    echo "║  🏭 Demo 5: Production-Ready Features"
+                    sh """
+                        echo "║     • Docker containerization"
+                        echo "║     • Health check endpoints"
+                        echo "║     • Error handling"
+                        echo "║     • Logging and monitoring"
+                        echo "║     • Easy deployment with docker-compose"
+                    """
+                    
+                    echo "║"
+                    echo "║  🎯 Demo Complete!"
+                    echo "║  🌐 Access Your Dashboard:"
+                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
+                    echo "║     • API: http://localhost:$WEBAPP_PORT/api/health"
+                    echo "║     • Metrics: http://localhost:$WEBAPP_PORT/api/metrics"
+                    echo "║"
+                    echo "║  🏆 Points Earned: 150/150"
+                    echo "║  ⏱️  Time Taken: 30 seconds"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Update dashboard score
+                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 150
+                }
+            }
+        }
+        
+        stage('🏆 Final Results & Learning') {
+            steps {
+                script {
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                    🏆 FINAL RESULTS & LEARNING                               ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🎯 Objective: Showcase completed CI/CD Dashboard and learning outcomes"
+                    echo "║  ⏱️  Time Limit: 1 minute"
+                    echo "║  🏆 Max Points: 100 points"
+                    echo "║"
+                    
+                    // Read port from file
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    
+                    // Calculate final score and time
+                    def endTime = System.currentTimeMillis()
+                    def duration = (endTime - env.START_TIME.toLong()) / 1000
+                    def finalScore = (env.DASHBOARD_SCORE ?: '0').toInteger()
+                    
+                    echo "║  🎉 CI/CD Dashboard Successfully Built!"
+                    echo "║"
+                    echo "║  📊 Final Results:"
+                    echo "║     • Total Score: $finalScore/800 points"
+                    echo "║     • Build Time: $duration seconds"
+                    echo "║     • Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                    echo "║     • Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                    echo "║     • Company: ${params.COMPANY_NAME ?: 'Your Company'}"
+                    echo "║"
+                    echo "║  🌐 Your Dashboard is Live:"
+                    echo "║     • Main Interface: http://localhost:$WEBAPP_PORT"
+                    echo "║     • Health Check: http://localhost:$WEBAPP_PORT/api/health"
+                    echo "║     • Real-time Metrics: http://localhost:$WEBAPP_PORT/api/metrics"
+                    echo "║     • Pipeline Status: http://localhost:$WEBAPP_PORT/api/pipelines"
+                    echo "║     • Alert System: http://localhost:$WEBAPP_PORT/api/alerts"
+                    echo "║"
+                    echo "║  🎓 Learning Outcomes Achieved:"
+                    echo "║     ✅ Jenkins Pipeline Creation"
+                    echo "║     ✅ Web Application Development"
+                    echo "║     ✅ Docker Containerization"
+                    echo "║     ✅ API Design & Implementation"
+                    echo "║     ✅ Real-time Data Visualization"
+                    echo "║     ✅ Production Deployment Patterns"
+                    echo "║     ✅ Interactive User Interface"
+                    echo "║     ✅ Comprehensive Testing Strategy"
+                    echo "║"
+                    echo "║  🚀 Next Steps:"
+                    echo "║     • Customize dashboard for your needs"
+                    echo "║     • Integrate with real CI/CD tools"
+                    echo "║     • Add authentication and security"
+                    echo "║     • Deploy to cloud platforms"
+                    echo "║     • Scale for production use"
+                    echo "║"
+                    echo "║  🏆 Points Earned: 100/100"
+                    echo "║  ⏱️  Time Taken: 20 seconds"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    
+                    // Update dashboard score
+                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 100
                 }
             }
         }
@@ -481,137 +977,71 @@ if __name__ == '__main__':
             script {
                 def endTime = System.currentTimeMillis()
                 def duration = (endTime - env.START_TIME.toLong()) / 1000
+                def finalScore = (env.DASHBOARD_SCORE ?: '0').toInteger()
                 
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                echo "║                    🎉 CHALLENGE COMPLETED! 🎉                                ║"
+                echo "║                    🎉 DASHBOARD BUILD SUCCESS! 🎉                             ║"
                 echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🏆 Final Score: ${env.CHALLENGE_SCORE ?: '0'}/${MAX_SCORE} points"
-                echo "║  ⏱️  Completion Time: ${duration} seconds"
-                echo "║  🎯 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
-                echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
-                echo "║  📊 Completion Rate: ${((env.CHALLENGE_SCORE ?: '0').toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                echo "║  🏆 Final Score: $finalScore/800 points"
+                echo "║  ⏱️  Build Time: $duration seconds"
+                echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
                 echo "║"
-                
-                // Calculate performance rating
-                def performanceRating = "🥉 Bronze"
-                def ratingDescription = "Good effort! Keep practicing to improve."
-                def currentScore = (env.CHALLENGE_SCORE ?: '0').toInteger()
-                if (currentScore >= 900) {
-                    performanceRating = "🏆 Legendary"
-                    ratingDescription = "Outstanding! You're a CI/CD master!"
-                } else if (currentScore >= 800) {
-                    performanceRating = "🥇 Gold"
-                    ratingDescription = "Excellent! You've mastered CI/CD!"
-                } else if (currentScore >= 600) {
-                    performanceRating = "🥈 Silver"
-                    ratingDescription = "Great job! You're well on your way!"
-                }
-                
-                echo "║  🏅 Performance Rating: ${performanceRating}"
-                echo "║  💬 ${ratingDescription}"
+                echo "║  🌐 Your CI/CD Dashboard is Live!"
+                echo "║     • Access: http://localhost:$(cat dashboard.port 2>/dev/null || echo '8080')"
+                echo "║     • API Health: http://localhost:$(cat dashboard.port 2>/dev/null || echo '8080')/api/health"
                 echo "║"
-                
-                // Show achievements
-                echo "║  🎖️  Achievements Unlocked:"
-                if (currentScore >= 100) {
-                    echo "║     ✅ First Steps - Completed your first challenge"
-                }
-                if (currentScore >= 300) {
-                    echo "║     ✅ Quality Guardian - Mastered code quality"
-                }
-                if (currentScore >= 500) {
-                    echo "║     ✅ Test Master - Conquered testing strategies"
-                }
-                if (currentScore >= 700) {
-                    echo "║     ✅ Container Expert - Mastered containerization"
-                }
-                if (currentScore >= 800) {
-                    echo "║     ✅ Deployment Pro - Conquered deployment strategies"
-                }
-                if (currentScore >= 900) {
-                    echo "║     ✅ Monitoring Master - Achieved full observability"
-                }
+                echo "║  🎓 You've Mastered:"
+                echo "║     ✅ Jenkins Pipeline Development"
+                echo "║     ✅ Modern Web Application Creation"
+                echo "║     ✅ Docker Containerization"
+                echo "║     ✅ RESTful API Design"
+                echo "║     ✅ Real-time Data Visualization"
+                echo "║     ✅ Production Deployment"
                 echo "║"
-                
-                echo "║  🎮 You've mastered Jenkins CI/CD!"
-                echo "║  🚀 Ready for production deployments!"
-                echo "║  💡 Continue learning with advanced Jenkins features!"
-                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                
-                // Show leaderboard if enabled
-                if (params.SHOW_LEADERBOARD) {
-                    echo ""
-                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                    🏆 LIVE LEADERBOARD                                       ║"
-                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  #1 🥇 Alex Chen     - 950 points (Expert, Performance Optimized)"
-                    echo "║  #2 🥈 Sarah Kim     - 875 points (Advanced, Quality Focus)"
-                    echo "║  #3 🥉 Mike Johnson  - 820 points (Intermediate, Security First)"
-                    echo "║  #4    You           - ${env.CHALLENGE_SCORE ?: '0'} points (${params.SKILL_LEVEL ?: 'Beginner'}, ${params.CHALLENGE_TYPE ?: 'Speed Run'})"
-                    echo "║  #5    Emma Wilson   - 750 points (Beginner, Speed Run)"
-                    echo "║"
-                    echo "║  🎯 Challenge Statistics:"
-                    echo "║     • Total Participants: 1,247"
-                    echo "║     • Average Score: 720 points"
-                    echo "║     • Your Rank: Top ${currentScore >= 800 ? '10%' : currentScore >= 600 ? '25%' : '50%'}"
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                }
-                
-                // Show next steps
-                echo ""
-                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                echo "║                    🚀 NEXT STEPS & LEARNING PATH                              ║"
-                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  📚 Continue Your CI/CD Journey:"
-                echo "║     • Explore Jenkins plugins and integrations"
-                echo "║     • Learn advanced pipeline patterns"
-                echo "║     • Implement real-world CI/CD pipelines"
-                echo "║     • Join the Jenkins community"
-                echo "║     • Contribute to open source projects"
-                echo "║"
-                echo "║  🎯 Recommended Next Scenarios:"
-                echo "║     • Kubernetes Deployment Scenarios"
-                echo "║     • Advanced Jenkins Patterns"
-                echo "║     • Production CI/CD Strategies"
-                echo "║     • Security and Compliance"
-                echo "║"
-                echo "║  💡 Pro Tip: Practice makes perfect! Try different skill levels"
-                echo "║     and challenge types to master all aspects of CI/CD."
+                echo "║  🚀 Ready for Production CI/CD!"
+                echo "║  💡 Continue building amazing applications!"
                 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
             }
         }
-        
         failure {
             script {
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                echo "║                    💪 CHALLENGE FAILED - BUT DON'T GIVE UP!                  ║"
+                echo "║                    💪 BUILD FAILED - BUT DON'T GIVE UP!                      ║"
                 echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🎯 Current Score: ${env.CHALLENGE_SCORE ?: '0'}/${MAX_SCORE} points"
-                echo "║  📊 Progress: ${((env.CHALLENGE_SCORE ?: '0').toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
-                echo "║  👤 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
+                echo "║  🎯 Current Score: ${env.DASHBOARD_SCORE ?: '0'}/800 points"
+                echo "║  📊 Progress: ${((env.DASHBOARD_SCORE ?: '0').toInteger() / 800 * 100).intValue()}%"
+                echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
+                echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
                 echo "║"
                 echo "║  💡 Learning Opportunities:"
                 echo "║     • Review the failed stage carefully"
-                echo "║     • Try a different skill level or challenge type"
+                echo "║     • Check Docker and port availability"
+                echo "║     • Try a different dashboard type"
                 echo "║     • Practice the fundamentals first"
-                echo "║     • Ask for help from the community"
                 echo "║"
-                echo "║  🔄 Retry the challenge to improve your score!"
-                echo "║  📚 Learn from the failure and come back stronger!"
-                echo "║  🚀 Every master was once a beginner!"
+                echo "║  🔧 Common Issues:"
+                echo "║     • Port conflicts - try different port"
+                echo "║     • Docker not running - start Docker service"
+                echo "║     • Dependencies missing - check requirements"
+                echo "║     • Permission issues - check file permissions"
                 echo "║"
-                echo "║  🎖️  Remember: Failure is just feedback!"
-                echo "║  💪 You've got this! Try again! 💪"
+                echo "║  🚀 Keep Learning and Building!"
                 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
             }
         }
-        
         always {
             script {
-                // Cleanup
-                echo "🧹 Cleaning up challenge artifacts..."
-                sh 'rm -f Dockerfile requirements.txt app.py 2>/dev/null || true'
+                echo "🧹 Cleaning up build artifacts..."
+                sh '''
+                    # Clean up temporary files
+                    rm -f dashboard.port
+                    
+                    # Optional: Clean up Docker containers (uncomment if needed)
+                    # docker stop ci-cd-dashboard-* 2>/dev/null || true
+                    # docker rm ci-cd-dashboard-* 2>/dev/null || true
+                '''
             }
         }
     }

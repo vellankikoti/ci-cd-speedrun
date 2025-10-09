@@ -758,7 +758,7 @@ This dashboard demonstrates:
                             
                             # Wait for container to start
                             echo "║  ⏳ Waiting for container to start..."
-                            sleep 5
+                            sleep 10
                             
                             # Check if container is running
                             if ! docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
@@ -822,15 +822,37 @@ This dashboard demonstrates:
                     echo "║  🧪 Running comprehensive tests..."
                     echo "║"
                     
-                    // Test 1: Health Check
+                    // Test 1: Health Check with retries
                     echo "║  🔍 Test 1: Health Check API"
                     sh """
                         echo "║     Testing health endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/health || {
-                            echo "║     ❌ Health check failed"
+                        
+                        # Wait for container to be ready with retries
+                        MAX_RETRIES=10
+                        RETRY_COUNT=0
+                        HEALTH_CHECK_PASSED=false
+                        
+                        while [ \$RETRY_COUNT -lt \$MAX_RETRIES ] && [ "\$HEALTH_CHECK_PASSED" = "false" ]; do
+                            RETRY_COUNT=\$((RETRY_COUNT + 1))
+                            echo "║     Health check attempt \$RETRY_COUNT/\$MAX_RETRIES..."
+                            
+                            if curl -f http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
+                                echo "║     ✅ Health check passed"
+                                HEALTH_CHECK_PASSED=true
+                            else
+                                echo "║     ⏳ Container not ready yet, waiting 3 seconds..."
+                                sleep 3
+                            fi
+                        done
+                        
+                        if [ "\$HEALTH_CHECK_PASSED" = "false" ]; then
+                            echo "║     ❌ Health check failed after \$MAX_RETRIES attempts"
+                            echo "║     • Container status:"
+                            docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
+                            echo "║     • Container logs:"
+                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
                             exit 1
-                        }
-                        echo "║     ✅ Health check passed"
+                        fi
                     """
                     
                     // Test 2: Metrics API

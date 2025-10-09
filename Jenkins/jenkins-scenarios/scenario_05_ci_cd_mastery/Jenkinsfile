@@ -1,23 +1,21 @@
 pipeline {
     agent any
     
-    // Production-grade options - Jenkins best practices
+    // Production-grade options
     options {
-        timeout(time: 5, unit: 'MINUTES')           // 5-minute challenge!
-        timestamps()                                  // Every log line timestamped
-        buildDiscarder(logRotator(numToKeepStr: '5')) // Keep only last 5 builds
-        skipDefaultCheckout()                         // We'll checkout manually
+        timeout(time: 5, unit: 'MINUTES')
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+        skipDefaultCheckout()
     }
     
-    // Environment variables for the CI/CD Dashboard
+    // Environment variables
     environment {
         APP_NAME = 'ci-cd-dashboard'
         BUILD_TIMESTAMP = "${new Date().format('yyyyMMdd-HHmmss')}"
-        DASHBOARD_THEME = 'modern'
-        FEATURES_ENABLED = 'all'
     }
     
-    // CI/CD Dashboard parameters - attendees can customize
+    // CI/CD Dashboard parameters
     parameters {
         choice(
             name: 'DASHBOARD_TYPE',
@@ -45,7 +43,7 @@ pipeline {
             description: 'Company name for dashboard branding'
         )
     }
-    
+
     stages {
         stage('🚀 CI/CD Dashboard Setup') {
             steps {
@@ -55,9 +53,9 @@ pipeline {
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🎯 Building: Interactive CI/CD Dashboard Application"
                     echo "║  ⏱️  Duration: 5 minutes"
-                    echo "║  🏗️  Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                    echo "║  🎨 Style: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
-                    echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
+                    echo "║  🏗️  Type: ${params.DASHBOARD_TYPE}"
+                    echo "║  🎨 Style: ${params.VISUALIZATION_STYLE}"
+                    echo "║  🏢 Company: ${params.COMPANY_NAME}"
                     echo "║"
                     echo "║  🎮 Ready to build the ultimate CI/CD Dashboard?"
                     echo "║"
@@ -75,25 +73,21 @@ pipeline {
                     echo "║     • Learn modern web technologies"
                     echo "║     • Create production-ready dashboards!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Initialize dashboard scoring
-                    env.DASHBOARD_SCORE = 0
-                    env.START_TIME = System.currentTimeMillis()
-                    
-                    // Show dashboard configuration
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    ⚙️  DASHBOARD CONFIGURATION                               ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                    echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
+                    echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE}"
+                    echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE}"
                     echo "║  📊 Metrics: ${params.ENABLE_METRICS ? 'Enabled' : 'Disabled'}"
                     echo "║  🔔 Alerts: ${params.ENABLE_ALERTS ? 'Enabled' : 'Disabled'}"
-                    echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
+                    echo "║  🏢 Company: ${params.COMPANY_NAME}"
                     echo "║  ⏱️  Build Time: 5 minutes"
                     echo "║  🎮 Mode: Interactive Dashboard Builder"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                 }
+                
+                checkout scm
             }
         }
         
@@ -107,324 +101,425 @@ pipeline {
                     echo "║  ⏱️  Time Limit: 1 minute"
                     echo "║  🏆 Max Points: 200 points"
                     echo "║"
-                    
-                    // Checkout code
-                    checkout scm
-                    
                     echo "║  🔨 Creating dashboard application files..."
                     echo "║"
                     
-                    // Create the main dashboard HTML file
+                    // Create dashboard.html
                     writeFile file: 'dashboard.html', text: '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Dashboard - ''' + (params.COMPANY_NAME ?: 'Your Company') + '''</title>
+    <title>CI/CD Dashboard - ${COMPANY_NAME}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; min-height: 100vh;
+            min-height: 100vh;
+            color: #333;
         }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .header { 
-            background: rgba(0,0,0,0.2); padding: 20px; text-align: center; 
-            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center; 
+            color: white; 
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
         .dashboard { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto;
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
         }
         .card { 
-            background: rgba(255,255,255,0.1); border-radius: 15px; 
-            padding: 20px; backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.2);
+            background: white; 
+            border-radius: 15px; 
+            padding: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .card:hover { 
             transform: translateY(-5px); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .card h3 { 
+            color: #667eea; 
+            margin-bottom: 15px; 
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
         }
         .metric { 
-            font-size: 2em; font-weight: bold; color: #4CAF50; 
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            display: flex; 
+            justify-content: space-between; 
+            margin: 10px 0; 
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric:last-child { border-bottom: none; }
+        .metric-label { font-weight: 500; color: #666; }
+        .metric-value { 
+            font-weight: bold; 
+            color: #667eea;
+            font-size: 1.1em;
         }
         .status { 
-            display: inline-block; padding: 5px 15px; border-radius: 20px; 
-            font-size: 0.9em; font-weight: bold; margin: 5px 0;
+            display: inline-block; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 0.9em; 
+            font-weight: bold;
         }
-        .success { background: #4CAF50; }
-        .warning { background: #FF9800; }
-        .error { background: #F44336; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.danger { background: #f8d7da; color: #721c24; }
+        .pipeline { 
+            margin: 15px 0; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .pipeline-name { font-weight: bold; margin-bottom: 8px; }
+        .pipeline-status { margin-bottom: 5px; }
         .progress-bar { 
-            width: 100%; height: 10px; background: rgba(255,255,255,0.2); 
-            border-radius: 5px; overflow: hidden; margin: 10px 0;
+            width: 100%; 
+            height: 8px; 
+            background: #e9ecef; 
+            border-radius: 4px; 
+            overflow: hidden;
+            margin-top: 10px;
         }
         .progress-fill { 
-            height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); 
-            transition: width 0.3s ease; border-radius: 5px;
+            height: 100%; 
+            background: linear-gradient(90deg, #667eea, #764ba2); 
+            transition: width 0.3s ease;
         }
-        .pipeline-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); 
-            border-radius: 8px; border-left: 4px solid #4CAF50;
+        .refresh-btn { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
         }
-        .chart-container { 
-            height: 200px; background: rgba(255,255,255,0.05); 
-            border-radius: 10px; display: flex; align-items: center; 
-            justify-content: center; margin: 10px 0;
+        .refresh-btn:hover { 
+            background: #5a6fd8; 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-        .alert { 
-            background: rgba(255, 193, 7, 0.2); border: 1px solid #FFC107; 
-            padding: 10px; border-radius: 8px; margin: 10px 0;
-        }
-        .real-time { 
-            animation: pulse 2s infinite; 
+        .loading { 
+            text-align: center; 
+            color: #666; 
+            font-style: italic; 
+            margin: 20px 0;
         }
         @keyframes pulse { 
-            0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } 
+            0%, 100% { opacity: 1; } 
+            50% { opacity: 0.5; } 
         }
-        .footer { 
-            text-align: center; padding: 20px; 
-            background: rgba(0,0,0,0.2); margin-top: 20px;
-        }
+        .pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🚀 CI/CD Dashboard</h1>
-        <p>''' + (params.COMPANY_NAME ?: 'Your Company') + ''' - Real-time Pipeline Monitoring</p>
-        <div class="status success real-time">● LIVE</div>
-    </div>
-    
-    <div class="dashboard">
-        <div class="card">
-            <h3>📊 Build Statistics</h3>
-            <div class="metric" id="totalBuilds">247</div>
-            <p>Total Builds Today</p>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: 85%"></div>
-            </div>
-            <p>Success Rate: 85%</p>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CI/CD Dashboard</h1>
+            <p>Real-time Pipeline Monitoring & Analytics</p>
         </div>
         
-        <div class="card">
-            <h3>⚡ Pipeline Status</h3>
-            <div class="pipeline-item">
-                <span>Frontend Pipeline</span>
-                <span class="status success">PASSING</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Backend API</span>
-                <span class="status success">PASSING</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Database Migration</span>
-                <span class="status warning">RUNNING</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Security Scan</span>
-                <span class="status error">FAILED</span>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3>📈 Performance Metrics</h3>
-            <div class="chart-container">
-                <div style="text-align: center;">
-                    <div class="metric">2.3s</div>
-                    <p>Avg Build Time</p>
+        <div class="dashboard">
+            <div class="card">
+                <h3>📊 Build Statistics</h3>
+                <div class="metric">
+                    <span class="metric-label">Total Builds</span>
+                    <span class="metric-value" id="total-builds">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Success Rate</span>
+                    <span class="metric-value" id="success-rate">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Avg Build Time</span>
+                    <span class="metric-value" id="avg-build-time">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Last Build</span>
+                    <span class="metric-value" id="last-build">-</span>
                 </div>
             </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: 70%"></div>
-            </div>
-            <p>Performance Score: 70%</p>
-        </div>
-        
-        <div class="card">
-            <h3>🔔 Recent Alerts</h3>
-            <div class="alert">
-                <strong>⚠️ High CPU Usage</strong><br>
-                Build server CPU at 85%
-            </div>
-            <div class="alert">
-                <strong>✅ Deployment Success</strong><br>
-                Production deployment completed
-            </div>
-            <div class="alert">
-                <strong>🔍 Security Scan</strong><br>
-                New vulnerabilities detected
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3>🎯 Team Performance</h3>
-            <div class="metric">94%</div>
-            <p>Team Efficiency</p>
-            <div class="pipeline-item">
-                <span>Commits Today</span>
-                <span>23</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Code Reviews</span>
-                <span>15</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Deployments</span>
-                <span>8</span>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3>🌐 Environment Status</h3>
-            <div class="pipeline-item">
-                <span>Production</span>
-                <span class="status success">HEALTHY</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Staging</span>
-                <span class="status success">HEALTHY</span>
-            </div>
-            <div class="pipeline-item">
-                <span>Development</span>
-                <span class="status warning">MAINTENANCE</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="footer">
-        <p>Built with ❤️ using Jenkins CI/CD Pipeline</p>
-        <p>Last Updated: <span id="lastUpdate">''' + new Date().toLocaleString() + '''</span></p>
-    </div>
-    
-    <script>
-        // Real-time updates simulation
-        function updateMetrics() {
-            const totalBuilds = document.getElementById('totalBuilds');
-            const currentBuilds = parseInt(totalBuilds.textContent);
-            totalBuilds.textContent = currentBuilds + Math.floor(Math.random() * 3);
             
-            const lastUpdate = document.getElementById('lastUpdate');
-            lastUpdate.textContent = new Date().toLocaleString();
+            <div class="card">
+                <h3>🚀 Active Pipelines</h3>
+                <div id="pipelines">
+                    <div class="loading">Loading pipelines...</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📈 Performance Metrics</h3>
+                <div class="metric">
+                    <span class="metric-label">CPU Usage</span>
+                    <span class="metric-value" id="cpu-usage">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Memory Usage</span>
+                    <span class="metric-value" id="memory-usage">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Disk Usage</span>
+                    <span class="metric-value" id="disk-usage">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Network I/O</span>
+                    <span class="metric-value" id="network-io">-</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🔔 System Status</h3>
+                <div class="metric">
+                    <span class="metric-label">Dashboard Status</span>
+                    <span class="status success" id="dashboard-status">Healthy</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">API Status</span>
+                    <span class="status success" id="api-status">Online</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Database</span>
+                    <span class="status success" id="db-status">Connected</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Last Update</span>
+                    <span class="metric-value" id="last-update">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+    </div>
+
+    <script>
+        // Dashboard data management
+        let dashboardData = {
+            builds: { total: 0, success: 0, failed: 0, avgTime: 0 },
+            pipelines: [],
+            metrics: { cpu: 0, memory: 0, disk: 0, network: 0 },
+            status: { dashboard: 'healthy', api: 'online', db: 'connected' }
+        };
+
+        // API endpoints
+        const API_BASE = window.location.origin;
+
+        // Fetch data from API
+        async function fetchData() {
+            try {
+                const [health, metrics, pipelines] = await Promise.all([
+                    fetch(`${API_BASE}/api/health`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/metrics`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/pipelines`).then(r => r.json())
+                ]);
+
+                dashboardData = {
+                    builds: metrics.builds || { total: 0, success: 0, failed: 0, avgTime: 0 },
+                    pipelines: pipelines.pipelines || [],
+                    metrics: metrics.system || { cpu: 0, memory: 0, disk: 0, network: 0 },
+                    status: health.status || 'healthy'
+                };
+
+                updateDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showError('Failed to fetch dashboard data');
+            }
         }
-        
-        // Update every 5 seconds
-        setInterval(updateMetrics, 5000);
-        
-        // Add some interactivity
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('click', function() {
-                this.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
+
+        // Update dashboard UI
+        function updateDashboard() {
+            // Update build statistics
+            document.getElementById('total-builds').textContent = dashboardData.builds.total;
+            document.getElementById('success-rate').textContent = 
+                dashboardData.builds.total > 0 ? 
+                Math.round((dashboardData.builds.success / dashboardData.builds.total) * 100) + '%' : '0%';
+            document.getElementById('avg-build-time').textContent = 
+                Math.round(dashboardData.builds.avgTime) + 's';
+            document.getElementById('last-build').textContent = 
+                new Date().toLocaleTimeString();
+
+            // Update pipelines
+            const pipelinesContainer = document.getElementById('pipelines');
+            if (dashboardData.pipelines.length > 0) {
+                pipelinesContainer.innerHTML = dashboardData.pipelines.map(pipeline => `
+                    <div class="pipeline">
+                        <div class="pipeline-name">${pipeline.name}</div>
+                        <div class="pipeline-status">
+                            Status: <span class="status ${pipeline.status}">${pipeline.status}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${pipeline.progress}%"></div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                pipelinesContainer.innerHTML = '<div class="loading">No active pipelines</div>';
+            }
+
+            // Update performance metrics
+            document.getElementById('cpu-usage').textContent = dashboardData.metrics.cpu + '%';
+            document.getElementById('memory-usage').textContent = dashboardData.metrics.memory + '%';
+            document.getElementById('disk-usage').textContent = dashboardData.metrics.disk + '%';
+            document.getElementById('network-io').textContent = dashboardData.metrics.network + ' MB/s';
+
+            // Update system status
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Show error message
+        function showError(message) {
+            const pipelinesContainer = document.getElementById('pipelines');
+            pipelinesContainer.innerHTML = `<div class="loading" style="color: #dc3545;">${message}</div>`;
+        }
+
+        // Refresh data
+        function refreshData() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.textContent = '🔄 Refreshing...';
+            btn.disabled = true;
+            
+            fetchData().finally(() => {
+                btn.textContent = '🔄 Refresh Data';
+                btn.disabled = false;
             });
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchData();
+            // Auto-refresh every 30 seconds
+            setInterval(fetchData, 30000);
         });
-        
-        console.log('🚀 CI/CD Dashboard loaded successfully!');
-        console.log('📊 Dashboard Type: ''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''');
-        console.log('🎨 Visualization: ''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''');
     </script>
 </body>
 </html>'''
                     
                     echo "║  ✅ Created dashboard.html - Interactive web application"
                     
-                    // Create Python Flask backend for API
+                    // Create dashboard_api.py
                     writeFile file: 'dashboard_api.py', text: '''#!/usr/bin/env python3
 """
 CI/CD Dashboard API Server
-Real-time metrics and pipeline monitoring
+Provides real-time data for the dashboard web application
 """
 
 from flask import Flask, jsonify, render_template_string
-import json
-import time
+import os
 import random
+import time
 from datetime import datetime, timedelta
 
+# Initialize Flask app
 app = Flask(__name__)
 
-# Dashboard configuration
+# Dashboard configuration from environment variables
 DASHBOARD_CONFIG = {
-    "company_name": "''' + (params.COMPANY_NAME ?: 'Your Company') + '''",
-    "dashboard_type": "''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''",
-    "visualization_style": "''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''",
-    "metrics_enabled": ''' + (params.ENABLE_METRICS ? 'True' : 'False') + ''',
-    "alerts_enabled": ''' + (params.ENABLE_ALERTS ? 'True' : 'False') + '''
+    'dashboard_type': os.getenv('DASHBOARD_TYPE', 'Basic'),
+    'visualization_style': os.getenv('VISUALIZATION_STYLE', 'Interactive'),
+    'company_name': os.getenv('COMPANY_NAME', 'Your Company'),
+    'metrics_enabled': os.getenv('ENABLE_METRICS', 'true').lower() == 'true',
+    'alerts_enabled': os.getenv('ENABLE_ALERTS', 'true').lower() == 'true'
 }
 
-# Simulated pipeline data
-pipelines = [
-    {"name": "Frontend Pipeline", "status": "success", "duration": 120, "last_run": "2 minutes ago"},
-    {"name": "Backend API", "status": "success", "duration": 180, "last_run": "5 minutes ago"},
-    {"name": "Database Migration", "status": "running", "duration": 45, "last_run": "1 minute ago"},
-    {"name": "Security Scan", "status": "failed", "duration": 300, "last_run": "10 minutes ago"},
-    {"name": "Integration Tests", "status": "success", "duration": 240, "last_run": "15 minutes ago"}
-]
+# Simulated data for demonstration
+def generate_build_data():
+    """Generate realistic build statistics"""
+    total_builds = random.randint(150, 500)
+    success_rate = random.uniform(0.75, 0.95)
+    success_builds = int(total_builds * success_rate)
+    failed_builds = total_builds - success_builds
+    avg_time = random.uniform(45, 180)
+    
+    return {
+        'total': total_builds,
+        'success': success_builds,
+        'failed': failed_builds,
+        'avgTime': avg_time
+    }
+
+def generate_pipeline_data():
+    """Generate realistic pipeline data"""
+    pipeline_names = [
+        'Frontend Build', 'Backend API', 'Database Migration', 
+        'Integration Tests', 'Security Scan', 'Deployment'
+    ]
+    
+    statuses = ['running', 'success', 'failed', 'pending']
+    pipelines = []
+    
+    for i, name in enumerate(pipeline_names[:random.randint(2, 4)]):
+        status = random.choice(statuses)
+        progress = random.randint(0, 100) if status == 'running' else (100 if status == 'success' else random.randint(0, 50))
+        
+        pipelines.append({
+            'name': name,
+            'status': status,
+            'progress': progress,
+            'duration': random.randint(30, 300)
+        })
+    
+    return pipelines
+
+def generate_system_metrics():
+    """Generate realistic system metrics"""
+    return {
+        'cpu': round(random.uniform(20, 80), 1),
+        'memory': round(random.uniform(30, 85), 1),
+        'disk': round(random.uniform(40, 90), 1),
+        'network': round(random.uniform(10, 100), 1)
+    }
 
 @app.route('/')
 def dashboard():
-    """Serve the main dashboard"""
-    return render_template_string(open('dashboard.html').read())
+    """Serve the main dashboard page"""
+    with open('dashboard.html', 'r') as f:
+        html_content = f.read()
+    
+    # Replace placeholders with actual values
+    html_content = html_content.replace('${COMPANY_NAME}', DASHBOARD_CONFIG['company_name'])
+    
+    return html_content
+
+@app.route('/api/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0',
+        'config': DASHBOARD_CONFIG
+    })
 
 @app.route('/api/metrics')
-def get_metrics():
-    """Get real-time metrics"""
+def metrics():
+    """Metrics endpoint"""
     return jsonify({
-        "total_builds": random.randint(240, 260),
-        "success_rate": round(random.uniform(80, 95), 1),
-        "avg_build_time": round(random.uniform(2.0, 3.5), 1),
-        "active_pipelines": len([p for p in pipelines if p["status"] == "running"]),
-        "last_updated": datetime.now().isoformat()
+        'builds': generate_build_data(),
+        'system': generate_system_metrics(),
+        'timestamp': datetime.now().isoformat()
     })
 
 @app.route('/api/pipelines')
-def get_pipelines():
-    """Get pipeline status"""
+def pipelines():
+    """Pipelines endpoint"""
     return jsonify({
-        "pipelines": pipelines,
-        "total": len(pipelines),
-        "success": len([p for p in pipelines if p["status"] == "success"]),
-        "running": len([p for p in pipelines if p["status"] == "running"]),
-        "failed": len([p for p in pipelines if p["status"] == "failed"])
-    })
-
-@app.route('/api/alerts')
-def get_alerts():
-    """Get recent alerts"""
-    alerts = [
-        {
-            "id": 1,
-            "type": "warning",
-            "message": "High CPU usage detected on build server",
-            "timestamp": (datetime.now() - timedelta(minutes=5)).isoformat()
-        },
-        {
-            "id": 2,
-            "type": "success",
-            "message": "Production deployment completed successfully",
-            "timestamp": (datetime.now() - timedelta(minutes=15)).isoformat()
-        },
-        {
-            "id": 3,
-            "type": "error",
-            "message": "Security scan failed - vulnerabilities detected",
-            "timestamp": (datetime.now() - timedelta(minutes=30)).isoformat()
-        }
-    ]
-    return jsonify({"alerts": alerts})
-
-@app.route('/api/health')
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0",
-        "config": DASHBOARD_CONFIG
+        'pipelines': generate_pipeline_data(),
+        'timestamp': datetime.now().isoformat()
     })
 
 if __name__ == '__main__':
@@ -441,16 +536,11 @@ if __name__ == '__main__':
                     // Create requirements.txt
                     writeFile file: 'requirements.txt', text: '''Flask==2.3.3
 Werkzeug==2.3.7
-Jinja2==3.1.2
-MarkupSafe==2.1.3
-itsdangerous==2.1.2
-click==8.1.7
-blinker==1.6.2
 '''
                     
                     echo "║  ✅ Created requirements.txt - Python dependencies"
                     
-                    // Create Dockerfile for containerization
+                    // Create Dockerfile
                     writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
 
 WORKDIR /app
@@ -471,133 +561,81 @@ COPY dashboard_api.py .
 # Expose port
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
-    CMD curl -f http://localhost:5000/api/health || exit 1
-
 # Run the application
 CMD ["python", "dashboard_api.py"]
 '''
                     
                     echo "║  ✅ Created Dockerfile - Container configuration"
                     
-                    // Create docker-compose.yml for easy deployment
+                    // Create docker-compose.yml
                     writeFile file: 'docker-compose.yml', text: '''version: '3.8'
 
 services:
   ci-cd-dashboard:
     build: .
     ports:
-      - "8080:5000"
+      - "8081:5000"
     environment:
-      - FLASK_ENV=production
-      - DASHBOARD_TYPE=''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''
-      - VISUALIZATION_STYLE=''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''
-      - COMPANY_NAME=''' + (params.COMPANY_NAME ?: 'Your Company') + '''
+      - DASHBOARD_TYPE=${DASHBOARD_TYPE:-Basic}
+      - VISUALIZATION_STYLE=${VISUALIZATION_STYLE:-Interactive}
+      - COMPANY_NAME=${COMPANY_NAME:-Your Company}
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+      - ENABLE_ALERTS=${ENABLE_ALERTS:-true}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`dashboard.localhost`)"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=5000"
 '''
                     
                     echo "║  ✅ Created docker-compose.yml - Easy deployment"
                     
-                    // Create README with instructions
+                    // Create README.md
                     writeFile file: 'README.md', text: '''# CI/CD Dashboard
 
-A modern, interactive CI/CD monitoring dashboard built with Jenkins pipelines.
+A real-time CI/CD monitoring dashboard built with Jenkins, Flask, and Docker.
 
 ## Features
 
-- 📊 **Real-time Metrics**: Live build statistics and performance data
-- 🚀 **Pipeline Monitoring**: Visual pipeline status and progress tracking
-- 🔔 **Alert System**: Real-time notifications and warnings
-- 🎨 **Customizable Themes**: Multiple visualization styles
-- 🏢 **Company Branding**: Customizable company information
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+- 📊 Real-time build statistics
+- 🚀 Pipeline monitoring
+- 📈 Performance metrics
+- 🔔 Alert notifications
+- 🎨 Customizable themes
 
 ## Quick Start
 
-### Option 1: Docker Compose (Recommended)
+### Using Docker Compose
 ```bash
 docker-compose up -d
 ```
 
-### Option 2: Python Direct
-```bash
-pip install -r requirements.txt
-python dashboard_api.py
-```
-
-### Option 3: Docker Build
+### Using Docker
 ```bash
 docker build -t ci-cd-dashboard .
-docker run -p 8080:5000 ci-cd-dashboard
+docker run -p 8081:5000 ci-cd-dashboard
 ```
-
-## Access
-
-- **Dashboard**: http://localhost:8080
-- **API Health**: http://localhost:8080/api/health
-- **Metrics API**: http://localhost:8080/api/metrics
-- **Pipelines API**: http://localhost:8080/api/pipelines
-- **Alerts API**: http://localhost:8080/api/alerts
-
-## Configuration
-
-The dashboard is configured through Jenkins pipeline parameters:
-
-- **Dashboard Type**: ''' + (params.DASHBOARD_TYPE ?: 'Basic') + '''
-- **Visualization Style**: ''' + (params.VISUALIZATION_STYLE ?: 'Interactive') + '''
-- **Company Name**: ''' + (params.COMPANY_NAME ?: 'Your Company') + '''
-- **Metrics Enabled**: ''' + (params.ENABLE_METRICS ?: 'true') + '''
-- **Alerts Enabled**: ''' + (params.ENABLE_ALERTS ?: 'true') + '''
 
 ## API Endpoints
 
-- `GET /` - Main dashboard interface
+- `GET /` - Dashboard web interface
 - `GET /api/health` - Health check
-- `GET /api/metrics` - Real-time metrics
+- `GET /api/metrics` - Build and system metrics
 - `GET /api/pipelines` - Pipeline status
-- `GET /api/alerts` - Recent alerts
 
-## Built With
+## Configuration
 
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Backend**: Python Flask
-- **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **CI/CD**: Jenkins Pipeline
+Set environment variables:
+- `DASHBOARD_TYPE`: Basic, Advanced, Enterprise, Custom
+- `VISUALIZATION_STYLE`: Minimal, Interactive, 3D, Real-time
+- `COMPANY_NAME`: Your company name
+- `ENABLE_METRICS`: true/false
+- `ENABLE_ALERTS`: true/false
 
-## Learning Objectives
+## Access
 
-This dashboard demonstrates:
-
-1. **Jenkins Pipeline Creation**: Automated application building
-2. **Web Application Development**: Modern frontend and backend
-3. **Containerization**: Docker and Docker Compose
-4. **API Design**: RESTful API endpoints
-5. **Real-time Data**: Live metrics and updates
-6. **Production Patterns**: Health checks, monitoring, alerts
-
-## Next Steps
-
-1. Customize the dashboard for your specific needs
-2. Integrate with real CI/CD tools and metrics
-3. Add authentication and user management
-4. Implement data persistence
-5. Add more visualization types
-6. Deploy to cloud platforms
-
----
-
-**Built with ❤️ using Jenkins CI/CD Pipeline**
+Open http://localhost:8081 in your browser.
 '''
                     
                     echo "║  ✅ Created README.md - Documentation and instructions"
@@ -614,9 +652,6 @@ This dashboard demonstrates:
                     echo "║  🏆 Points Earned: 200/200"
                     echo "║  ⏱️  Time Taken: 45 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update dashboard score
-                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 200
                 }
             }
         }
@@ -632,176 +667,116 @@ This dashboard demonstrates:
                     echo "║  🏆 Max Points: 200 points"
                     echo "║"
                     
-                    echo "║  🐳 Building Docker image..."
-                    echo "║"
-                    
-                    // Clean up any existing dashboard containers
-                    echo "║  🧹 Cleaning up existing dashboard containers..."
                     sh '''
-                        # Stop and remove any existing dashboard containers
-                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker stop
-                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker rm
-                        echo "║     ✅ Cleanup completed"
-                    '''
-                    
-                    // Enhanced port detection with Docker port checking
-                    echo "║  🔍 Finding available port..."
-                    def WEBAPP_PORT = 8081
-                    def foundPort = false
-                    
-                    // Get list of ports used by Docker containers
-                    def dockerPorts = sh(
-                        script: "docker ps --format '{{.Ports}}' | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | sort -n | uniq || true",
-                        returnStdout: true
-                    ).trim().split('\n').findAll { it.isNumber() && it.toInteger() > 0 }.collect { it.toInteger() }
-                    
-                    echo "║  📊 Docker ports in use: ${dockerPorts.take(5).join(', ')}${dockerPorts.size() > 5 ? '...' : ''}"
-                    
-                    // Try ports 8081-8100, avoiding Docker ports
-                    for (int port = 8081; port <= 8100; port++) {
-                        echo "║  🔍 Checking port $port..."
-                        
-                        // Skip if port is used by Docker
-                        if (dockerPorts.contains(port)) {
-                            echo "║     Port $port is used by Docker, trying next..."
-                            continue
-                        }
-                        
-                        // Test if port is available by trying to connect to it
-                        def portTest = sh(
-                            script: "timeout 2 bash -c 'echo > /dev/tcp/localhost/$port' 2>/dev/null",
-                            returnStatus: true
-                        )
-                        
-                        if (portTest != 0) {
-                            // Port is available (connection failed = port not in use)
-                            WEBAPP_PORT = port
-                            foundPort = true
-                            echo "║     ✅ Found available port: $WEBAPP_PORT"
-                            break
-                        } else {
-                            echo "║     Port $port is in use, trying next..."
-                        }
-                    }
-                    
-                    if (!foundPort) {
-                        echo "║     ⚠️  No port found, using random port 8xxx"
-                        WEBAPP_PORT = 8000 + (new Random().nextInt(1000))
-                        foundPort = true
-                    }
-                    
-                    // Build Docker image
-                    sh """
+                        # Clean up any existing ci-cd-dashboard containers first
+                        echo "║  🧹 Cleaning up existing containers..."
+                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                        docker ps -a --filter "name=ci-cd-dashboard" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+
+                        # Wait a moment for cleanup to complete
+                        sleep 2
+
+                        IMAGE_NAME="ci-cd-dashboard-${BUILD_NUMBER}"
+                        CONTAINER_NAME="ci-cd-dashboard-${BUILD_NUMBER}"
+
+                        # Build Docker image
                         echo "║  🔨 Building Docker image..."
-                        docker build -t ci-cd-dashboard:${BUILD_TIMESTAMP} . || {
-                            echo "║     ❌ Docker build failed"
+                        docker build -t $IMAGE_NAME . || {
+                            echo "║     ❌ Docker image build failed"
                             exit 1
                         }
                         echo "║     ✅ Docker image built successfully"
-                    """
-                    
-                    echo "║  🚀 Deploying container..."
-                    
-                    // Run container with comprehensive port handling
-                    def finalPort = sh(
-                        script: """
-                            echo "║  🐳 Starting container on port $WEBAPP_PORT..."
-                            
-                            # Function to try starting container on a port
-                            try_port() {
-                                local port=\$1
-                                echo "║     🔍 Trying port \$port..."
-                                
-                                # Clean up the port
-                                if command -v lsof >/dev/null 2>&1; then
-                                    lsof -ti:\$port | xargs -r kill -9 2>/dev/null || true
-                                fi
-                                if command -v netstat >/dev/null 2>&1; then
-                                    netstat -tulpn 2>/dev/null | grep ":\$port " | awk '{print \\\$7}' | cut -d'/' -f1 | xargs -r kill -9 2>/dev/null || true
-                                fi
-                                docker ps -a --filter "publish=\$port" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
-                                docker ps -a --filter "publish=\$port" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-                                
-                                # Try to start container
-                                if CONTAINER_ID=\$(docker run -d \\
-                                    --name ci-cd-dashboard-${BUILD_TIMESTAMP} \\
-                                    -p \$port:5000 \\
-                                    -e DASHBOARD_TYPE='${params.DASHBOARD_TYPE ?: 'Basic'}' \\
-                                    -e VISUALIZATION_STYLE='${params.VISUALIZATION_STYLE ?: 'Interactive'}' \\
-                                    -e COMPANY_NAME='${params.COMPANY_NAME ?: 'Your Company'}' \\
-                                    ci-cd-dashboard:${BUILD_TIMESTAMP} 2>&1); then
-                                    
-                                    echo "║     ✅ Container started on port \$port: \$CONTAINER_ID"
-                                    echo \$port
-                                    return 0
-                                else
-                                    echo "║     ❌ Port \$port failed: \$CONTAINER_ID"
-                                    docker rm -f ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                                    return 1
-                                fi
-                            }
-                            
-                            # Try the primary port first
-                            if try_port $WEBAPP_PORT; then
-                                echo "║     ✅ Primary port $WEBAPP_PORT worked"
+
+                        # Retry loop to handle TOCTTOU (Time-Of-Check-Time-Of-Use) race conditions
+                        echo "║  🔄 Starting deployment with retry logic..."
+                        EXTERNAL_PORT=8081
+                        MAX_PORT_ATTEMPTS=50
+                        PORT_ATTEMPT=0
+                        DEPLOY_SUCCESS=false
+
+                        while [ $PORT_ATTEMPT -lt $MAX_PORT_ATTEMPTS ] && [ "$DEPLOY_SUCCESS" = false ]; do
+                            # Check if port is available
+                            PORT_IN_USE=false
+
+                            # Check netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$EXTERNAL_PORT "; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check lsof
+                            if lsof -i :$EXTERNAL_PORT 2>/dev/null | grep -q LISTEN; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check Docker containers
+                            if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$EXTERNAL_PORT->"; then
+                                PORT_IN_USE=true
+                            fi
+
+                            if [ "$PORT_IN_USE" = true ]; then
+                                echo "║     • Port $EXTERNAL_PORT in use, skipping..."
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
+                                continue
+                            fi
+
+                            # Port appears available, try to start container immediately
+                            echo "║     • Attempting deployment on port $EXTERNAL_PORT (attempt $((PORT_ATTEMPT + 1)))..."
+
+                            if docker run -d \\
+                                --name $CONTAINER_NAME \\
+                                -p $EXTERNAL_PORT:5000 \\
+                                -e DASHBOARD_TYPE="${DASHBOARD_TYPE}" \\
+                                -e VISUALIZATION_STYLE="${VISUALIZATION_STYLE}" \\
+                                -e COMPANY_NAME="${COMPANY_NAME}" \\
+                                $IMAGE_NAME > /dev/null 2>&1; then
+
+                                # Container started successfully
+                                echo "║     ✅ Container started on port $EXTERNAL_PORT"
+                                DEPLOY_SUCCESS=true
+                                break
                             else
-                                echo "║     🔄 Primary port failed, trying alternatives..."
-                                
-                                # Try alternative ports
-                                for alt_port in 8082 8083 8084 8085 8086 8087 8088 8089 8090 8091 8092 8093 8094 8095; do
-                                    if try_port \$alt_port; then
-                                        echo "║     ✅ Alternative port \$alt_port worked"
-                                        break
-                                    fi
-                                done
+                                # Container failed to start (likely port conflict race condition)
+                                echo "║     ⚠️  Port $EXTERNAL_PORT taken during deployment, trying next..."
+
+                                # Clean up failed container attempt
+                                docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
+                                # Try next port
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
                             fi
-                            
-                            # Wait for container to start
-                            echo "║  ⏳ Waiting for container to start..."
-                            sleep 10
-                            
-                            # Check if container is running
-                            if ! docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
-                                echo "║     ❌ Container failed to start"
-                                echo "║     • Container logs:"
-                                docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                                exit 1
-                            fi
-                            
-                            # Get the actual port from running container
-                            ACTUAL_PORT=\$(docker ps --filter "name=ci-cd-dashboard-${BUILD_TIMESTAMP}" --format "{{.Ports}}" | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | head -1)
-                            echo "║     📊 Container running on port: \$ACTUAL_PORT"
-                            
-                            # Save port info
-                            echo \$ACTUAL_PORT > dashboard.port
-                            echo "║     💾 Port saved to dashboard.port: \$ACTUAL_PORT"
-                            
-                            echo "║     ✅ Container deployed successfully"
-                            echo "║     🌐 Dashboard URL: http://localhost:\$ACTUAL_PORT"
-                            
-                            # Return the actual port
-                            echo \$ACTUAL_PORT
-                        """,
-                        returnStdout: true
-                    ).trim()
-                    
-                    // Update the port variable with the actual port used
-                    WEBAPP_PORT = finalPort
-                    
-                    echo "║"
-                    echo "║  🎯 Containerization Complete!"
-                    echo "║  📊 Deployment Details:"
-                    echo "║     • Image: ci-cd-dashboard:${BUILD_TIMESTAMP}"
-                    echo "║     • Container: ci-cd-dashboard-${BUILD_TIMESTAMP}"
-                    echo "║     • Port: $WEBAPP_PORT"
-                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
-                    echo "║"
-                    echo "║  🏆 Points Earned: 200/200"
-                    echo "║  ⏱️  Time Taken: 50 seconds"
-                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update dashboard score
-                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 200
+                        done
+
+                        # Check if deployment succeeded
+                        if [ "$DEPLOY_SUCCESS" = false ]; then
+                            echo "║     ❌ Failed to deploy after $PORT_ATTEMPT attempts"
+                            echo "║     • Tried ports 8081-$EXTERNAL_PORT"
+                            echo "║     • All ports were in use or conflicts occurred"
+                            exit 1
+                        fi
+
+                        # Wait for container to fully start
+                        echo "║     • Waiting for container to fully start..."
+                        sleep 3
+
+                        # Verify container is actually running
+                        if docker ps | grep -q $CONTAINER_NAME; then
+                            echo "║     ✅ Container deployed: $CONTAINER_NAME"
+                            echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
+                            echo "║     ✅ Port mapping: $EXTERNAL_PORT:5000"
+
+                            # Save port for testing stage
+                            echo $EXTERNAL_PORT > dashboard.port
+                        else
+                            echo "║     ❌ Container failed to start properly"
+                            echo "║     • Container logs:"
+                            docker logs $CONTAINER_NAME 2>&1 || true
+                            exit 1
+                        fi
+
+                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    '''
                 }
             }
         }
@@ -817,65 +792,26 @@ This dashboard demonstrates:
                     echo "║  🏆 Max Points: 150 points"
                     echo "║"
                     
-                    // Read port from file or use default
-                    def WEBAPP_PORT = "8082"
-                    try {
-                        WEBAPP_PORT = readFile('dashboard.port').trim()
-                    } catch (Exception e) {
-                        echo "║     ⚠️  Could not read port from file, using default 8082"
-                    }
+                    // Read port from file
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
                     
                     echo "║  🧪 Running comprehensive tests..."
                     echo "║"
                     echo "║     🔍 Using port: $WEBAPP_PORT"
-                    echo "║     📁 Checking dashboard.port file..."
-                    sh """
-                        if [ -f dashboard.port ]; then
-                            echo "║     ✅ dashboard.port exists: \$(cat dashboard.port)"
-                        else
-                            echo "║     ❌ dashboard.port not found"
-                        fi
-                    """
                     
-                    // Test 1: Health Check with retries
+                    // Test 1: Health Check API
                     echo "║  🔍 Test 1: Health Check API"
                     sh """
                         echo "║     Testing health endpoint..."
-                        
-                        # First, test if port is accessible using curl
-                        echo "║     🔍 Testing port accessibility..."
-                        if ! curl -s --connect-timeout 5 http://localhost:$WEBAPP_PORT/ >/dev/null 2>&1; then
-                            echo "║     ❌ Port $WEBAPP_PORT is not accessible"
-                            echo "║     • Container status:"
-                            docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
-                            echo "║     • Container logs:"
-                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                            exit 1
-                        fi
-                        echo "║     ✅ Port $WEBAPP_PORT is accessible"
-                        
-                        # Test health endpoint directly
-                        echo "║     🔍 Testing health endpoint..."
-                        if curl -f http://localhost:$WEBAPP_PORT/api/health; then
-                            echo "║     ✅ Health check passed"
-                        else
-                            echo "║     ❌ Health check failed"
-                            echo "║     • Container status:"
-                            docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
-                            echo "║     • Container logs:"
-                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
-                            exit 1
-                        fi
+                        curl -f http://localhost:$WEBAPP_PORT/api/health
+                        echo "║     ✅ Health check passed"
                     """
                     
                     // Test 2: Metrics API
                     echo "║  📊 Test 2: Metrics API"
                     sh """
                         echo "║     Testing metrics endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/metrics || {
-                            echo "║     ❌ Metrics API failed"
-                            exit 1
-                        }
+                        curl -f http://localhost:$WEBAPP_PORT/api/metrics
                         echo "║     ✅ Metrics API working"
                     """
                     
@@ -883,10 +819,7 @@ This dashboard demonstrates:
                     echo "║  🚀 Test 3: Pipelines API"
                     sh """
                         echo "║     Testing pipelines endpoint..."
-                        curl -f http://localhost:$WEBAPP_PORT/api/pipelines || {
-                            echo "║     ❌ Pipelines API failed"
-                            exit 1
-                        }
+                        curl -f http://localhost:$WEBAPP_PORT/api/pipelines
                         echo "║     ✅ Pipelines API working"
                     """
                     
@@ -894,10 +827,7 @@ This dashboard demonstrates:
                     echo "║  🌐 Test 4: Main Dashboard"
                     sh """
                         echo "║     Testing main dashboard..."
-                        curl -f http://localhost:$WEBAPP_PORT/ || {
-                            echo "║     ❌ Main dashboard failed"
-                            exit 1
-                        }
+                        curl -f http://localhost:$WEBAPP_PORT/
                         echo "║     ✅ Main dashboard accessible"
                     """
                     
@@ -905,12 +835,8 @@ This dashboard demonstrates:
                     echo "║  🐳 Test 5: Container Status"
                     sh """
                         echo "║     Checking container health..."
-                        if docker ps | grep -q ci-cd-dashboard-${BUILD_TIMESTAMP}; then
-                            echo "║     ✅ Container is running"
-                        else
-                            echo "║     ❌ Container is not running"
-                            exit 1
-                        fi
+                        docker ps | grep ci-cd-dashboard-${BUILD_NUMBER}
+                        echo "║     ✅ Container is running"
                     """
                     
                     echo "║"
@@ -923,11 +849,8 @@ This dashboard demonstrates:
                     echo "║     • Container Status: ✅ PASS"
                     echo "║"
                     echo "║  🏆 Points Earned: 150/150"
-                    echo "║  ⏱️  Time Taken: 40 seconds"
+                    echo "║  ⏱️  Time Taken: 30 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update dashboard score
-                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 150
                 }
             }
         }
@@ -935,85 +858,37 @@ This dashboard demonstrates:
         stage('🎯 Interactive Demo & Learning') {
             steps {
                 script {
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    🎯 INTERACTIVE DEMO & LEARNING                            ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Demonstrate CI/CD Dashboard capabilities"
+                    echo "║  🎯 Objective: Explore the CI/CD Dashboard features"
                     echo "║  ⏱️  Time Limit: 1 minute"
                     echo "║  🏆 Max Points: 150 points"
                     echo "║"
-                    
-                    // Read port from file or use default
-                    def WEBAPP_PORT = "8082"
-                    try {
-                        WEBAPP_PORT = readFile('dashboard.port').trim()
-                    } catch (Exception e) {
-                        echo "║     ⚠️  Could not read port from file, using default 8082"
-                    }
-                    
-                    echo "║  🎮 Interactive Demo Features:"
-                    echo "║"
-                    
-                    // Demo 1: Real-time Updates
-                    echo "║  🔄 Demo 1: Real-time Metrics Updates"
-                    sh """
-                        echo "║     • Dashboard updates every 5 seconds"
-                        echo "║     • Live build statistics"
-                        echo "║     • Dynamic progress bars"
-                        echo "║     • Animated status indicators"
-                    """
-                    
-                    // Demo 2: API Endpoints
-                    echo "║  🌐 Demo 2: RESTful API Endpoints"
-                    sh """
-                        echo "║     • GET /api/health - Health monitoring"
-                        echo "║     • GET /api/metrics - Real-time metrics"
-                        echo "║     • GET /api/pipelines - Pipeline status"
-                        echo "║     • GET /api/alerts - Alert notifications"
-                    """
-                    
-                    // Demo 3: Responsive Design
-                    echo "║  📱 Demo 3: Responsive Design"
-                    sh """
-                        echo "║     • Mobile-friendly interface"
-                        echo "║     • Adaptive grid layout"
-                        echo "║     • Touch-friendly interactions"
-                        echo "║     • Modern CSS animations"
-                    """
-                    
-                    // Demo 4: Customization
-                    echo "║  🎨 Demo 4: Customization Features"
-                    sh """
-                        echo "║     • Company branding: ${params.COMPANY_NAME ?: 'Your Company'}"
-                        echo "║     • Dashboard type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                        echo "║     • Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
-                        echo "║     • Metrics enabled: ${params.ENABLE_METRICS ?: 'true'}"
-                        echo "║     • Alerts enabled: ${params.ENABLE_ALERTS ?: 'true'}"
-                    """
-                    
-                    // Demo 5: Production Features
-                    echo "║  🏭 Demo 5: Production-Ready Features"
-                    sh """
-                        echo "║     • Docker containerization"
-                        echo "║     • Health check endpoints"
-                        echo "║     • Error handling"
-                        echo "║     • Logging and monitoring"
-                        echo "║     • Easy deployment with docker-compose"
-                    """
-                    
-                    echo "║"
-                    echo "║  🎯 Demo Complete!"
-                    echo "║  🌐 Access Your Dashboard:"
+                    echo "║  🌐 Dashboard Access:"
                     echo "║     • URL: http://localhost:$WEBAPP_PORT"
-                    echo "║     • API: http://localhost:$WEBAPP_PORT/api/health"
-                    echo "║     • Metrics: http://localhost:$WEBAPP_PORT/api/metrics"
+                    echo "║     • Type: ${params.DASHBOARD_TYPE}"
+                    echo "║     • Style: ${params.VISUALIZATION_STYLE}"
+                    echo "║     • Company: ${params.COMPANY_NAME}"
+                    echo "║"
+                    echo "║  🎮 Interactive Features:"
+                    echo "║     • Real-time data updates every 30 seconds"
+                    echo "║     • Click 'Refresh Data' to update manually"
+                    echo "║     • Hover over cards for animations"
+                    echo "║     • Responsive design works on mobile"
+                    echo "║"
+                    echo "║  📚 Learning Points:"
+                    echo "║     • Modern web development (HTML5, CSS3, JavaScript)"
+                    echo "║     • RESTful API design with Flask"
+                    echo "║     • Docker containerization best practices"
+                    echo "║     • Jenkins pipeline automation"
+                    echo "║     • Real-time data visualization"
                     echo "║"
                     echo "║  🏆 Points Earned: 150/150"
                     echo "║  ⏱️  Time Taken: 30 seconds"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update dashboard score
-                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 150
                 }
             }
         }
@@ -1021,142 +896,76 @@ This dashboard demonstrates:
         stage('🏆 Final Results & Learning') {
             steps {
                 script {
+                    def WEBAPP_PORT = readFile('dashboard.port').trim()
+                    
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    🏆 FINAL RESULTS & LEARNING                               ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Objective: Showcase completed CI/CD Dashboard and learning outcomes"
-                    echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🏆 Max Points: 100 points"
+                    echo "║  🎯 Dashboard Builder Complete!"
+                    echo "║  📊 Total Score: 700/700 points"
+                    echo "║  ⏱️  Total Time: 5 minutes"
                     echo "║"
-                    
-                    // Read port from file or use default
-                    def WEBAPP_PORT = "8082"
-                    try {
-                        WEBAPP_PORT = readFile('dashboard.port').trim()
-                    } catch (Exception e) {
-                        echo "║     ⚠️  Could not read port from file, using default 8082"
-                    }
-                    
-                    // Calculate final score and time
-                    def endTime = System.currentTimeMillis()
-                    def duration = (endTime - env.START_TIME.toLong()) / 1000
-                    def finalScore = (env.DASHBOARD_SCORE ?: '0').toInteger()
-                    
-                    echo "║  🎉 CI/CD Dashboard Successfully Built!"
+                    echo "║  🌐 Your CI/CD Dashboard:"
+                    echo "║     • URL: http://localhost:$WEBAPP_PORT"
+                    echo "║     • Type: ${params.DASHBOARD_TYPE}"
+                    echo "║     • Style: ${params.VISUALIZATION_STYLE}"
+                    echo "║     • Company: ${params.COMPANY_NAME}"
                     echo "║"
-                    echo "║  📊 Final Results:"
-                    echo "║     • Total Score: $finalScore/800 points"
-                    echo "║     • Build Time: $duration seconds"
-                    echo "║     • Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                    echo "║     • Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
-                    echo "║     • Company: ${params.COMPANY_NAME ?: 'Your Company'}"
-                    echo "║"
-                    echo "║  🌐 Your Dashboard is Live:"
-                    echo "║     • Main Interface: http://localhost:$WEBAPP_PORT"
-                    echo "║     • Health Check: http://localhost:$WEBAPP_PORT/api/health"
-                    echo "║     • Real-time Metrics: http://localhost:$WEBAPP_PORT/api/metrics"
-                    echo "║     • Pipeline Status: http://localhost:$WEBAPP_PORT/api/pipelines"
-                    echo "║     • Alert System: http://localhost:$WEBAPP_PORT/api/alerts"
-                    echo "║"
-                    echo "║  🎓 Learning Outcomes Achieved:"
-                    echo "║     ✅ Jenkins Pipeline Creation"
-                    echo "║     ✅ Web Application Development"
+                    echo "║  🎓 What You've Mastered:"
+                    echo "║     ✅ Jenkins Pipeline Development"
+                    echo "║     ✅ Web Application Creation"
+                    echo "║     ✅ Flask API Development"
                     echo "║     ✅ Docker Containerization"
-                    echo "║     ✅ API Design & Implementation"
                     echo "║     ✅ Real-time Data Visualization"
                     echo "║     ✅ Production Deployment Patterns"
-                    echo "║     ✅ Interactive User Interface"
-                    echo "║     ✅ Comprehensive Testing Strategy"
                     echo "║"
                     echo "║  🚀 Next Steps:"
-                    echo "║     • Customize dashboard for your needs"
                     echo "║     • Integrate with real CI/CD tools"
                     echo "║     • Add authentication and security"
-                    echo "║     • Deploy to cloud platforms"
-                    echo "║     • Scale for production use"
+                    echo "║     • Deploy to Kubernetes"
+                    echo "║     • Add more advanced features"
                     echo "║"
-                    echo "║  🏆 Points Earned: 100/100"
-                    echo "║  ⏱️  Time Taken: 20 seconds"
+                    echo "║  🎉 Congratulations! You've built a production-ready CI/CD Dashboard!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                    
-                    // Update dashboard score
-                    env.DASHBOARD_SCORE = (env.DASHBOARD_SCORE ?: '0').toInteger() + 100
                 }
             }
         }
     }
     
     post {
-        success {
+        always {
             script {
-                def endTime = System.currentTimeMillis()
-                def duration = (endTime - env.START_TIME.toLong()) / 1000
-                def finalScore = (env.DASHBOARD_SCORE ?: '0').toInteger()
-                
+                echo ""
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                echo "║                    🎉 DASHBOARD BUILD SUCCESS! 🎉                             ║"
+                echo "║                    🎉 CI/CD DASHBOARD BUILDER COMPLETED!                      ║"
                 echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🏆 Final Score: $finalScore/800 points"
-                echo "║  ⏱️  Build Time: $duration seconds"
-                echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
-                echo "║  🏢 Company: ${params.COMPANY_NAME ?: 'Your Company'}"
+                echo "║  🎯 Dashboard Configuration:"
+                echo "║     • Type: ${params.DASHBOARD_TYPE}"
+                echo "║     • Style: ${params.VISUALIZATION_STYLE}"
+                echo "║     • Company: ${params.COMPANY_NAME}"
+                echo "║     • Metrics: ${params.ENABLE_METRICS ? 'Enabled' : 'Disabled'}"
+                echo "║     • Alerts: ${params.ENABLE_ALERTS ? 'Enabled' : 'Disabled'}"
                 echo "║"
-                echo "║  🌐 Your CI/CD Dashboard is Live!"
-                echo "║     • Access: http://localhost:\$(cat dashboard.port 2>/dev/null || echo '8081')"
-                echo "║     • API Health: http://localhost:\$(cat dashboard.port 2>/dev/null || echo '8081')/api/health"
+                echo "║  🌐 Application Access:"
+                echo "║     • Web Dashboard: Available during pipeline execution"
+                echo "║     • API Endpoints: Health, Metrics, Pipelines"
+                echo "║     • Documentation: README.md generated"
+                echo "║     • Docker Compose: Ready for easy deployment"
                 echo "║"
-                echo "║  🎓 You've Mastered:"
-                echo "║     ✅ Jenkins Pipeline Development"
-                echo "║     ✅ Modern Web Application Creation"
-                echo "║     ✅ Docker Containerization"
-                echo "║     ✅ RESTful API Design"
-                echo "║     ✅ Real-time Data Visualization"
-                echo "║     ✅ Production Deployment"
-                echo "║"
-                echo "║  🚀 Ready for Production CI/CD!"
-                echo "║  💡 Continue building amazing applications!"
-                echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-            }
-        }
-        failure {
-            script {
-                echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                echo "║                    💪 BUILD FAILED - BUT DON'T GIVE UP!                      ║"
-                echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🎯 Current Score: ${env.DASHBOARD_SCORE ?: '0'}/800 points"
-                echo "║  📊 Progress: ${((env.DASHBOARD_SCORE ?: '0').toInteger() / 800 * 100).intValue()}%"
-                echo "║  🏗️  Dashboard Type: ${params.DASHBOARD_TYPE ?: 'Basic'}"
-                echo "║  🎨 Visualization: ${params.VISUALIZATION_STYLE ?: 'Interactive'}"
-                echo "║"
-                echo "║  💡 Learning Opportunities:"
-                echo "║     • Review the failed stage carefully"
-                echo "║     • Check Docker and port availability"
-                echo "║     • Try a different dashboard type"
-                echo "║     • Practice the fundamentals first"
-                echo "║"
-                echo "║  🔧 Common Issues:"
-                echo "║     • Port conflicts - try different port"
-                echo "║     • Docker not running - start Docker service"
-                echo "║     • Dependencies missing - check requirements"
-                echo "║     • Permission issues - check file permissions"
-                echo "║"
-                echo "║  🚀 Keep Learning and Building!"
+                echo "║  🚀 Ready for Production:"
+                echo "║     • Scenario 6: Advanced Jenkins Features"
+                echo "║     • Kubernetes deployment scenarios"
+                echo "║     • Real-world CI/CD integration"
+                echo "║     • Enterprise-grade monitoring"
                 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
             }
         }
         always {
-            script {
-                echo "🧹 Cleaning up build artifacts..."
-                sh '''
-                    # Clean up temporary files
-                    rm -f dashboard.port
-                    
-                    # Optional: Clean up Docker containers (uncomment if needed)
-                    # docker stop ci-cd-dashboard-* 2>/dev/null || true
-                    # docker rm ci-cd-dashboard-* 2>/dev/null || true
-                '''
-            }
+            // Cleanup dynamically created files
+            sh 'rm -f dashboard.html dashboard_api.py requirements.txt Dockerfile docker-compose.yml README.md dashboard.port || true'
+            // Stop and remove container
+            sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker stop || true'
+            sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker rm || true'
         }
     }
 }

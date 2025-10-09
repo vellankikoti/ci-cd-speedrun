@@ -432,8 +432,8 @@ if __name__ == '__main__':
     print(f"📊 Dashboard Type: {DASHBOARD_CONFIG['dashboard_type']}")
     print(f"🎨 Visualization: {DASHBOARD_CONFIG['visualization_style']}")
     print(f"🏢 Company: {DASHBOARD_CONFIG['company_name']}")
-    print("🌐 Server running on http://localhost:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print("🌐 Server running on http://0.0.0.0:5000")
+    app.run(host='0.0.0.0', port=5000, debug=False)
 '''
                     
                     echo "║  ✅ Created dashboard_api.py - Flask API server"
@@ -826,6 +826,18 @@ This dashboard demonstrates:
                     echo "║  🔍 Test 1: Health Check API"
                     sh """
                         echo "║     Testing health endpoint..."
+                        
+                        # First, test if port is accessible
+                        echo "║     🔍 Testing port accessibility..."
+                        if ! nc -z localhost $WEBAPP_PORT 2>/dev/null; then
+                            echo "║     ❌ Port $WEBAPP_PORT is not accessible"
+                            echo "║     • Container status:"
+                            docker ps | grep ci-cd-dashboard-${BUILD_TIMESTAMP} || echo "Container not running"
+                            echo "║     • Container logs:"
+                            docker logs ci-cd-dashboard-${BUILD_TIMESTAMP} 2>/dev/null || true
+                            exit 1
+                        fi
+                        echo "║     ✅ Port $WEBAPP_PORT is accessible"
                         
                         # Wait for container to be ready with retries
                         MAX_RETRIES=10

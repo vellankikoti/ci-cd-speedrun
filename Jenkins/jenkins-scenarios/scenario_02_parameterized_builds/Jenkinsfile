@@ -578,11 +578,19 @@ PYEOF
                                 ;;
                         esac
                         
-                        # Handle empty packages
+                        # Handle empty packages and cleanup
                         if [ -z "${EXTRA_PACKAGES}" ]; then
-                            PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_CLEANUP}"
+                            if [ -n "${PACKAGE_CLEANUP}" ]; then
+                                PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_CLEANUP}"
+                            else
+                                PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE}"
+                            fi
                         else
-                            PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} ${EXTRA_PACKAGES} && ${PACKAGE_CLEANUP}"
+                            if [ -n "${PACKAGE_CLEANUP}" ]; then
+                                PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} ${EXTRA_PACKAGES} && ${PACKAGE_CLEANUP}"
+                            else
+                                PACKAGE_INSTALL_CMD="${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} ${EXTRA_PACKAGES}"
+                            fi
                         fi
                         
                         # Create Dockerfile

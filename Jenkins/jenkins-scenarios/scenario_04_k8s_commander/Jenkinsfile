@@ -606,12 +606,34 @@ EOF
                         docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
                         docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
                         
-                        # Find available port
+                        # Also clean up any processes using ports 8081-8090
+                        echo "║  🧹 Cleaning up port usage..."
+                        for port in {8081..8090}; do
+                            if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+                                echo "║     • Port $port is in use, attempting to free it..."
+                                # Try to find and kill processes using this port
+                                lsof -ti:$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+                                sleep 1
+                            fi
+                        done
+                        
+                        # Find available port with more thorough checking
                         WEBAPP_PORT=8081
-                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
+                        while true; do
+                            # Check if port is free at system level
+                            if ! netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                # Check if port is free in Docker
+                                if ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; then
+                                    echo "║  ✅ Found available port: $WEBAPP_PORT"
+                                    break
+                                fi
+                            fi
+                            
                             WEBAPP_PORT=$((WEBAPP_PORT + 1))
                             if [ $WEBAPP_PORT -gt 8090 ]; then
                                 echo "║  ❌ No available ports found (8081-8090)"
+                                echo "║  🔍 Current port usage:"
+                                netstat -tuln 2>/dev/null | grep ":808" | while read line; do echo "║     $line"; done
                                 exit 1
                             fi
                         done

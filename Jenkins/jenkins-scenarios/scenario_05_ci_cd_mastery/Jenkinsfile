@@ -958,14 +958,13 @@ Open http://localhost:8081 in your browser.
                 echo "║     • Real-world CI/CD integration"
                 echo "║     • Enterprise-grade monitoring"
                 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                
+                // Cleanup dynamically created files
+                sh 'rm -f dashboard.html dashboard_api.py requirements.txt Dockerfile docker-compose.yml README.md dashboard.port || true'
+                // Stop and remove container
+                sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker stop || true'
+                sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker rm || true'
             }
-        }
-        always {
-            // Cleanup dynamically created files
-            sh 'rm -f dashboard.html dashboard_api.py requirements.txt Dockerfile docker-compose.yml README.md dashboard.port || true'
-            // Stop and remove container
-            sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker stop || true'
-            sh 'docker ps -a --filter "name=ci-cd-dashboard" --format "{{.ID}}" | xargs -r docker rm || true'
         }
     }
 }

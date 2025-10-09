@@ -502,32 +502,71 @@ EOF
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🚀 Deploying web application..."
                     
-                    // Start web server
+                    // Start web server on different port
                     sh '''
                         echo "║"
                         echo "║  🔧 Starting web server..."
+                        
+                        # Clean up any existing webapp processes
+                        if [ -f webapp/webapp.pid ]; then
+                            OLD_PID=$(cat webapp/webapp.pid 2>/dev/null)
+                            if [ ! -z "$OLD_PID" ] && kill -0 $OLD_PID 2>/dev/null; then
+                                echo "║     • Stopping existing webapp server (PID: $OLD_PID)"
+                                kill $OLD_PID 2>/dev/null || true
+                            fi
+                        fi
+                        
                         cd webapp
-                        nohup python3 -m http.server 8080 > webapp.log 2>&1 &
+                        
+                        # Find an available port starting from 8081
+                        PORT=8081
+                        while netstat -tuln | grep -q ":$PORT "; do
+                            PORT=$((PORT + 1))
+                        done
+                        
+                        echo "║     • Using port $PORT (avoiding Jenkins port 8080)"
+                        
+                        nohup python3 -m http.server $PORT > webapp.log 2>&1 &
                         WEBAPP_PID=$!
                         echo $WEBAPP_PID > webapp.pid
-                        sleep 2
+                        echo $PORT > webapp.port
+                        sleep 3
                         
-                        echo "║     • Web server started on port 8080"
-                        echo "║     • Process ID: $WEBAPP_PID"
+                        # Verify server is running
+                        if kill -0 $WEBAPP_PID 2>/dev/null; then
+                            echo "║     • Web server started successfully on port $PORT"
+                            echo "║     • Process ID: $WEBAPP_PID"
+                        else
+                            echo "║     • Failed to start web server"
+                            exit 1
+                        fi
                     '''
                     
-                    // Get server info
+                    // Get server info with correct external URL
                     sh '''
                         HOSTNAME=$(hostname)
-                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        PORT=$(cat webapp/webapp.port 2>/dev/null || echo "8081")
+                        
+                        # Get external IP (Docker host IP)
+                        EXTERNAL_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        if [ -z "$EXTERNAL_IP" ]; then
+                            EXTERNAL_IP="localhost"
+                        fi
                         
                         echo "║"
                         echo "║  📊 Web Application Info:"
-                        echo "║     • URL: http://$IP_ADDRESS:8080"
+                        echo "║     • External URL: http://$EXTERNAL_IP:$PORT"
+                        echo "║     • Local URL: http://localhost:$PORT"
+                        echo "║     • Internal IP: $(hostname -I | awk '{print $1}')"
                         echo "║     • Hostname: $HOSTNAME"
                         echo "║     • Environment: ${ENVIRONMENT}"
                         echo "║     • Features: ${FEATURES}"
                         echo "║     • Version: ${VERSION}"
+                        echo "║"
+                        echo "║  🌐 Access Instructions:"
+                        echo "║     • If running in Docker: Use http://localhost:$PORT"
+                        echo "║     • If running locally: Use http://localhost:$PORT"
+                        echo "║     • Port $PORT is available (avoiding Jenkins port 8080)"
                     '''
                     
                     echo "║"
@@ -664,6 +703,14 @@ EOF
             echo "║  🎛️  Features: ${params.FEATURES} deployed"
             echo "║  📊 Version: ${params.VERSION} is now live"
             echo "║  🔧 Monitoring: Active and configured"
+            echo "║"
+            echo "║  🌐 WEB APPLICATION ACCESS:"
+            sh '''
+                PORT=$(cat webapp/webapp.port 2>/dev/null || echo "8081")
+                echo "║     • URL: http://localhost:$PORT"
+                echo "║     • Port: $PORT (avoiding Jenkins port 8080)"
+                echo "║     • Status: ✅ RUNNING"
+            '''
             echo "╚══════════════════════════════════════════════════════════════════════════════╝"
             echo ""
         }

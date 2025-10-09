@@ -11,8 +11,11 @@
 - 🧪 Implement quality gates and automated testing
 - 🔄 Achieve zero-downtime deployments
 - 📊 Understand environment progression (Dev → Staging → Production)
+- ✋ **NEW:** Manual approval gates for production deployments
+- 📦 **NEW:** Artifact management and audit trails
+- 📧 **NEW:** Automated email notifications with deployment reports
 
-**Your mission:** Experience a complete production CI/CD pipeline with visual deployment strategy simulator.
+**Your mission:** Experience a complete production CI/CD pipeline with visual deployment strategy simulator and enterprise-grade governance features.
 
 ---
 
@@ -31,11 +34,11 @@
 
 ### **Step 2: Configure Parameters**
 ```bash
-DEPLOYMENT_STRATEGY: Blue-Green   # Choose your strategy
-TARGET_ENV: development           # Start with dev
-RUN_TESTS: true                   # Enable quality gates
-REQUIRE_APPROVAL: false           # Manual approval for prod
-APP_VERSION: 1.0.0               # Version to deploy
+DEPLOYMENT_STRATEGY: Blue-Green      # Choose your strategy
+APP_COMPLEXITY: Production           # Simple, Advanced, or Production
+INITIAL_VERSION: 1.0.0              # Version to deploy
+REQUIRE_APPROVAL: false             # Manual approval gate (set true for production)
+APPROVER_EMAIL: devops@company.com  # Email for notifications
 ```
 
 ### **Step 3: Run & Access**
@@ -220,22 +223,180 @@ Choose how your application will be deployed:
 - **Rolling**: Instance-by-instance updates (best for resource efficiency)
 - **Recreate**: Stop old, start new (simplest, but causes downtime)
 
-### **TARGET_ENV**
-- **development**: Fast iteration, minimal checks
-- **staging**: Pre-production validation, full test suite
-- **production**: Maximum safety, approval gates, monitoring
+### **APP_COMPLEXITY**
+- **Simple**: Basic deployment with minimal features
+- **Advanced**: Enhanced features with additional monitoring
+- **Production**: Full production-grade features with all safeguards
 
-### **RUN_TESTS**
-- `true`: Run full quality gate suite (unit tests, integration tests, security scans)
-- `false`: Skip tests (not recommended for staging/production)
-
-### **REQUIRE_APPROVAL**
-- `true`: Pause before deployment for manual approval
-- `false`: Fully automated deployment
-
-### **APP_VERSION**
+### **INITIAL_VERSION**
 - Semantic version number (e.g., `1.0.0`, `2.3.1`)
 - Displayed in environment cards and deployment visualization
+- Used for artifact naming and tracking
+
+### **REQUIRE_APPROVAL** ✋ NEW!
+- `true`: **Pauses pipeline and requires manual approval before deployment**
+  - Shows approval dialog in Jenkins UI
+  - Allows approvers to add notes/comments
+  - Records approval decision in artifacts
+  - 15-minute timeout for approval response
+  - **Recommended for Production deployments**
+- `false`: Fully automated deployment (no human intervention)
+
+### **APPROVER_EMAIL** 📧 NEW!
+- Email address(es) to receive deployment notifications
+- Receives notifications for:
+  - ✅ Successful deployments (with deployment report attached)
+  - ❌ Failed deployments (with console logs attached)
+  - ⚠️ Unstable builds
+  - ✋ Approval requests (when REQUIRE_APPROVAL is true)
+- Format: Single email or comma-separated list
+- Example: `devops@company.com` or `dev@company.com,ops@company.com`
+
+---
+
+## 🏭 **Production-Grade Features** 🆕
+
+### **1. ✋ Manual Approval Gates**
+**Real-world use case:** Compliance and governance requirements for production deployments
+
+```
+Pipeline Flow with Approval:
+┌─────────────────┐
+│  Build & Test   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ ✋ Approval Gate │  ◄── Requires human approval
+│  (15min timeout)│      • Shows deployment details
+└────────┬────────┘      • Allows approval notes
+         │               • Records decision
+         ▼
+┌─────────────────┐
+│    Deploy       │
+└─────────────────┘
+```
+
+**Features:**
+- **Interactive approval dialog** in Jenkins UI
+- **Customizable approvers** - Restrict who can approve (admin, devops roles)
+- **Timeout protection** - Auto-fail after 15 minutes to prevent stuck pipelines
+- **Audit trail** - Records approval decision, timestamp, and notes
+- **Archived approval record** - Stored in deployment artifacts for compliance
+
+**When to use:**
+- ✅ Production deployments
+- ✅ Regulated environments (finance, healthcare)
+- ✅ Change management workflows
+- ✅ Multi-stage deployments requiring sign-off
+
+---
+
+### **2. 📦 Artifact Management**
+**Real-world use case:** Audit trails, rollback capability, and compliance documentation
+
+**Artifacts Created:**
+```
+deployment-artifacts/
+├── metadata.json              # Build metadata, timestamps, git info
+├── deployment-report.txt      # Human-readable deployment summary
+├── deployment-summary.html    # Rich HTML report with links
+├── approval.txt               # Approval decision record (if enabled)
+└── email-notification.html    # Email template used for notifications
+
+Root artifacts:
+├── Dockerfile                 # Docker image definition
+└── app.py                     # Application source code
+```
+
+**Metadata Example (metadata.json):**
+```json
+{
+  "build_number": "42",
+  "deployment_strategy": "Blue-Green",
+  "app_complexity": "Production",
+  "version": "1.0.0",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "git_commit": "abc123def",
+  "git_branch": "main",
+  "jenkins_url": "http://jenkins:8080/job/deploy/42/",
+  "triggered_by": "john.doe"
+}
+```
+
+**Features:**
+- **Automatic archiving** - All artifacts saved after each build
+- **Fingerprinting** - Track artifact versions across builds
+- **Retention policy** - Keep last 30 builds, 10 artifact sets
+- **Downloadable from Jenkins UI** - Click "Build Artifacts" link
+- **Compliance-ready** - Full audit trail for SOC2, ISO27001
+
+**When to use:**
+- ✅ All production deployments
+- ✅ Compliance and audit requirements
+- ✅ Troubleshooting and debugging
+- ✅ Rollback scenarios (reference previous successful builds)
+
+---
+
+### **3. 📧 Email Notifications**
+**Real-world use case:** Team visibility, incident response, stakeholder communication
+
+**Notification Types:**
+
+#### ✅ **Success Notifications**
+- **Trigger:** Deployment completes successfully
+- **Recipients:** Specified in APPROVER_EMAIL parameter
+- **Attachments:**
+  - `deployment-report.txt` - Quick summary
+  - `deployment-summary.html` - Rich HTML report
+- **Content:**
+  - Build information (number, strategy, version)
+  - Deployment details (container, image, port)
+  - Access URLs (app, health check, metrics)
+  - Quick actions guide
+  - Link to Jenkins artifacts
+
+#### ❌ **Failure Notifications**
+- **Trigger:** Deployment fails at any stage
+- **Recipients:** Specified in APPROVER_EMAIL parameter
+- **Attachments:**
+  - Full console log (compressed)
+- **Content:**
+  - Failure details and error summary
+  - Troubleshooting steps
+  - Links to console output
+  - Recommended actions for resolution
+
+#### ⚠️ **Unstable Notifications**
+- **Trigger:** Build succeeds but with warnings
+- **Recipients:** Specified in APPROVER_EMAIL parameter
+- **Attachments:** Console log
+- **Content:** Brief summary with link to review
+
+**Email Features:**
+- **Plain text format** - Compatible with all email clients
+- **Structured layout** - Box drawing characters for readability
+- **Clickable links** - Direct links to Jenkins, application, APIs
+- **Automatic attachments** - Relevant logs and reports
+- **Customizable sender** - From `jenkins@cicd-mastery.local`
+
+**Configuration:**
+```groovy
+emailext(
+    subject: "✅ SUCCESS: Deployment #42 - Blue-Green Strategy",
+    body: "...",  // Formatted text with deployment details
+    to: "devops@company.com",
+    from: "jenkins@cicd-mastery.local",
+    attachmentsPattern: "deployment-artifacts/*.txt,*.html"
+)
+```
+
+**When to use:**
+- ✅ Production deployments (always notify)
+- ✅ Failed builds (immediate incident response)
+- ✅ Approval requests (notify approvers)
+- ✅ Weekly deployment summaries
 
 ---
 
@@ -243,12 +404,11 @@ Choose how your application will be deployed:
 
 ### **What the Pipeline Does**
 1. **Initialization** - Validates parameters and environment
-2. **Build** - Creates application artifacts
-3. **Quality Gates** - Runs automated tests and scans (if enabled)
-4. **Approval** - Waits for manual approval (if required)
-5. **Deploy Strategy** - Executes selected deployment strategy
-6. **Health Check** - Verifies application health
-7. **Success** - Provides access URL
+2. **Build Application** - Creates Docker image and application artifacts
+3. **Approval Gate** ✋ NEW! - Waits for manual approval (if REQUIRE_APPROVAL=true)
+4. **Build & Deploy** - Executes selected deployment strategy
+5. **Archive Artifacts** 📦 NEW! - Archives deployment metadata, reports, and files
+6. **Email Notifications** 📧 NEW! - Sends email notifications to stakeholders
 
 ### **Technology Stack**
 - **Backend**: Python 3.11 with Flask

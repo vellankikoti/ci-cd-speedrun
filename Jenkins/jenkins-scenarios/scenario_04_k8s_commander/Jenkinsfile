@@ -404,20 +404,55 @@ EOF
                         echo "║  🎯 Creating interactive learning dashboard..."
                         mkdir -p dashboard
                         
-                        # Find available port (avoiding Jenkins on 8080)
-                        DASHBOARD_PORT=8081
+                        # Use Flask default port 5000 (avoiding Jenkins on 8080)
+                        DASHBOARD_PORT=5000
                         while netstat -tuln 2>/dev/null | grep -q ":$DASHBOARD_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$DASHBOARD_PORT"; do
                             DASHBOARD_PORT=$((DASHBOARD_PORT + 1))
-                            if [ $DASHBOARD_PORT -gt 8090 ]; then
-                                echo "║  ❌ No available ports found (8081-8090)"
+                            if [ $DASHBOARD_PORT -gt 5010 ]; then
+                                echo "║  ❌ No available ports found (5000-5010)"
                                 exit 1
                             fi
                         done
                         
                         echo "║  🌐 Using port: $DASHBOARD_PORT"
                         
-                        # Create HTML dashboard
-                        cat > dashboard/index.html << 'EOF'
+                        # Create dynamic Python web application
+                        cat > dashboard/app.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import json
+import time
+from datetime import datetime
+from flask import Flask, render_template_string, jsonify
+
+app = Flask(__name__)
+
+# Get Jenkins environment variables
+K8S_CONCEPT = os.environ.get('CURRENT_CONCEPT', 'Pods')
+LEARNING_LEVEL = os.environ.get('LEARNING_LEVEL', 'Beginner')
+NAMESPACE = os.environ.get('NAMESPACE', 'k8s-learning')
+K8S_VERSION = os.environ.get('K8S_VERSION', '1.28')
+INTERACTIVE_DEMO = os.environ.get('INTERACTIVE_DEMO', 'true').lower() == 'true'
+HANDS_ON_LAB = os.environ.get('HANDS_ON_LAB', 'true').lower() == 'true'
+
+# Learning progress tracking
+LEARNING_PROGRESS = 0
+ACHIEVEMENTS = ['🚀 K8s Commander Started']
+
+def update_progress(progress, achievement):
+    global LEARNING_PROGRESS, ACHIEVEMENTS
+    LEARNING_PROGRESS = progress
+    if achievement not in ACHIEVEMENTS:
+        ACHIEVEMENTS.append(achievement)
+
+# Simulate learning progression
+update_progress(20, '📚 Concepts Learned')
+update_progress(40, '🎮 Demo Completed')
+update_progress(60, '🔬 Lab Completed')
+update_progress(80, '🌐 Dashboard Created')
+update_progress(100, '🎓 Mastery Achieved')
+
+HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -472,6 +507,19 @@ EOF
         .beginner { background: #4CAF50; color: white; }
         .intermediate { background: #FF9800; color: white; }
         .advanced { background: #F44336; color: white; }
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -480,24 +528,26 @@ EOF
             <h1>🚀 K8s Commander</h1>
             <p>Your Kubernetes Learning Journey</p>
             <div class="progress-bar">
-                <div class="progress-fill" style="width: ${LEARNING_PROGRESS}%"></div>
+                <div class="progress-fill" id="progressBar" style="width: {{ progress }}%"></div>
             </div>
-            <p>Progress: ${LEARNING_PROGRESS}% Complete</p>
+            <p>Progress: <span id="progressText">{{ progress }}</span>% Complete <span class="live-indicator"></span></p>
         </div>
         
         <div class="dashboard">
             <div class="card">
                 <h3>🎯 Current Focus</h3>
-                <p><strong>Concept:</strong> <span class="concept-highlight">${CURRENT_CONCEPT}</span></p>
-                <p><strong>Level:</strong> <span class="level-badge \${LEARNING_LEVEL.toLowerCase()}">\${LEARNING_LEVEL}</span></p>
-                <p><strong>Namespace:</strong> ${NAMESPACE}</p>
-                <p><strong>K8s Version:</strong> ${K8S_VERSION}</p>
+                <p><strong>Concept:</strong> <span class="concept-highlight">{{ concept }}</span></p>
+                <p><strong>Level:</strong> <span class="level-badge {{ level_class }}">{{ level }}</span></p>
+                <p><strong>Namespace:</strong> {{ namespace }}</p>
+                <p><strong>K8s Version:</strong> {{ k8s_version }}</p>
             </div>
             
             <div class="card">
                 <h3>🏆 Achievements</h3>
                 <div id="achievements">
-                    \${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">\${achievement.trim()}</span>`).join('')}
+                    {% for achievement in achievements %}
+                    <span class="achievement">{{ achievement }}</span>
+                    {% endfor %}
                 </div>
             </div>
             
@@ -514,9 +564,16 @@ EOF
             
             <div class="card">
                 <h3>🎮 Interactive Features</h3>
-                <p><strong>Demo Mode:</strong> ${INTERACTIVE_DEMO ? '✅ Enabled' : '❌ Disabled'}</p>
-                <p><strong>Lab Mode:</strong> ${HANDS_ON_LAB ? '✅ Enabled' : '❌ Disabled'}</p>
+                <p><strong>Demo Mode:</strong> {{ '✅ Enabled' if interactive_demo else '❌ Disabled' }}</p>
+                <p><strong>Lab Mode:</strong> {{ '✅ Enabled' if hands_on_lab else '❌ Disabled' }}</p>
                 <p><strong>Real-time Updates:</strong> ✅ Active</p>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Live Metrics</h3>
+                <p><strong>Current Time:</strong> <span id="currentTime">{{ current_time }}</span></p>
+                <p><strong>Learning Duration:</strong> <span id="duration">{{ duration }}</span></p>
+                <p><strong>Pipeline Status:</strong> <span style="color: #4CAF50;">✅ Running</span></p>
             </div>
         </div>
     </div>
@@ -524,27 +581,82 @@ EOF
     <script>
         // Real-time updates
         function updateProgress() {
-            const progress = document.querySelector('.progress-fill');
-            const currentProgress = parseInt('\${LEARNING_PROGRESS}');
-            progress.style.width = currentProgress + '%';
+            fetch('/api/progress')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('progressBar').style.width = data.progress + '%';
+                    document.getElementById('progressText').textContent = data.progress;
+                });
         }
         
-        // Simulate learning progression
-        let progress = parseInt('\${LEARNING_PROGRESS}');
-        setInterval(() => {
-            if (progress < 100) {
-                progress += Math.random() * 5;
-                if (progress > 100) progress = 100;
-                document.querySelector('.progress-fill').style.width = progress + '%';
-                document.querySelector('.header p:last-child').textContent = 'Progress: ' + Math.round(progress) + '% Complete';
-            }
-        }, 2000);
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+        }
         
+        // Update every 2 seconds
+        setInterval(updateProgress, 2000);
+        setInterval(updateTime, 1000);
+        
+        // Initial update
         updateProgress();
+        updateTime();
     </script>
 </body>
 </html>
+'''
+
+@app.route('/')
+def dashboard():
+    level_class = LEARNING_LEVEL.lower()
+    current_time = datetime.now().strftime('%H:%M:%S')
+    duration = 'Active'
+    
+    return render_template_string(HTML_TEMPLATE,
+        concept=K8S_CONCEPT,
+        level=LEARNING_LEVEL,
+        level_class=level_class,
+        namespace=NAMESPACE,
+        k8s_version=K8S_VERSION,
+        progress=LEARNING_PROGRESS,
+        achievements=ACHIEVEMENTS,
+        interactive_demo=INTERACTIVE_DEMO,
+        hands_on_lab=HANDS_ON_LAB,
+        current_time=current_time,
+        duration=duration
+    )
+
+@app.route('/api/progress')
+def api_progress():
+    return jsonify({
+        'progress': LEARNING_PROGRESS,
+        'achievements': ACHIEVEMENTS,
+        'concept': K8S_CONCEPT,
+        'level': LEARNING_LEVEL,
+        'timestamp': time.time()
+    })
+
+if __name__ == '__main__':
+    import sys
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+    app.run(host='0.0.0.0', port=port, debug=False)
 EOF
+
+                        # Create requirements.txt for Flask
+                        cat > dashboard/requirements.txt << 'EOF'
+Flask==2.3.3
+Werkzeug==2.3.7
+EOF
+
+                        # Install Flask and start the application
+                        echo "║  📦 Installing Flask dependencies..."
+                        pip3 install -r dashboard/requirements.txt > /dev/null 2>&1
+                        
+                        echo "║  🚀 Starting dynamic K8s Commander dashboard..."
+                        cd dashboard
+                        nohup python3 app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
+                        WEB_SERVER_PID=$!
+                        echo $DASHBOARD_PORT > ../dashboard.pid
                         
                         echo "║     • Interactive dashboard created"
                         echo "║     • Real-time progress tracking enabled"
@@ -650,15 +762,16 @@ EOF
                 // Cleanup web server
                 sh '''
                     if [ -f dashboard.pid ]; then
-                        WEB_SERVER_PID=$(cat dashboard.pid)
-                        if kill -0 $WEB_SERVER_PID 2>/dev/null; then
-                            echo "🛑 Stopping dashboard web server (PID: $WEB_SERVER_PID)..."
+                        DASHBOARD_PORT=$(cat dashboard.pid)
+                        WEB_SERVER_PID=$(ps aux | grep "python3 app.py $DASHBOARD_PORT" | grep -v grep | awk '{print $2}')
+                        if [ ! -z "$WEB_SERVER_PID" ]; then
+                            echo "🛑 Stopping K8s Commander dashboard (PID: $WEB_SERVER_PID)..."
                             kill $WEB_SERVER_PID
                             sleep 1
                             if kill -0 $WEB_SERVER_PID 2>/dev/null; then
                                 kill -9 $WEB_SERVER_PID
                             fi
-                            echo "✅ Dashboard web server stopped"
+                            echo "✅ K8s Commander dashboard stopped"
                         fi
                         rm -f dashboard.pid
                     fi
@@ -674,8 +787,18 @@ EOF
                 echo "║     • Progress Achieved: ${env.LEARNING_PROGRESS}%"
                 echo "║     • Achievements: ${env.ACHIEVEMENTS}"
                 echo "║"
-                echo "║  🌐 Dashboard was available during pipeline execution"
-                echo "║  📁 Generated files: dashboard/ directory with HTML files"
+                sh '''
+                    if [ -f dashboard.pid ]; then
+                        DASHBOARD_PORT=$(cat dashboard.pid)
+                        HOST_IP=$(hostname -I | awk '{print $1}')
+                        echo "║  🌐 Dashboard was available at:"
+                        echo "║     • Local: http://localhost:$DASHBOARD_PORT/"
+                        echo "║     • Network: http://$HOST_IP:$DASHBOARD_PORT/"
+                    else
+                        echo "║  🌐 Dashboard was available during pipeline execution"
+                    fi
+                '''
+                echo "║  📁 Generated files: dashboard/ directory with Flask app"
                 echo "║  📋 Lab files: k8s-lab/ directory with YAML examples"
                 echo "║"
                 echo "║  🚀 Ready for Next Level:"

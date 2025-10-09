@@ -434,8 +434,46 @@ pipeline {
                         echo "║  🎯 Creating mastery dashboard..."
                         mkdir -p mastery-dashboard
                         
-                        # Create comprehensive mastery dashboard
-                        cat > mastery-dashboard/index.html << 'EOF'
+                        # Create dynamic Python web application for mastery dashboard
+                        cat > mastery-dashboard/app.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import json
+import time
+from datetime import datetime
+from flask import Flask, render_template_string, jsonify
+
+app = Flask(__name__)
+
+# Get Jenkins environment variables
+MASTERY_LEVEL = os.environ.get('MASTERY_LEVEL', 'Foundation')
+PIPELINE_PATTERN = os.environ.get('PIPELINE_PATTERN', 'Blue-Green')
+TARGET_ENVIRONMENT = os.environ.get('TARGET_ENVIRONMENT', 'production')
+ENABLE_MONITORING = os.environ.get('ENABLE_MONITORING', 'true').lower() == 'true'
+ENABLE_SECURITY = os.environ.get('ENABLE_SECURITY', 'true').lower() == 'true'
+ENABLE_PERFORMANCE = os.environ.get('ENABLE_PERFORMANCE', 'true').lower() == 'true'
+
+# Mastery tracking
+MASTERY_SCORE = 0
+ACHIEVEMENTS = ['🚀 CI/CD Mastery Started']
+DEPLOYMENT_STATUS = 'pending'
+
+def update_mastery(score, achievement):
+    global MASTERY_SCORE, ACHIEVEMENTS
+    MASTERY_SCORE = score
+    if achievement not in ACHIEVEMENTS:
+        ACHIEVEMENTS.append(achievement)
+
+# Simulate mastery progression
+update_mastery(10, '🎯 Foundation Level')
+update_mastery(25, '📊 Quality Master')
+update_mastery(45, '🔒 Security Expert')
+update_mastery(60, '⚡ Performance Guru')
+update_mastery(80, '🚀 Deployment Master')
+update_mastery(95, '📊 Monitoring Expert')
+update_mastery(100, '🎓 Mastery Achieved')
+
+HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -519,6 +557,19 @@ pipeline {
         .expert { background: #2196F3; color: white; }
         .master { background: #4CAF50; color: white; }
         .pattern-highlight { color: #E91E63; font-weight: bold; }
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -526,14 +577,14 @@ pipeline {
         <div class="header">
             <h1>🎯 CI/CD Mastery</h1>
             <p>Advanced DevOps Automation Excellence</p>
-            <div class="mastery-score">${MASTERY_SCORE}/100</div>
+            <div class="mastery-score">{{ mastery_score }}/100</div>
             <div class="progress-ring">
                 <svg width="200" height="200">
                     <circle class="background" cx="100" cy="100" r="90"></circle>
-                    <circle class="progress" cx="100" cy="100" r="90" style="stroke-dashoffset: \${565.48 - (565.48 * \${MASTERY_SCORE} / 100)}"></circle>
+                    <circle class="progress" cx="100" cy="100" r="90" id="progressCircle"></circle>
                 </svg>
             </div>
-            <p>Mastery Level: <span class="level-badge \${MASTERY_LEVEL.toLowerCase()}">\${MASTERY_LEVEL}</span></p>
+            <p>Mastery Level: <span class="level-badge {{ level_class }}">{{ mastery_level }}</span> <span class="live-indicator"></span></p>
         </div>
         
         <div class="dashboard">
@@ -541,26 +592,24 @@ pipeline {
                 <h3>🎯 Mastery Overview</h3>
                 <div class="metric">
                     <span>Pipeline Pattern:</span>
-                    <span class="pattern-highlight">${PIPELINE_PATTERN}</span>
+                    <span class="pattern-highlight">{{ pipeline_pattern }}</span>
                 </div>
                 <div class="metric">
                     <span>Target Environment:</span>
-                    <span class="metric-value">${TARGET_ENVIRONMENT}</span>
-                </div>
-                <div class="metric">
-                    <span>Pipeline ID:</span>
-                    <span class="metric-value">${PIPELINE_ID}</span>
+                    <span class="metric-value">{{ target_environment }}</span>
                 </div>
                 <div class="metric">
                     <span>Deployment Status:</span>
-                    <span class="metric-value" style="color: #4CAF50;">${DEPLOYMENT_STATUS}</span>
+                    <span class="metric-value" style="color: #4CAF50;">{{ deployment_status }}</span>
                 </div>
             </div>
             
             <div class="card">
                 <h3>🏆 Achievements</h3>
                 <div id="achievements">
-                    \${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">\${achievement.trim()}</span>`).join('')}
+                    {% for achievement in achievements %}
+                    <span class="achievement">{{ achievement }}</span>
+                    {% endfor %}
                 </div>
             </div>
             
@@ -586,7 +635,7 @@ pipeline {
             
             <div class="card">
                 <h3>🚀 Deployment Patterns</h3>
-                <p><strong>Active Pattern:</strong> <span class="pattern-highlight">${PIPELINE_PATTERN}</span></p>
+                <p><strong>Active Pattern:</strong> <span class="pattern-highlight">{{ pipeline_pattern }}</span></p>
                 <p><strong>Zero Downtime:</strong> ✅ Achieved</p>
                 <p><strong>Rollback Time:</strong> 30 seconds</p>
                 <p><strong>Success Rate:</strong> 99.8%</p>
@@ -601,15 +650,10 @@ pipeline {
             </div>
             
             <div class="card">
-                <h3>🎓 Learning Path</h3>
-                <ul>
-                    <li>✅ Jenkins Fundamentals</li>
-                    <li>✅ Parameterized Builds</li>
-                    <li>✅ Advanced Features</li>
-                    <li>✅ Kubernetes Introduction</li>
-                    <li>✅ CI/CD Mastery</li>
-                    <li>⏳ Next: Full K8s Deployment</li>
-                </ul>
+                <h3>📊 Live Metrics</h3>
+                <p><strong>Current Time:</strong> <span id="currentTime">{{ current_time }}</span></p>
+                <p><strong>Pipeline Duration:</strong> <span id="duration">{{ duration }}</span></p>
+                <p><strong>Mastery Score:</strong> <span id="masteryScore">{{ mastery_score }}</span>/100</p>
             </div>
         </div>
     </div>
@@ -617,8 +661,8 @@ pipeline {
     <script>
         // Animate progress ring
         function animateProgress() {
-            const progress = document.querySelector('.progress');
-            const score = parseInt('\${MASTERY_SCORE}');
+            const progress = document.getElementById('progressCircle');
+            const score = {{ mastery_score }};
             const circumference = 565.48;
             const offset = circumference - (circumference * score / 100);
             
@@ -626,25 +670,78 @@ pipeline {
         }
         
         // Real-time updates
-        function updateDashboard() {
-            // Simulate real-time metric updates
-            const metrics = document.querySelectorAll('.metric-value');
-            metrics.forEach(metric => {
-                if (metric.textContent.includes('%')) {
-                    const currentValue = parseFloat(metric.textContent);
-                    const newValue = currentValue + (Math.random() - 0.5) * 0.1;
-                    metric.textContent = newValue.toFixed(1) + '%';
-                }
-            });
+        function updateMetrics() {
+            fetch('/api/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('masteryScore').textContent = data.mastery_score;
+                    // Update other metrics as needed
+                });
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
         }
         
         // Initialize dashboard
         animateProgress();
-        setInterval(updateDashboard, 3000);
+        setInterval(updateMetrics, 3000);
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>
+'''
+
+@app.route('/')
+def dashboard():
+    level_class = MASTERY_LEVEL.lower()
+    current_time = datetime.now().strftime('%H:%M:%S')
+    duration = 'Active'
+    
+    return render_template_string(HTML_TEMPLATE,
+        mastery_level=MASTERY_LEVEL,
+        level_class=level_class,
+        pipeline_pattern=PIPELINE_PATTERN,
+        target_environment=TARGET_ENVIRONMENT,
+        mastery_score=MASTERY_SCORE,
+        achievements=ACHIEVEMENTS,
+        deployment_status=DEPLOYMENT_STATUS,
+        current_time=current_time,
+        duration=duration
+    )
+
+@app.route('/api/metrics')
+def api_metrics():
+    return jsonify({
+        'mastery_score': MASTERY_SCORE,
+        'achievements': ACHIEVEMENTS,
+        'pipeline_pattern': PIPELINE_PATTERN,
+        'mastery_level': MASTERY_LEVEL,
+        'timestamp': time.time()
+    })
+
+if __name__ == '__main__':
+    import sys
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+    app.run(host='0.0.0.0', port=port, debug=False)
 EOF
+
+                        # Create requirements.txt for Flask
+                        cat > mastery-dashboard/requirements.txt << 'EOF'
+Flask==2.3.3
+Werkzeug==2.3.7
+EOF
+
+                        # Install Flask and start the application
+                        echo "║  📦 Installing Flask dependencies..."
+                        pip3 install -r mastery-dashboard/requirements.txt > /dev/null 2>&1
+                        
+                        echo "║  🚀 Starting dynamic CI/CD Mastery dashboard..."
+                        cd mastery-dashboard
+                        nohup python3 app.py $DASHBOARD_PORT > ../mastery-dashboard.log 2>&1 &
+                        WEB_SERVER_PID=$!
+                        echo $DASHBOARD_PORT > ../mastery-dashboard.pid
                         
                         echo "║     • Mastery dashboard created"
                         echo "║     • Real-time metrics enabled"
@@ -658,19 +755,19 @@ EOF
                         echo "║     • Deployment pattern visualization"
                         echo "║     • Quality metrics display"
                         
-                        # Find available port (avoiding Jenkins on 8080)
-                        DASHBOARD_PORT=8081
+                        # Use Flask default port 5000 (avoiding Jenkins on 8080)
+                        DASHBOARD_PORT=5000
                         while netstat -tuln 2>/dev/null | grep -q ":$DASHBOARD_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$DASHBOARD_PORT"; do
                             DASHBOARD_PORT=$((DASHBOARD_PORT + 1))
-                            if [ $DASHBOARD_PORT -gt 8090 ]; then
-                                echo "║  ❌ No available ports found (8081-8090)"
+                            if [ $DASHBOARD_PORT -gt 5010 ]; then
+                                echo "║  ❌ No available ports found (5000-5010)"
                                 exit 1
                             fi
                         done
                         
                         echo "║  🚀 Starting mastery dashboard on port $DASHBOARD_PORT..."
                         cd mastery-dashboard
-                        nohup python3 -m http.server $DASHBOARD_PORT --bind 0.0.0.0 > ../mastery-dashboard.log 2>&1 &
+                        nohup python3 app.py $DASHBOARD_PORT > ../mastery-dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
                         echo $DASHBOARD_PORT > ../mastery-dashboard.pid
                         

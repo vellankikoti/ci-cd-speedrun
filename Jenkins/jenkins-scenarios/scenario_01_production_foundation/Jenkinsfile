@@ -166,9 +166,10 @@ pipeline {
                     def gitCommit = env.GIT_COMMIT ? env.GIT_COMMIT[0..7] : 'unknown'
                     def imageTag = "${env.BUILD_NUMBER}-${gitCommit}"
                     
-                    sh """
-                        echo "🐳 Building production container..."
-                        echo "Building image: ${APP_NAME}:${imageTag}"
+                    withEnv(["IMAGE_TAG=${imageTag}"]) {
+                        sh """
+                            echo "🐳 Building production container..."
+                            echo "Building image: ${APP_NAME}:\$IMAGE_TAG"
                         
                         # Get actual system information
                         echo "📊 Container Build Analysis:"
@@ -194,7 +195,8 @@ pipeline {
                         echo "  • Step 5: Image optimization"
                         
                         echo "✅ Container build simulation completed"
-                    """
+                        """
+                    }
                 }
             }
         }

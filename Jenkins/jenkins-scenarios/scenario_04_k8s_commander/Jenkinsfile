@@ -301,49 +301,12 @@ EOF
                     
                         sh '''
                         echo "║  🏗️  Building K8s Commander Docker image..."
-                        
-                        # Find available port (avoiding Jenkins on 8080)
-                        WEBAPP_PORT=8081
-                        MAX_ATTEMPTS=50
-                        ATTEMPTS=0
-                        
-                        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-                            # Check if port is in use by netstat (both IPv4 and IPv6)
-                            if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
-                                echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
-                                continue
-                            fi
-                            
-                            # Check if port is in use by lsof (catches all processes)
-                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
-                                echo "║     • Port $WEBAPP_PORT in use by process, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
-                                continue
-                            fi
-                            
-                            # Check if port is in use by Docker containers
-                            if docker ps --format "{{.Ports}}" | grep -q ":$WEBAPP_PORT->"; then
-                                echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
-                                continue
-                            fi
-                            
-                            # Port is available
-                            echo "║     • Found available port: $WEBAPP_PORT"
-                            break
-                        done
-                        
-                        if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                            echo "║  ❌ Could not find available port after $MAX_ATTEMPTS attempts"
-                            exit 1
-                        fi
-                        
-                        echo "║  🌐 Using port: $WEBAPP_PORT"
-                        
+
+                        # Use port 8080 INSIDE the container (will map to external port during deployment)
+                        INTERNAL_PORT=8080
+
+                        echo "║  🌐 Container internal port: $INTERNAL_PORT"
+
                         # Create Dockerfile for K8s Commander app
                         cat > Dockerfile << 'EOF'
 FROM python:3.11-slim
@@ -587,21 +550,21 @@ print(f"K8s Commander server starting on port {os.environ.get('EXPOSE_PORT', '80
 server.serve_forever()
 PYEOF
 
-# Set environment variables
-ENV K8S_CONCEPT="${K8S_CONCEPT}"
-ENV LEARNING_LEVEL="${LEARNING_LEVEL}"
-ENV NAMESPACE="${NAMESPACE}"
-ENV K8S_VERSION="${K8S_VERSION}"
-ENV INTERACTIVE_DEMO="${INTERACTIVE_DEMO}"
-ENV HANDS_ON_LAB="${HANDS_ON_LAB}"
-ENV EXPOSE_PORT="${WEBAPP_PORT}"
+# Set environment variables (will be passed at runtime)
+ENV K8S_CONCEPT=Pods
+ENV LEARNING_LEVEL=Beginner
+ENV NAMESPACE=k8s-learning
+ENV K8S_VERSION=1.28
+ENV INTERACTIVE_DEMO=true
+ENV HANDS_ON_LAB=true
+ENV EXPOSE_PORT=8080
 
-# Expose port
-EXPOSE ${WEBAPP_PORT}
+# Expose port (ALWAYS 8080 inside container)
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
-    CMD curl -f http://localhost:${WEBAPP_PORT}/api/status || exit 1
+    CMD curl -f http://localhost:8080/api/status || exit 1
 
 # Run the application
 CMD ["python3", "app.py"]
@@ -635,83 +598,95 @@ EOF
                         echo "║  🧹 Cleaning up existing containers..."
                         docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
                         docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
-                        
+
                         # Wait a moment for cleanup to complete
                         sleep 2
-                        
-                        # Find available port (check both netstat and docker port mappings)
-                        echo "║     • Finding available port..."
-                        WEBAPP_PORT=8081
+
+                        # Find available EXTERNAL port (container uses 8080 internally)
+                        echo "║     • Finding available external port..."
+                        EXTERNAL_PORT=8081
                         MAX_ATTEMPTS=50
                         ATTEMPTS=0
-                        
+
                         while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-                            # Check if port is in use by netstat (both IPv4 and IPv6)
-                            if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
-                                echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                            # Comprehensive port check
+                            PORT_IN_USE=false
+
+                            # Check netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$EXTERNAL_PORT "; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check lsof
+                            if lsof -i :$EXTERNAL_PORT 2>/dev/null | grep -q LISTEN; then
+                                PORT_IN_USE=true
+                            fi
+
+                            # Check Docker containers
+                            if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$EXTERNAL_PORT->"; then
+                                PORT_IN_USE=true
+                            fi
+
+                            if [ "$PORT_IN_USE" = true ]; then
+                                echo "║     • Port $EXTERNAL_PORT in use, trying next..."
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
                                 ATTEMPTS=$((ATTEMPTS + 1))
                                 continue
                             fi
-                            
-                            # Check if port is in use by lsof (catches all processes)
-                            if lsof -i :$WEBAPP_PORT 2>/dev/null | grep -q LISTEN; then
-                                echo "║     • Port $WEBAPP_PORT in use by process, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
-                                continue
-                            fi
-                            
-                            # Check if port is in use by Docker containers
-                            if docker ps --format "{{.Ports}}" | grep -q ":$WEBAPP_PORT->"; then
-                                echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
-                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
-                                continue
-                            fi
-                            
+
                             # Port is available
-                            echo "║     • Found available port: $WEBAPP_PORT"
+                            echo "║     • Found available external port: $EXTERNAL_PORT"
                             break
                         done
-                        
+
                         if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
                             echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
                             exit 1
                         fi
-                        
+
                         IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
-                        
-                        # Run new container
-                        echo "║     • Starting container on port $WEBAPP_PORT..."
+
+                        # Run new container - Map external port to internal 8080
+                        echo "║     • Starting container (external:$EXTERNAL_PORT -> internal:8080)..."
                         CONTAINER_ID=$(docker run -d \\
                             --name $CONTAINER_NAME \\
-                            -p $WEBAPP_PORT:$WEBAPP_PORT \\
+                            -p $EXTERNAL_PORT:8080 \\
                             -e K8S_CONCEPT="${K8S_CONCEPT}" \\
                             -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
                             -e NAMESPACE="${NAMESPACE}" \\
                             -e K8S_VERSION="${K8S_VERSION}" \\
                             -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
                             -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
-                            -e EXPOSE_PORT="$WEBAPP_PORT" \\
+                            -e EXPOSE_PORT=8080 \\
                             $IMAGE_NAME) || {
                             echo "║     ❌ Docker container deployment failed"
-                            echo "║     • Check if port $WEBAPP_PORT is available"
-                            echo "║     • Check if image $IMAGE_NAME exists"
+                            echo "║     • Failed port: $EXTERNAL_PORT"
+                            echo "║     • Image: $IMAGE_NAME"
+                            echo "║     • Showing recent Docker logs..."
+                            docker logs $CONTAINER_NAME 2>&1 | tail -20 || true
                             exit 1
                         }
-                        
+
+                        # Wait for container to start
+                        echo "║     • Waiting for container to start..."
+                        sleep 3
+
                         # Check if container is running
                         if docker ps | grep -q $CONTAINER_NAME; then
                             echo "║     ✅ Container deployed: $CONTAINER_NAME"
-                            echo "║     ✅ Access: http://localhost:$WEBAPP_PORT"
+                            echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
+                            echo "║     ✅ Port mapping: $EXTERNAL_PORT:8080"
+
+                            # Save port for monitoring stage
+                            echo $EXTERNAL_PORT > webapp.port
                         else
                             echo "║     ❌ Container failed to start"
-                            docker logs $CONTAINER_NAME
+                            echo "║     • Container logs:"
+                            docker logs $CONTAINER_NAME 2>&1 || true
                             exit 1
                         fi
-                        
+
                         echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     '''
                 }

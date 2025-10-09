@@ -602,14 +602,18 @@ EOF
                         # Wait a moment for cleanup to complete
                         sleep 2
 
-                        # Find available EXTERNAL port (container uses 8080 internally)
-                        echo "║     • Finding available external port..."
-                        EXTERNAL_PORT=8081
-                        MAX_ATTEMPTS=50
-                        ATTEMPTS=0
+                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
+                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
 
-                        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-                            # Comprehensive port check
+                        # Retry loop to handle TOCTTOU (Time-Of-Check-Time-Of-Use) race conditions
+                        echo "║  🔄 Starting deployment with retry logic..."
+                        EXTERNAL_PORT=8081
+                        MAX_PORT_ATTEMPTS=50
+                        PORT_ATTEMPT=0
+                        DEPLOY_SUCCESS=false
+
+                        while [ $PORT_ATTEMPT -lt $MAX_PORT_ATTEMPTS ] && [ "$DEPLOY_SUCCESS" = false ]; do
+                            # Check if port is available
                             PORT_IN_USE=false
 
                             # Check netstat
@@ -628,51 +632,57 @@ EOF
                             fi
 
                             if [ "$PORT_IN_USE" = true ]; then
-                                echo "║     • Port $EXTERNAL_PORT in use, trying next..."
+                                echo "║     • Port $EXTERNAL_PORT in use, skipping..."
                                 EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
-                                ATTEMPTS=$((ATTEMPTS + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
                                 continue
                             fi
 
-                            # Port is available
-                            echo "║     • Found available external port: $EXTERNAL_PORT"
-                            break
+                            # Port appears available, try to start container immediately
+                            echo "║     • Attempting deployment on port $EXTERNAL_PORT (attempt $((PORT_ATTEMPT + 1)))..."
+
+                            if docker run -d \\
+                                --name $CONTAINER_NAME \\
+                                -p $EXTERNAL_PORT:8080 \\
+                                -e K8S_CONCEPT="${K8S_CONCEPT}" \\
+                                -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
+                                -e NAMESPACE="${NAMESPACE}" \\
+                                -e K8S_VERSION="${K8S_VERSION}" \\
+                                -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
+                                -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
+                                -e EXPOSE_PORT=8080 \\
+                                $IMAGE_NAME > /dev/null 2>&1; then
+
+                                # Container started successfully
+                                echo "║     ✅ Container started on port $EXTERNAL_PORT"
+                                DEPLOY_SUCCESS=true
+                                break
+                            else
+                                # Container failed to start (likely port conflict race condition)
+                                echo "║     ⚠️  Port $EXTERNAL_PORT taken during deployment, trying next..."
+
+                                # Clean up failed container attempt
+                                docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
+                                # Try next port
+                                EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
+                                PORT_ATTEMPT=$((PORT_ATTEMPT + 1))
+                            fi
                         done
 
-                        if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
-                            echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+                        # Check if deployment succeeded
+                        if [ "$DEPLOY_SUCCESS" = false ]; then
+                            echo "║     ❌ Failed to deploy after $PORT_ATTEMPT attempts"
+                            echo "║     • Tried ports 8081-$EXTERNAL_PORT"
+                            echo "║     • All ports were in use or conflicts occurred"
                             exit 1
                         fi
 
-                        IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
-                        CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
-
-                        # Run new container - Map external port to internal 8080
-                        echo "║     • Starting container (external:$EXTERNAL_PORT -> internal:8080)..."
-                        CONTAINER_ID=$(docker run -d \\
-                            --name $CONTAINER_NAME \\
-                            -p $EXTERNAL_PORT:8080 \\
-                            -e K8S_CONCEPT="${K8S_CONCEPT}" \\
-                            -e LEARNING_LEVEL="${LEARNING_LEVEL}" \\
-                            -e NAMESPACE="${NAMESPACE}" \\
-                            -e K8S_VERSION="${K8S_VERSION}" \\
-                            -e INTERACTIVE_DEMO="${INTERACTIVE_DEMO}" \\
-                            -e HANDS_ON_LAB="${HANDS_ON_LAB}" \\
-                            -e EXPOSE_PORT=8080 \\
-                            $IMAGE_NAME) || {
-                            echo "║     ❌ Docker container deployment failed"
-                            echo "║     • Failed port: $EXTERNAL_PORT"
-                            echo "║     • Image: $IMAGE_NAME"
-                            echo "║     • Showing recent Docker logs..."
-                            docker logs $CONTAINER_NAME 2>&1 | tail -20 || true
-                            exit 1
-                        }
-
-                        # Wait for container to start
-                        echo "║     • Waiting for container to start..."
+                        # Wait for container to fully start
+                        echo "║     • Waiting for container to fully start..."
                         sleep 3
 
-                        # Check if container is running
+                        # Verify container is actually running
                         if docker ps | grep -q $CONTAINER_NAME; then
                             echo "║     ✅ Container deployed: $CONTAINER_NAME"
                             echo "║     ✅ Access URL: http://localhost:$EXTERNAL_PORT"
@@ -681,7 +691,7 @@ EOF
                             # Save port for monitoring stage
                             echo $EXTERNAL_PORT > webapp.port
                         else
-                            echo "║     ❌ Container failed to start"
+                            echo "║     ❌ Container failed to start properly"
                             echo "║     • Container logs:"
                             docker logs $CONTAINER_NAME 2>&1 || true
                             exit 1

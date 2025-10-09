@@ -544,7 +544,7 @@ EOF
                     
                     // Test 1: Health Check API
                     echo "║  🔍 Test 1: Health Check API"
-                    sh """
+                    sh '''
                         echo "║     Testing health endpoint..."
                         
                         # Retry health check with timeout
@@ -553,7 +553,7 @@ EOF
                         HEALTH_SUCCESS=false
                         
                         while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$HEALTH_SUCCESS" = false ]; do
-                            echo "║     • Attempt \$((RETRY_COUNT + 1))/$MAX_RETRIES..."
+                            echo "║     • Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
                             
                             if curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/health 2>/dev/null; then
                                 echo "║     ✅ Health check passed"
@@ -574,39 +574,39 @@ EOF
                             docker logs ci-cd-dashboard-${BUILD_NUMBER} 2>&1 | tail -20
                             exit 1
                         fi
-                    """
+                    '''
                     
                     // Test 2: Metrics API
                     echo "║  📊 Test 2: Metrics API"
-                    sh """
+                    sh '''
                         echo "║     Testing metrics endpoint..."
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/metrics
                         echo "║     ✅ Metrics API working"
-                    """
+                    '''
                     
                     // Test 3: Pipelines API
                     echo "║  🚀 Test 3: Pipelines API"
-                    sh """
+                    sh '''
                         echo "║     Testing pipelines endpoint..."
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/api/pipelines
                         echo "║     ✅ Pipelines API working"
-                    """
+                    '''
                     
                     // Test 4: Main Dashboard
                     echo "║  🌐 Test 4: Main Dashboard"
-                    sh """
+                    sh '''
                         echo "║     Testing main dashboard..."
                         curl -f --connect-timeout 5 --max-time 10 http://localhost:$WEBAPP_PORT/
                         echo "║     ✅ Main dashboard accessible"
-                    """
+                    '''
                     
                     // Test 5: Container Status
                     echo "║  🐳 Test 5: Container Status"
-                    sh """
+                    sh '''
                         echo "║     Checking container health..."
                         docker ps | grep ci-cd-dashboard-${BUILD_NUMBER}
                         echo "║     ✅ Container is running"
-                    """
+                    '''
                     
                     echo "║"
                     echo "║  🎯 All Tests Passed!"

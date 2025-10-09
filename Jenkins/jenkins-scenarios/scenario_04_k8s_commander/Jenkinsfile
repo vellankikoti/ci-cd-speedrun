@@ -472,18 +472,7 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
                         {
                             'type': 'yaml',
                             'title': 'Simple Pod Example',
-                            'code': '''apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-pod
-  labels:
-    app: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx:latest
-    ports:
-    - containerPort: 80'''
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: nginx-pod\\n  labels:\\n    app: nginx\\nspec:\\n  containers:\\n  - name: nginx\\n    image: nginx:latest\\n    ports:\\n    - containerPort: 80'
                         },
                         {
                             'type': 'production',
@@ -549,24 +538,7 @@ spec:
                         {
                             'type': 'yaml',
                             'title': 'Sidecar Pattern Example',
-                            'code': '''apiVersion: v1
-kind: Pod
-metadata:
-  name: app-with-sidecar
-spec:
-  containers:
-  - name: app
-    image: myapp:1.0
-    ports:
-    - containerPort: 8080
-  - name: logging-sidecar
-    image: fluentd
-    volumeMounts:
-    - name: logs
-      mountPath: /var/log
-  volumes:
-  - name: logs
-    emptyDir: {{}}'''
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: app-with-sidecar\\nspec:\\n  containers:\\n  - name: app\\n    image: myapp:1.0\\n    ports:\\n    - containerPort: 8080\\n  - name: logging-sidecar\\n    image: fluentd\\n    volumeMounts:\\n    - name: logs\\n      mountPath: /var/log\\n  volumes:\\n  - name: logs\\n    emptyDir: {{}}'
                         },
                         {
                             'type': 'production',
@@ -596,39 +568,7 @@ spec:
                         {
                             'type': 'yaml',
                             'title': 'Production-Ready Pod',
-                            'code': '''apiVersion: v1
-kind: Pod
-metadata:
-  name: production-app
-  labels:
-    app: myapp
-    tier: backend
-spec:
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1000
-  containers:
-  - name: app
-    image: myapp:1.0
-    resources:
-      requests:
-        memory: "64Mi"
-        cpu: "250m"
-      limits:
-        memory: "128Mi"
-        cpu: "500m"
-    livenessProbe:
-      httpGet:
-        path: /healthz
-        port: 8080
-      initialDelaySeconds: 15
-      periodSeconds: 10
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: 8080
-      initialDelaySeconds: 5
-      periodSeconds: 5'''
+                            'code': 'apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: production-app\\n  labels:\\n    app: myapp\\n    tier: backend\\nspec:\\n  securityContext:\\n    runAsNonRoot: true\\n    runAsUser: 1000\\n  containers:\\n  - name: app\\n    image: myapp:1.0\\n    resources:\\n      requests:\\n        memory: "64Mi"\\n        cpu: "250m"\\n      limits:\\n        memory: "128Mi"\\n        cpu: "500m"\\n    livenessProbe:\\n      httpGet:\\n        path: /healthz\\n        port: 8080\\n      initialDelaySeconds: 15\\n      periodSeconds: 10\\n    readinessProbe:\\n      httpGet:\\n        path: /ready\\n        port: 8080\\n      initialDelaySeconds: 5\\n      periodSeconds: 5'
                         },
                         {
                             'type': 'production',

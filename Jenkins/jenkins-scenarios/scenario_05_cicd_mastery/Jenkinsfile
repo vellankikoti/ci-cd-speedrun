@@ -657,6 +657,34 @@ EOF
                         echo "║     • Achievement tracking"
                         echo "║     • Deployment pattern visualization"
                         echo "║     • Quality metrics display"
+                        
+                        # Find available port (avoiding Jenkins on 8080)
+                        DASHBOARD_PORT=8081
+                        while netstat -tuln 2>/dev/null | grep -q ":$DASHBOARD_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$DASHBOARD_PORT"; do
+                            DASHBOARD_PORT=$((DASHBOARD_PORT + 1))
+                            if [ $DASHBOARD_PORT -gt 8090 ]; then
+                                echo "║  ❌ No available ports found (8081-8090)"
+                                exit 1
+                            fi
+                        done
+                        
+                        echo "║  🚀 Starting mastery dashboard on port $DASHBOARD_PORT..."
+                        cd mastery-dashboard
+                        nohup python3 -m http.server $DASHBOARD_PORT --bind 0.0.0.0 > ../mastery-dashboard.log 2>&1 &
+                        WEB_SERVER_PID=$!
+                        echo $DASHBOARD_PORT > ../mastery-dashboard.pid
+                        
+                        # Wait a moment for server to start
+                        sleep 2
+                        
+                        # Get host IP
+                        HOST_IP=$(hostname -I | awk '{print $1}')
+                        
+                        echo "║  ✅ Mastery dashboard started successfully!"
+                        echo "║  🌐 Access URLs:"
+                        echo "║     • Local: http://localhost:$DASHBOARD_PORT/"
+                        echo "║     • Network: http://$HOST_IP:$DASHBOARD_PORT/"
+                        echo "║  🆔 Process ID: $WEB_SERVER_PID"
                     '''
                     
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
@@ -668,6 +696,24 @@ EOF
     post {
         always {
             script {
+                // Cleanup web server
+                sh '''
+                    if [ -f mastery-dashboard.pid ]; then
+                        DASHBOARD_PORT=$(cat mastery-dashboard.pid)
+                        WEB_SERVER_PID=$(ps aux | grep "python3 -m http.server $DASHBOARD_PORT" | grep -v grep | awk '{print $2}')
+                        if [ ! -z "$WEB_SERVER_PID" ]; then
+                            echo "🛑 Stopping mastery dashboard web server (PID: $WEB_SERVER_PID)..."
+                            kill $WEB_SERVER_PID
+                            sleep 1
+                            if kill -0 $WEB_SERVER_PID 2>/dev/null; then
+                                kill -9 $WEB_SERVER_PID
+                            fi
+                            echo "✅ Mastery dashboard web server stopped"
+                        fi
+                        rm -f mastery-dashboard.pid
+                    fi
+                '''
+                
                 echo ""
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                 echo "║                    🎉 CI/CD MASTERY COMPLETED!                              ║"
@@ -678,9 +724,8 @@ EOF
                 echo "║     • Pipeline Pattern: ${params.PIPELINE_PATTERN}"
                 echo "║     • Achievements: ${env.ACHIEVEMENTS}"
                 echo "║"
-                echo "║  🌐 Access Your Mastery Dashboard:"
-                echo "║     • Local: http://localhost:8080/mastery-dashboard/"
-                echo "║     • Network: http://$(hostname -I | awk '{print $1}'):8080/mastery-dashboard/"
+                echo "║  🌐 Dashboard was available during pipeline execution"
+                echo "║  📁 Generated files: mastery-dashboard/ directory with HTML files"
                 echo "║"
                 echo "║  🚀 Ready for Next Level:"
                 echo "║     • Full Kubernetes deployment"

@@ -54,8 +54,7 @@ pipeline {
                     echo "║"
 
                     // Create Python Flask application with real-time features
-                    sh '''#!/bin/bash
-                        cat > app.py << 'PYTHON_APP_EOF'
+                    writeFile file: 'app.py', text: '''
 #!/usr/bin/env python3
 """
 Live CI/CD Deployment Simulator
@@ -972,16 +971,13 @@ if __name__ == '__main__':
     state.add_log("✨ Ready for interactive deployments!")
 
     app.run(host='0.0.0.0', port=8080, threaded=True)
-PYTHON_APP_EOF
+'''
 
-                        chmod +x app.py
-                        echo "║     ✅ Live simulator created"
-                    '''
+                    sh 'chmod +x app.py'
+                    echo "║     ✅ Live simulator created"
 
                     // Create Dockerfile
-                    sh '''#!/bin/bash
-                        cat > Dockerfile << 'DOCKERFILE_EOF'
-FROM python:3.11-slim
+                    writeFile file: 'Dockerfile', text: '''FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -995,10 +991,9 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \\
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')" || exit 1
 
 CMD ["python3", "app.py"]
-DOCKERFILE_EOF
+'''
 
-                        echo "║     ✅ Dockerfile created"
-                    '''
+                    echo "║     ✅ Dockerfile created"
                 }
             }
         }

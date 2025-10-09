@@ -442,6 +442,249 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
             }
 
             self.wfile.write(json.dumps(lessons.get(concept, {}), indent=2).encode())
+        elif self.path.startswith('/api/lesson/'):
+            # Get specific lesson content
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+
+            lesson_id = self.path.split('/')[-1]
+
+            lesson_content = {
+                '1': {
+                    'title': 'What are Pods?',
+                    'duration': '5 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Pods are the smallest deployable units in Kubernetes. A Pod represents a single instance of a running process in your cluster.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Key Concepts',
+                            'points': [
+                                'A Pod can contain one or more containers',
+                                'Containers in a Pod share network and storage',
+                                'Pods are ephemeral - they can be created and destroyed',
+                                'Each Pod gets its own IP address'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Simple Pod Example',
+                            'code': '''apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80'''
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Best Practice',
+                            'content': 'In production, you rarely create Pods directly. Instead, use Deployments which manage Pods for you and provide features like rolling updates and scaling.'
+                        }
+                    ]
+                },
+                '2': {
+                    'title': 'Pod Lifecycle',
+                    'duration': '8 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Understanding the Pod lifecycle is crucial for debugging and managing your Kubernetes applications.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Pod Phases',
+                            'points': [
+                                '🟡 Pending: Pod accepted but not running yet',
+                                '🟢 Running: Pod bound to node and containers running',
+                                '🟢 Succeeded: All containers terminated successfully',
+                                '🔴 Failed: At least one container failed',
+                                '🟠 Unknown: Pod state cannot be determined'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Check Pod Status',
+                            'commands': [
+                                'kubectl get pods',
+                                'kubectl describe pod <pod-name>',
+                                'kubectl logs <pod-name>',
+                                'kubectl get pod <pod-name> -o yaml'
+                            ]
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Monitoring',
+                            'content': 'Always implement health checks (liveness and readiness probes) to let Kubernetes automatically manage Pod lifecycle and ensure high availability.'
+                        }
+                    ]
+                },
+                '3': {
+                    'title': 'Multi-Container Pods',
+                    'duration': '10 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Multi-container Pods are powerful patterns for building modular, reusable applications in Kubernetes.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Common Patterns',
+                            'points': [
+                                '📦 Sidecar: Helper container that extends main container',
+                                '🔌 Ambassador: Proxy that simplifies network connections',
+                                '🔧 Adapter: Standardizes output from main container',
+                                '🔄 Init Containers: Run before main containers start'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Sidecar Pattern Example',
+                            'code': '''apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-sidecar
+spec:
+  containers:
+  - name: app
+    image: myapp:1.0
+    ports:
+    - containerPort: 8080
+  - name: logging-sidecar
+    image: fluentd
+    volumeMounts:
+    - name: logs
+      mountPath: /var/log
+  volumes:
+  - name: logs
+    emptyDir: {{}}'''
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Production Use Case',
+                            'content': 'Sidecar containers are widely used for logging, monitoring, security, and service mesh patterns like Istio which injects an Envoy proxy sidecar.'
+                        }
+                    ]
+                },
+                '4': {
+                    'title': 'Production Patterns',
+                    'duration': '12 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Production-ready Pods require careful configuration of resources, health checks, and security settings.'
+                        },
+                        {
+                            'type': 'concept',
+                            'title': 'Essential Production Features',
+                            'points': [
+                                '⚡ Resource Limits: Prevent resource exhaustion',
+                                '🔍 Health Checks: Enable auto-healing',
+                                '🛡️ Security Context: Run as non-root',
+                                '🏷️ Labels & Annotations: Organize and track'
+                            ]
+                        },
+                        {
+                            'type': 'yaml',
+                            'title': 'Production-Ready Pod',
+                            'code': '''apiVersion: v1
+kind: Pod
+metadata:
+  name: production-app
+  labels:
+    app: myapp
+    tier: backend
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+  - name: app
+    image: myapp:1.0
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5'''
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Real-World Impact',
+                            'content': 'These patterns prevent 90% of production incidents. Resource limits prevent cascading failures, health checks enable zero-downtime deployments, and security contexts prevent container escapes.'
+                        }
+                    ]
+                },
+                '5': {
+                    'title': 'Hands-on Lab',
+                    'duration': '15 min',
+                    'sections': [
+                        {
+                            'type': 'intro',
+                            'content': 'Practice creating and managing Pods with real kubectl commands. This lab builds on everything you have learned.'
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 1: Create a Pod',
+                            'commands': [
+                                'kubectl create namespace k8s-learning',
+                                'kubectl run nginx --image=nginx --port=80 -n k8s-learning',
+                                'kubectl get pods -n k8s-learning',
+                                'kubectl describe pod nginx -n k8s-learning'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 2: Interact with Pod',
+                            'commands': [
+                                'kubectl logs nginx -n k8s-learning',
+                                'kubectl exec -it nginx -n k8s-learning -- /bin/bash',
+                                'kubectl port-forward nginx 8080:80 -n k8s-learning',
+                                'curl http://localhost:8080'
+                            ]
+                        },
+                        {
+                            'type': 'command',
+                            'title': 'Lab Exercise 3: Update and Delete',
+                            'commands': [
+                                'kubectl label pod nginx tier=backend -n k8s-learning',
+                                'kubectl get pod nginx --show-labels -n k8s-learning',
+                                'kubectl delete pod nginx -n k8s-learning',
+                                'kubectl get pods -n k8s-learning'
+                            ]
+                        },
+                        {
+                            'type': 'production',
+                            'title': 'Next Steps',
+                            'content': 'You are now ready to deploy real applications to Kubernetes! Continue to the Kubernetes scenarios to deploy production applications with auto-scaling, secrets management, and GitOps.'
+                        }
+                    ]
+                }
+            }
+
+            self.wfile.write(json.dumps(lesson_content.get(lesson_id, {{}}), indent=2).encode())
         else:
             # Serve the main HTML page
             self.send_response(200)
@@ -841,6 +1084,8 @@ readinessProbe:
     <script>
         let currentProgress = 0;
         let completedCount = 0;
+        let completedLessons = new Set();
+        let currentLesson = null;
 
         function showTab(tabName) {{
             // Hide all tabs
@@ -882,9 +1127,150 @@ readinessProbe:
         }}
 
         function startLesson(lessonId) {{
-            alert('Lesson ' + lessonId + ' started! In production, this would load interactive content.');
-            completedCount++;
-            updateProgress();
+            currentLesson = lessonId;
+            fetch('/api/lesson/' + lessonId)
+                .then(response => response.json())
+                .then(data => {{
+                    showLessonContent(data);
+                    // Mark as completed
+                    if (!completedLessons.has(lessonId)) {{
+                        completedLessons.add(lessonId);
+                        completedCount++;
+                        updateProgress();
+                    }}
+                }})
+                .catch(error => {{
+                    console.error('Error loading lesson:', error);
+                    alert('Error loading lesson content. Please try again.');
+                }});
+        }}
+
+        function showLessonContent(lesson) {{
+            const container = document.getElementById('lessonsContainer');
+            let html = `
+                <div class="lesson-viewer">
+                    <div class="lesson-header">
+                        <button onclick="backToLessonList()" class="btn" style="margin-bottom: 15px;">
+                            ← Back to Lessons
+                        </button>
+                        <h2>${{lesson.title}}</h2>
+                        <p style="color: #666;">⏱️ ${{lesson.duration}}</p>
+                    </div>
+                    <div class="lesson-content">
+            `;
+
+            lesson.sections.forEach((section, index) => {{
+                if (section.type === 'intro') {{
+                    html += `
+                        <div class="lesson-section intro-section">
+                            <p style="font-size: 1.1em; line-height: 1.6;">${{section.content}}</p>
+                        </div>
+                    `;
+                }} else if (section.type === 'concept') {{
+                    html += `
+                        <div class="lesson-section concept-section">
+                            <h3>${{section.title}}</h3>
+                            <ul style="list-style: none; padding-left: 0;">
+                                ${{section.points.map(point => `
+                                    <li style="padding: 10px; margin: 8px 0; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 4px;">
+                                        ${{point}}
+                                    </li>
+                                `).join('')}}
+                            </ul>
+                        </div>
+                    `;
+                }} else if (section.type === 'yaml') {{
+                    html += `
+                        <div class="lesson-section yaml-section">
+                            <h3>${{section.title}}</h3>
+                            <div class="code-block">
+                                <pre style="margin: 0;">${{section.code}}</pre>
+                            </div>
+                            <button onclick="copyCode(this)" class="btn" style="margin-top: 10px;">
+                                📋 Copy YAML
+                            </button>
+                        </div>
+                    `;
+                }} else if (section.type === 'command') {{
+                    html += `
+                        <div class="lesson-section command-section">
+                            <h3>${{section.title}}</h3>
+                            ${{section.commands.map(cmd => `
+                                <div class="kubectl-command" style="position: relative;">
+                                    <code>$ ${{cmd}}</code>
+                                    <button onclick="copyCommand('${{cmd}}')"
+                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                                                   background: #4CAF50; color: white; border: none; padding: 5px 10px;
+                                                   border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                                        Copy
+                                    </button>
+                                </div>
+                            `).join('')}}
+                        </div>
+                    `;
+                }} else if (section.type === 'production') {{
+                    html += `
+                        <div class="lesson-section production-section" style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                            <h3 style="color: #856404; margin-bottom: 10px;">💡 ${{section.title}}</h3>
+                            <p style="color: #856404;">${{section.content}}</p>
+                        </div>
+                    `;
+                }}
+            }});
+
+            html += `
+                    </div>
+                    <div class="lesson-navigation" style="margin-top: 30px; display: flex; justify-content: space-between;">
+                        <button onclick="previousLesson()" class="btn" id="prevBtn">
+                            ← Previous Lesson
+                        </button>
+                        <button onclick="nextLesson()" class="btn" id="nextBtn">
+                            Next Lesson →
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // Update navigation buttons
+            const lessonNum = parseInt(currentLesson);
+            document.getElementById('prevBtn').disabled = lessonNum === 1;
+            document.getElementById('nextBtn').disabled = lessonNum === 5;
+        }}
+
+        function backToLessonList() {{
+            loadLessons();
+            currentLesson = null;
+        }}
+
+        function previousLesson() {{
+            if (currentLesson && parseInt(currentLesson) > 1) {{
+                startLesson((parseInt(currentLesson) - 1).toString());
+            }}
+        }}
+
+        function nextLesson() {{
+            if (currentLesson && parseInt(currentLesson) < 5) {{
+                startLesson((parseInt(currentLesson) + 1).toString());
+            }}
+        }}
+
+        function copyCode(button) {{
+            const codeBlock = button.previousElementSibling.querySelector('pre');
+            const code = codeBlock.textContent;
+            navigator.clipboard.writeText(code).then(() => {{
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {{
+                    button.textContent = '📋 Copy YAML';
+                }}, 2000);
+            }});
+        }}
+
+        function copyCommand(command) {{
+            navigator.clipboard.writeText(command).then(() => {{
+                // Visual feedback handled by button
+            }});
         }}
 
         function updateProgress() {{

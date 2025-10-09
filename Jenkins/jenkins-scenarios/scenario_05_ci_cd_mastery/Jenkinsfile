@@ -51,8 +51,8 @@ pipeline {
                     echo "║  🎯 Challenge: ${CHALLENGE_NAME}"
                     echo "║  ⏱️  Duration: ${CHALLENGE_DURATION}"
                     echo "║  🏆 Max Score: ${MAX_SCORE} points"
-                    echo "║  👤 Skill Level: ${SKILL_LEVEL}"
-                    echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
+                    echo "║  👤 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
+                    echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
                     echo "║"
                     echo "║  🎮 Ready to become a CI/CD Master?"
                     echo "║"
@@ -75,10 +75,10 @@ pipeline {
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                     echo "║                    ⚙️  CHALLENGE CONFIGURATION                              ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🎯 Skill Level: ${SKILL_LEVEL}"
-                    echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
-                    echo "║  🔔 Notifications: ${ENABLE_NOTIFICATIONS ? 'Enabled' : 'Disabled'}"
-                    echo "║  🏆 Leaderboard: ${SHOW_LEADERBOARD ? 'Enabled' : 'Disabled'}"
+                    echo "║  🎯 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
+                    echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                    echo "║  🔔 Notifications: ${params.ENABLE_NOTIFICATIONS ? 'Enabled' : 'Disabled'}"
+                    echo "║  🏆 Leaderboard: ${params.SHOW_LEADERBOARD ? 'Enabled' : 'Disabled'}"
                     echo "║  ⏱️  Time Limit: 5 minutes"
                     echo "║  🎮 Mode: Interactive Gamified Learning"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
@@ -94,7 +94,7 @@ pipeline {
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🎯 Objective: Implement automated quality checks"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🏆 Max Points: ${SKILL_LEVEL == 'Expert' ? '200' : SKILL_LEVEL == 'Advanced' ? '150' : SKILL_LEVEL == 'Intermediate' ? '100' : '50'}"
+                    echo "║  🏆 Max Points: ${(params.SKILL_LEVEL ?: 'Beginner') == 'Expert' ? '200' : (params.SKILL_LEVEL ?: 'Beginner') == 'Advanced' ? '150' : (params.SKILL_LEVEL ?: 'Beginner') == 'Intermediate' ? '100' : '50'}"
                     echo "║"
                     
                     // Checkout code
@@ -130,7 +130,7 @@ pipeline {
                         ]
                     ]
                     
-                    def checks = qualityChecks[SKILL_LEVEL] ?: qualityChecks['Beginner']
+                    def checks = qualityChecks[params.SKILL_LEVEL ?: 'Beginner'] ?: qualityChecks['Beginner']
                     def totalPoints = 0
                     
                     checks.each { check ->
@@ -173,8 +173,8 @@ pipeline {
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🎯 Objective: Implement comprehensive testing approach"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🎲 Strategy: ${CHALLENGE_TYPE}"
-                    echo "║  🏆 Max Points: ${CHALLENGE_TYPE == 'Quality Focus' ? '250' : CHALLENGE_TYPE == 'Security First' ? '200' : CHALLENGE_TYPE == 'Performance Optimized' ? '180' : '120'}"
+                    echo "║  🎲 Strategy: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                    echo "║  🏆 Max Points: ${(params.CHALLENGE_TYPE ?: 'Speed Run') == 'Quality Focus' ? '250' : (params.CHALLENGE_TYPE ?: 'Speed Run') == 'Security First' ? '200' : (params.CHALLENGE_TYPE ?: 'Speed Run') == 'Performance Optimized' ? '180' : '120'}"
                     echo "║"
                     
                     // Simulate different testing strategies based on challenge type
@@ -200,10 +200,10 @@ pipeline {
                         ]
                     ]
                     
-                    def tests = testStrategies[CHALLENGE_TYPE] ?: testStrategies['Speed Run']
+                    def tests = testStrategies[params.CHALLENGE_TYPE ?: 'Speed Run'] ?: testStrategies['Speed Run']
                     def totalPoints = 0
                     
-                    echo "║  🧪 Executing ${CHALLENGE_TYPE} testing strategy..."
+                    echo "║  🧪 Executing ${params.CHALLENGE_TYPE ?: 'Speed Run'} testing strategy..."
                     echo "║"
                     
                     tests.each { test ->
@@ -334,7 +334,7 @@ if __name__ == '__main__':
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     echo "║  🎯 Objective: Deploy application with production strategy"
                     echo "║  ⏱️  Time Limit: 1 minute"
-                    echo "║  🎲 Strategy: ${CHALLENGE_TYPE}"
+                    echo "║  🎲 Strategy: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
                     echo "║"
                     
                     // Simulate different deployment strategies
@@ -345,7 +345,7 @@ if __name__ == '__main__':
                         'Performance Optimized': ['Rolling Update', 'Smooth updates with load balancing', 160]
                     ]
                     
-                    def strategy = deploymentStrategies[CHALLENGE_TYPE] ?: deploymentStrategies['Speed Run']
+                    def strategy = deploymentStrategies[params.CHALLENGE_TYPE ?: 'Speed Run'] ?: deploymentStrategies['Speed Run']
                     def strategyName = strategy[0]
                     def strategyDesc = strategy[1]
                     def strategyPoints = strategy[2]
@@ -485,23 +485,24 @@ if __name__ == '__main__':
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                 echo "║                    🎉 CHALLENGE COMPLETED! 🎉                                ║"
                 echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🏆 Final Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE} points"
+                echo "║  🏆 Final Score: ${env.CHALLENGE_SCORE ?: '0'}/${MAX_SCORE} points"
                 echo "║  ⏱️  Completion Time: ${duration} seconds"
-                echo "║  🎯 Skill Level: ${SKILL_LEVEL}"
-                echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
-                echo "║  📊 Completion Rate: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                echo "║  🎯 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
+                echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                echo "║  📊 Completion Rate: ${((env.CHALLENGE_SCORE ?: '0').toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
                 echo "║"
                 
                 // Calculate performance rating
                 def performanceRating = "🥉 Bronze"
                 def ratingDescription = "Good effort! Keep practicing to improve."
-                if (env.CHALLENGE_SCORE.toInteger() >= 900) {
+                def currentScore = (env.CHALLENGE_SCORE ?: '0').toInteger()
+                if (currentScore >= 900) {
                     performanceRating = "🏆 Legendary"
                     ratingDescription = "Outstanding! You're a CI/CD master!"
-                } else if (env.CHALLENGE_SCORE.toInteger() >= 800) {
+                } else if (currentScore >= 800) {
                     performanceRating = "🥇 Gold"
                     ratingDescription = "Excellent! You've mastered CI/CD!"
-                } else if (env.CHALLENGE_SCORE.toInteger() >= 600) {
+                } else if (currentScore >= 600) {
                     performanceRating = "🥈 Silver"
                     ratingDescription = "Great job! You're well on your way!"
                 }
@@ -512,22 +513,22 @@ if __name__ == '__main__':
                 
                 // Show achievements
                 echo "║  🎖️  Achievements Unlocked:"
-                if (env.CHALLENGE_SCORE.toInteger() >= 100) {
+                if (currentScore >= 100) {
                     echo "║     ✅ First Steps - Completed your first challenge"
                 }
-                if (env.CHALLENGE_SCORE.toInteger() >= 300) {
+                if (currentScore >= 300) {
                     echo "║     ✅ Quality Guardian - Mastered code quality"
                 }
-                if (env.CHALLENGE_SCORE.toInteger() >= 500) {
+                if (currentScore >= 500) {
                     echo "║     ✅ Test Master - Conquered testing strategies"
                 }
-                if (env.CHALLENGE_SCORE.toInteger() >= 700) {
+                if (currentScore >= 700) {
                     echo "║     ✅ Container Expert - Mastered containerization"
                 }
-                if (env.CHALLENGE_SCORE.toInteger() >= 800) {
+                if (currentScore >= 800) {
                     echo "║     ✅ Deployment Pro - Conquered deployment strategies"
                 }
-                if (env.CHALLENGE_SCORE.toInteger() >= 900) {
+                if (currentScore >= 900) {
                     echo "║     ✅ Monitoring Master - Achieved full observability"
                 }
                 echo "║"
@@ -546,13 +547,13 @@ if __name__ == '__main__':
                     echo "║  #1 🥇 Alex Chen     - 950 points (Expert, Performance Optimized)"
                     echo "║  #2 🥈 Sarah Kim     - 875 points (Advanced, Quality Focus)"
                     echo "║  #3 🥉 Mike Johnson  - 820 points (Intermediate, Security First)"
-                    echo "║  #4    You           - ${env.CHALLENGE_SCORE} points (${SKILL_LEVEL}, ${CHALLENGE_TYPE})"
+                    echo "║  #4    You           - ${env.CHALLENGE_SCORE ?: '0'} points (${params.SKILL_LEVEL ?: 'Beginner'}, ${params.CHALLENGE_TYPE ?: 'Speed Run'})"
                     echo "║  #5    Emma Wilson   - 750 points (Beginner, Speed Run)"
                     echo "║"
                     echo "║  🎯 Challenge Statistics:"
                     echo "║     • Total Participants: 1,247"
                     echo "║     • Average Score: 720 points"
-                    echo "║     • Your Rank: Top ${env.CHALLENGE_SCORE.toInteger() >= 800 ? '10%' : env.CHALLENGE_SCORE.toInteger() >= 600 ? '25%' : '50%'}"
+                    echo "║     • Your Rank: Top ${currentScore >= 800 ? '10%' : currentScore >= 600 ? '25%' : '50%'}"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                 }
                 
@@ -585,10 +586,10 @@ if __name__ == '__main__':
                 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                 echo "║                    💪 CHALLENGE FAILED - BUT DON'T GIVE UP!                  ║"
                 echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                echo "║  🎯 Current Score: ${env.CHALLENGE_SCORE}/${MAX_SCORE} points"
-                echo "║  📊 Progress: ${(env.CHALLENGE_SCORE.toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
-                echo "║  🎲 Challenge Type: ${CHALLENGE_TYPE}"
-                echo "║  👤 Skill Level: ${SKILL_LEVEL}"
+                echo "║  🎯 Current Score: ${env.CHALLENGE_SCORE ?: '0'}/${MAX_SCORE} points"
+                echo "║  📊 Progress: ${((env.CHALLENGE_SCORE ?: '0').toInteger() / MAX_SCORE.toInteger() * 100).intValue()}%"
+                echo "║  🎲 Challenge Type: ${params.CHALLENGE_TYPE ?: 'Speed Run'}"
+                echo "║  👤 Skill Level: ${params.SKILL_LEVEL ?: 'Beginner'}"
                 echo "║"
                 echo "║  💡 Learning Opportunities:"
                 echo "║     • Review the failed stage carefully"

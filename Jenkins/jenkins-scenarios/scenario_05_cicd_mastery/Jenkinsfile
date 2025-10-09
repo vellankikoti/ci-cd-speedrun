@@ -530,10 +530,10 @@ pipeline {
             <div class="progress-ring">
                 <svg width="200" height="200">
                     <circle class="background" cx="100" cy="100" r="90"></circle>
-                    <circle class="progress" cx="100" cy="100" r="90" style="stroke-dashoffset: ${565.48 - (565.48 * ${MASTERY_SCORE} / 100)}"></circle>
+                    <circle class="progress" cx="100" cy="100" r="90" style="stroke-dashoffset: \${565.48 - (565.48 * \${MASTERY_SCORE} / 100)}"></circle>
                 </svg>
             </div>
-            <p>Mastery Level: <span class="level-badge ${MASTERY_LEVEL.toLowerCase()}">${MASTERY_LEVEL}</span></p>
+            <p>Mastery Level: <span class="level-badge \${MASTERY_LEVEL.toLowerCase()}">\${MASTERY_LEVEL}</span></p>
         </div>
         
         <div class="dashboard">
@@ -560,7 +560,7 @@ pipeline {
             <div class="card">
                 <h3>🏆 Achievements</h3>
                 <div id="achievements">
-                    ${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">${achievement.trim()}</span>`).join('')}
+                    \${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">\${achievement.trim()}</span>`).join('')}
                 </div>
             </div>
             
@@ -618,7 +618,7 @@ pipeline {
         // Animate progress ring
         function animateProgress() {
             const progress = document.querySelector('.progress');
-            const score = parseInt('${MASTERY_SCORE}');
+            const score = parseInt('\${MASTERY_SCORE}');
             const circumference = 565.48;
             const offset = circumference - (circumference * score / 100);
             

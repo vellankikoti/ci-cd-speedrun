@@ -477,7 +477,7 @@ EOF
             <div class="card">
                 <h3>🎯 Current Focus</h3>
                 <p><strong>Concept:</strong> <span class="concept-highlight">${CURRENT_CONCEPT}</span></p>
-                <p><strong>Level:</strong> <span class="level-badge ${LEARNING_LEVEL.toLowerCase()}">${LEARNING_LEVEL}</span></p>
+                <p><strong>Level:</strong> <span class="level-badge \${LEARNING_LEVEL.toLowerCase()}">\${LEARNING_LEVEL}</span></p>
                 <p><strong>Namespace:</strong> ${NAMESPACE}</p>
                 <p><strong>K8s Version:</strong> ${K8S_VERSION}</p>
             </div>
@@ -485,7 +485,7 @@ EOF
             <div class="card">
                 <h3>🏆 Achievements</h3>
                 <div id="achievements">
-                    ${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">${achievement.trim()}</span>`).join('')}
+                    \${ACHIEVEMENTS.split(',').map(achievement => `<span class="achievement">\${achievement.trim()}</span>`).join('')}
                 </div>
             </div>
             
@@ -513,12 +513,12 @@ EOF
         // Real-time updates
         function updateProgress() {
             const progress = document.querySelector('.progress-fill');
-            const currentProgress = parseInt('${LEARNING_PROGRESS}');
+            const currentProgress = parseInt('\${LEARNING_PROGRESS}');
             progress.style.width = currentProgress + '%';
         }
         
         // Simulate learning progression
-        let progress = parseInt('${LEARNING_PROGRESS}');
+        let progress = parseInt('\${LEARNING_PROGRESS}');
         setInterval(() => {
             if (progress < 100) {
                 progress += Math.random() * 5;
@@ -628,7 +628,7 @@ EOF
                 echo "║"
                 echo "║  🌐 Access Your Learning Dashboard:"
                 echo "║     • Local: http://localhost:8080/dashboard/"
-                echo "║     • Network: http://$(hostname -I | awk '{print $1}'):8080/dashboard/"
+                    echo "║     • Network: http://\$(hostname -I | awk '{print \$1}'):8080/dashboard/"
                 echo "║"
                 echo "║  🚀 Ready for Next Level:"
                 echo "║     • Scenario 5: Jenkins CI/CD Mastery"

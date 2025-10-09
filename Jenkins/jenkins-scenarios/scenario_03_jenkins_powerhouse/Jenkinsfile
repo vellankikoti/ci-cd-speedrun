@@ -92,7 +92,7 @@ pipeline {
                         echo "║     • IP address: $IP_ADDRESS"
                         echo "║     • Build time: $CURRENT_TIME"
                         echo "║     • Build number: ${BUILD_NUMBER}"
-                        echo "║     • Git commit: ${GIT_COMMIT ?: 'unknown'}"
+                        echo "║     • Git commit: ${GIT_COMMIT:-unknown}"
                         echo "║     • Workspace: ${WORKSPACE}"
                         echo "║     • Node: ${NODE_NAME}"
                     '''
@@ -1350,7 +1350,7 @@ EOF
                 echo "║     • Performance Test: ${params.PERFORMANCE_TEST}"
                 echo "║     • Deployment Strategy: ${params.DEPLOYMENT_STRATEGY}"
                 echo "║     • Build Number: ${BUILD_NUMBER}"
-                echo "║     • Git Commit: ${GIT_COMMIT ?: 'unknown'}"
+                echo "║     • Git Commit: ${env.GIT_COMMIT ?: 'unknown'}"
                 echo "║     • Build Time: ${currentBuild.durationString}"
                 echo "║     • Status: ${currentBuild.result ?: 'RUNNING'}"
                 

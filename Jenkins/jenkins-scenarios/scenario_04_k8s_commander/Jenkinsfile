@@ -669,7 +669,7 @@ EOF
                             # Get status data
                             STATUS_DATA=$(curl -s http://localhost:$WEBAPP_PORT/api/status)
                             echo "║     📊 Status Data:"
-                            echo "$STATUS_DATA" | jq -r 'to_entries[] | "║        • \(.key): \(.value)"' 2>/dev/null || echo "║        • Raw: $STATUS_DATA"
+                            echo "$STATUS_DATA" | jq -r 'to_entries[] | "║        • " + .key + ": " + (.value | tostring)' 2>/dev/null || echo "║        • Raw: $STATUS_DATA"
                         else
                             echo "║     ❌ API Status: Unhealthy"
                         fi

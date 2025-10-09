@@ -169,7 +169,7 @@ pipeline {
                     withEnv(["IMAGE_TAG=${imageTag}"]) {
                         sh """
                             echo "🐳 Building production container..."
-                            echo "Building image: ${APP_NAME}:\$IMAGE_TAG"
+                            echo "Building image: ${APP_NAME}:\${IMAGE_TAG}"
                         
                         # Get actual system information
                         echo "📊 Container Build Analysis:"

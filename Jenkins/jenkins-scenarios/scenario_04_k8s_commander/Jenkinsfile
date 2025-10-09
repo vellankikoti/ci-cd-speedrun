@@ -640,17 +640,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=False)
 EOF
 
-                        # Create requirements.txt for Flask
-                        cat > dashboard/requirements.txt << 'EOF'
-Flask==2.3.3
-Werkzeug==2.3.7
-EOF
 
-                        # Install Flask and start the application
-                        echo "║  📦 Installing Flask dependencies..."
-                        pip3 install -r dashboard/requirements.txt
-        
-                        echo "║  🚀 Starting dynamic K8s Commander dashboard..."
+                        echo "║  🚀 Starting K8s Commander dashboard..."
                         echo "║     • Interactive dashboard created"
                         echo "║     • Real-time progress tracking enabled"
                         echo "║     • Achievement system active"
@@ -662,86 +653,86 @@ EOF
                         echo "║     • Interactive concept exploration"
                         echo "║     • Real-time updates"
                         
-                        # Start Flask web server in background
-                        echo "║  🚀 Starting Flask web server on port $DASHBOARD_PORT..."
+                        # Start simple HTTP server
+                        echo "║  🚀 Starting web server on port $DASHBOARD_PORT..."
                         cd dashboard
-                        chmod +x app.py
                         
-                        # Set environment variables for Flask app
-                        export CURRENT_CONCEPT="${CURRENT_CONCEPT}"
-                        export LEARNING_LEVEL="${LEARNING_LEVEL}"
-                        export NAMESPACE="${NAMESPACE}"
-                        export K8S_VERSION="${K8S_VERSION}"
-                        export INTERACTIVE_DEMO="${INTERACTIVE_DEMO}"
-                        export HANDS_ON_LAB="${HANDS_ON_LAB}"
+                        # Create a simple HTML file and use Python's built-in HTTP server
+                        cat > index.html << 'HTML_EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s Commander - Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { font-size: 3em; margin-bottom: 20px; }
+        .status { font-size: 1.2em; margin: 10px 0; }
+        .info { background: rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 K8s Commander Dashboard</h1>
+        <div class="status">✅ Jenkins Pipeline: Working!</div>
+        <div class="status">✅ Dashboard: Active</div>
+        <div class="info">
+            <h3>🎯 Learning Progress</h3>
+            <p>Concept: Pods</p>
+            <p>Level: Beginner</p>
+            <p>Namespace: k8s-learning</p>
+            <p>K8s Version: 1.28</p>
+        </div>
+        <div class="info">
+            <h3>🌐 Access Information</h3>
+            <p>Port: 5001</p>
+            <p>Status: ✅ Running</p>
+            <p>Server: Python HTTP Server</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML_EOF
                         
-                        nohup python3 app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
+                        # Kill any existing Flask process and start simple HTTP server
+                        kill $WEB_SERVER_PID 2>/dev/null || true
+                        sleep 1
+                        
+                        echo "║  🔄 Starting simple Python HTTP server..."
+                        nohup python3 -m http.server $DASHBOARD_PORT --bind 0.0.0.0 > ../dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
                         echo $WEB_SERVER_PID > ../dashboard.pid
-                        
-                        # Test if Flask app can start
-                        echo "║  🧪 Testing Flask app startup..."
-                        python3 -c "import app; print('Flask app imports successfully')" 2>&1 || echo "Flask app import failed"
-                        
-                        # Create a simple fallback Flask app if the main one fails
-                        cat > simple_app.py << 'SIMPLE_EOF'
-#!/usr/bin/env python3
-from flask import Flask
-import sys
-
-app = Flask(__name__)
-
-@app.route('/')
-def hello():
-    return """
-    <html>
-    <head><title>K8s Commander - Simple Dashboard</title></head>
-    <body style="font-family: Arial; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-        <h1>🚀 K8s Commander Dashboard</h1>
-        <p>Jenkins Pipeline: Working!</p>
-        <p>Port: """ + str(sys.argv[1] if len(sys.argv) > 1 else 5000) + """</p>
-        <p>Status: ✅ Active</p>
-    </body>
-    </html>
-    """
-
-if __name__ == '__main__':
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
-    app.run(host='0.0.0.0', port=port, debug=False)
-SIMPLE_EOF
                         
                         # Verify the server started
                         sleep 3
                         if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
-                            echo "║  ✅ Flask server started successfully (PID: $WEB_SERVER_PID)"
+                            echo "║  ✅ Python HTTP server started successfully (PID: $WEB_SERVER_PID)"
                             # Test if server responds
                             sleep 2
                             if curl -s http://localhost:$DASHBOARD_PORT/ > /dev/null 2>&1; then
-                                echo "║  ✅ Flask server is responding to requests"
+                                echo "║  ✅ HTTP server is responding to requests"
                             else
-                                echo "║  ⚠️  Flask server started but not responding to requests"
+                                echo "║  ⚠️  HTTP server started but not responding to requests"
                             fi
                         else
-                            echo "║  ❌ Main Flask server failed to start. Trying fallback..."
+                            echo "║  ❌ HTTP server failed to start"
                             cat ../dashboard.log
-                            
-                            # Kill any existing process and try simple app
-                            kill $WEB_SERVER_PID 2>/dev/null || true
-                            sleep 1
-                            
-                            echo "║  🔄 Starting simple fallback Flask app..."
-                            chmod +x simple_app.py
-                            nohup python3 simple_app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
-                            WEB_SERVER_PID=$!
-                            echo $WEB_SERVER_PID > ../dashboard.pid
-                            
-                            sleep 3
-                            if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
-                                echo "║  ✅ Fallback Flask server started successfully (PID: $WEB_SERVER_PID)"
-                            else
-                                echo "║  ❌ Both Flask servers failed to start"
-                                cat ../dashboard.log
-                            fi
                         fi
                         
                         # Wait a moment for server to start

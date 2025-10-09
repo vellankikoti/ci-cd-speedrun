@@ -87,7 +87,8 @@ pipeline {
         stage('🐳 Production Container Build') {
             steps {
                 script {
-                    def imageTag = "${env.BUILD_NUMBER}-${env.GIT_COMMIT[0..7]}"
+                    def gitCommit = env.GIT_COMMIT ? env.GIT_COMMIT[0..7] : 'unknown'
+                    def imageTag = "${env.BUILD_NUMBER}-${gitCommit}"
                     
                     sh """
                         echo "🐳 Building production container..."
@@ -163,9 +164,10 @@ pipeline {
     post {
         always {
             script {
+                def gitCommit = env.GIT_COMMIT ? env.GIT_COMMIT[0..7] : 'unknown'
                 echo "📊 Build Summary:"
                 echo "  • Build Number: ${env.BUILD_NUMBER}"
-                echo "  • Git Commit: ${env.GIT_COMMIT[0..7]}"
+                echo "  • Git Commit: ${gitCommit}"
                 echo "  • Build Time: ${currentBuild.durationString}"
                 echo "  • Status: ${currentBuild.result ?: 'SUCCESS'}"
             }

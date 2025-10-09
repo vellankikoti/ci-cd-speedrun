@@ -304,13 +304,35 @@ EOF
                         
                         # Find available port (avoiding Jenkins on 8080)
                         WEBAPP_PORT=8081
-                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
-                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                            if [ $WEBAPP_PORT -gt 8090 ]; then
-                                echo "║  ❌ No available ports found (8081-8090)"
-                                exit 1
+                        MAX_ATTEMPTS=50
+                        ATTEMPTS=0
+                        
+                        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+                            # Check if port is in use by netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
                             fi
+                            
+                            # Check if port is in use by Docker containers
+                            if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
+                                echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Port is available
+                            echo "║     • Found available port: $WEBAPP_PORT"
+                            break
                         done
+                        
+                        if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                            echo "║  ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+                            exit 1
+                        fi
                         
                         echo "║  🌐 Using port: $WEBAPP_PORT"
                         
@@ -558,13 +580,13 @@ server.serve_forever()
 PYEOF
 
 # Set environment variables
-ENV K8S_CONCEPT=${K8S_CONCEPT}
-ENV LEARNING_LEVEL=${LEARNING_LEVEL}
-ENV NAMESPACE=${NAMESPACE}
-ENV K8S_VERSION=${K8S_VERSION}
-ENV INTERACTIVE_DEMO=${INTERACTIVE_DEMO}
-ENV HANDS_ON_LAB=${HANDS_ON_LAB}
-ENV EXPOSE_PORT=${WEBAPP_PORT}
+ENV K8S_CONCEPT="${K8S_CONCEPT}"
+ENV LEARNING_LEVEL="${LEARNING_LEVEL}"
+ENV NAMESPACE="${NAMESPACE}"
+ENV K8S_VERSION="${K8S_VERSION}"
+ENV INTERACTIVE_DEMO="${INTERACTIVE_DEMO}"
+ENV HANDS_ON_LAB="${HANDS_ON_LAB}"
+ENV EXPOSE_PORT="${WEBAPP_PORT}"
 
 # Expose port
 EXPOSE ${WEBAPP_PORT}
@@ -613,30 +635,53 @@ EOF
                                 echo "║     • Port $port is in use, attempting to free it..."
                                 # Try to find and kill processes using this port
                                 lsof -ti:$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
-                                sleep 1
+                                sleep 2
                             fi
                         done
                         
+                        # Wait for cleanup to complete
+                        echo "║  ⏳ Waiting for cleanup to complete..."
+                        sleep 3
+                        
+                        # Run cleanup script as fallback if available
+                        if [ -f "cleanup.py" ]; then
+                            echo "║  🧹 Running additional cleanup script..."
+                            python3 cleanup.py > /dev/null 2>&1 || true
+                        fi
+                        
                         # Find available port with more thorough checking
                         WEBAPP_PORT=8081
-                        while true; do
-                            # Check if port is free at system level
-                            if ! netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
-                                # Check if port is free in Docker
-                                if ! docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; then
-                                    echo "║  ✅ Found available port: $WEBAPP_PORT"
-                                    break
-                                fi
+                        MAX_ATTEMPTS=50
+                        ATTEMPTS=0
+                        
+                        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+                            # Check if port is in use by netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
                             fi
                             
-                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                            if [ $WEBAPP_PORT -gt 8090 ]; then
-                                echo "║  ❌ No available ports found (8081-8090)"
-                                echo "║  🔍 Current port usage:"
-                                netstat -tuln 2>/dev/null | grep ":808" | while read line; do echo "║     $line"; done
-                                exit 1
+                            # Check if port is in use by Docker containers
+                            if docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT->"; then
+                                echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
                             fi
+                            
+                            # Port is available
+                            echo "║  ✅ Found available port: $WEBAPP_PORT"
+                            break
                         done
+                        
+                        if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                            echo "║  ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+                            echo "║  🔍 Current port usage:"
+                            netstat -tuln 2>/dev/null | grep ":808" | while read line; do echo "║     $line"; done
+                            exit 1
+                        fi
                         
                         IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
@@ -784,6 +829,16 @@ EOF
             script {
                 echo "❌ K8s Commander encountered issues, but learning continues!"
                 echo "🔄 Retry the pipeline to continue your journey."
+                
+                // Clean up on failure
+                sh '''
+                    echo "🧹 Cleaning up after failure..."
+                    docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                    docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+                    if [ -f "cleanup.py" ]; then
+                        python3 cleanup.py > /dev/null 2>&1 || true
+                    fi
+                '''
             }
         }
     }

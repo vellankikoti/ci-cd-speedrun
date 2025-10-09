@@ -48,7 +48,7 @@ pipeline {
             description: 'Enable hands-on lab exercises?'
         )
     }
-    
+
     stages {
         stage('📋 K8s Commander Setup') {
             steps {
@@ -244,7 +244,7 @@ EOF
                     echo "║                    🔬 HANDS-ON LAB SETUP                                    ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    sh '''
+                        sh '''
                         echo "║  🧪 Creating hands-on lab for: ${K8S_CONCEPT}"
                         echo "║  📁 Setting up lab environment..."
                         
@@ -299,7 +299,7 @@ EOF
                     echo "║                    🐳 K8S COMMANDER APP BUILD                               ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    sh '''
+                        sh '''
                         echo "║  🏗️  Building K8s Commander Docker image..."
                         
                         # Find available port (avoiding Jenkins on 8080)
@@ -600,9 +600,17 @@ EOF
                     echo "║                    🚀 K8S COMMANDER DEPLOYMENT                              ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
-                    sh '''
-                        # Get the port we used
-                        WEBAPP_PORT=$(grep "EXPOSE" Dockerfile | awk '{print $2}')
+                        sh '''
+                        # Find available port (same logic as build stage)
+                        WEBAPP_PORT=8081
+                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
+                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                            if [ $WEBAPP_PORT -gt 8090 ]; then
+                                echo "║  ❌ No available ports found (8081-8090)"
+                                exit 1
+                            fi
+                        done
+                        
                         IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
                         
@@ -657,7 +665,16 @@ EOF
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
                     sh '''
-                        WEBAPP_PORT=$(grep "EXPOSE" Dockerfile | awk '{print $2}')
+                        # Find available port (same logic as other stages)
+                        WEBAPP_PORT=8081
+                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
+                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                            if [ $WEBAPP_PORT -gt 8090 ]; then
+                                echo "║  ❌ No available ports found (8081-8090)"
+                                exit 1
+                            fi
+                        done
+                        
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
                         
                         echo "║  🔍 Checking application health..."

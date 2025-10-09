@@ -526,7 +526,7 @@ EOF
                         
                         echo "║     • Using port $PORT (avoiding Jenkins port 8080)"
                         
-                        nohup python3 -m http.server $PORT > webapp.log 2>&1 &
+                        nohup python3 -m http.server $PORT --bind 0.0.0.0 > webapp.log 2>&1 &
                         WEBAPP_PID=$!
                         echo $WEBAPP_PID > webapp.pid
                         echo $PORT > webapp.port
@@ -547,26 +547,26 @@ EOF
                         HOSTNAME=$(hostname)
                         PORT=$(cat webapp/webapp.port 2>/dev/null || echo "8081")
                         
-                        # Get external IP (Docker host IP)
-                        EXTERNAL_IP=$(ip route | grep default | awk '{print $3}' | head -1)
-                        if [ -z "$EXTERNAL_IP" ]; then
-                            EXTERNAL_IP="localhost"
-                        fi
+                        # Get Docker host IP
+                        DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                        CONTAINER_IP=$(hostname -I | awk '{print $1}')
                         
                         echo "║"
                         echo "║  📊 Web Application Info:"
-                        echo "║     • External URL: http://$EXTERNAL_IP:$PORT"
-                        echo "║     • Local URL: http://localhost:$PORT"
-                        echo "║     • Internal IP: $(hostname -I | awk '{print $1}')"
+                        echo "║     • Port: $PORT (bound to 0.0.0.0)"
+                        echo "║     • Container IP: $CONTAINER_IP"
+                        echo "║     • Docker Host IP: $DOCKER_HOST_IP"
                         echo "║     • Hostname: $HOSTNAME"
                         echo "║     • Environment: ${ENVIRONMENT}"
                         echo "║     • Features: ${FEATURES}"
                         echo "║     • Version: ${VERSION}"
                         echo "║"
                         echo "║  🌐 Access Instructions:"
-                        echo "║     • If running in Docker: Use http://localhost:$PORT"
-                        echo "║     • If running locally: Use http://localhost:$PORT"
+                        echo "║     • Try: http://localhost:$PORT"
+                        echo "║     • Try: http://$DOCKER_HOST_IP:$PORT"
+                        echo "║     • Try: http://$CONTAINER_IP:$PORT"
                         echo "║     • Port $PORT is available (avoiding Jenkins port 8080)"
+                        echo "║     • Server bound to 0.0.0.0 for Docker access"
                     '''
                     
                     echo "║"
@@ -707,8 +707,12 @@ EOF
             echo "║  🌐 WEB APPLICATION ACCESS:"
             sh '''
                 PORT=$(cat webapp/webapp.port 2>/dev/null || echo "8081")
-                echo "║     • URL: http://localhost:$PORT"
-                echo "║     • Port: $PORT (avoiding Jenkins port 8080)"
+                DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+                CONTAINER_IP=$(hostname -I | awk '{print $1}')
+                echo "║     • Primary URL: http://localhost:$PORT"
+                echo "║     • Alternative: http://$DOCKER_HOST_IP:$PORT"
+                echo "║     • Container IP: http://$CONTAINER_IP:$PORT"
+                echo "║     • Port: $PORT (bound to 0.0.0.0)"
                 echo "║     • Status: ✅ RUNNING"
             '''
             echo "╚══════════════════════════════════════════════════════════════════════════════╝"

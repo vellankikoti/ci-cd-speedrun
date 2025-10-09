@@ -452,7 +452,7 @@ update_progress(60, '🔬 Lab Completed')
 update_progress(80, '🌐 Dashboard Created')
 update_progress(100, '🎓 Mastery Achieved')
 
-HTML_TEMPLATE = '''<!DOCTYPE html>
+HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -602,7 +602,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         updateTime();
     </script>
 </body>
-</html>'''
+</html>"""
 
 @app.route('/')
 def dashboard():

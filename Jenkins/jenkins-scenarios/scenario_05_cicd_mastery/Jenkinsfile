@@ -473,7 +473,7 @@ update_mastery(80, '🚀 Deployment Master')
 update_mastery(95, '📊 Monitoring Expert')
 update_mastery(100, '🎓 Mastery Achieved')
 
-HTML_TEMPLATE = '''<!DOCTYPE html>
+HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -690,7 +690,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
     </script>
 </body>
 </html>
-'''
+"""
 
 @app.route('/')
 def dashboard():

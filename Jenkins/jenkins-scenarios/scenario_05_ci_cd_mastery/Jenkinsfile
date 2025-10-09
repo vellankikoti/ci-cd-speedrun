@@ -651,11 +651,11 @@ This dashboard demonstrates:
                     def usedPorts = sh(
                         script: '''
                             # Get ports from netstat (listening ports)
-                            netstat -tuln | grep -E ':[0-9]+ ' | sed 's/.*:\([0-9]*\) .*/\1/' | sort -n | uniq
+                            netstat -tuln | grep -E ":[0-9]+ " | sed "s/.*:\\([0-9]*\\) .*/\\1/" | sort -n | uniq
                             # Get ports from docker containers
-                            docker ps --format '{{.Ports}}' | grep -oE ':[0-9]+->' | sed 's/://g' | sed 's/->//g' | sort -n | uniq
+                            docker ps --format "{{.Ports}}" | grep -oE ":[0-9]+->" | sed "s/://g" | sed "s/->//g" | sort -n | uniq
                             # Get ports from lsof (additional check)
-                            lsof -i -P -n | grep LISTEN | grep -oE ':[0-9]+ ' | sed 's/://g' | sort -n | uniq
+                            lsof -i -P -n | grep LISTEN | grep -oE ":[0-9]+ " | sed "s/://g" | sort -n | uniq
                         ''',
                         returnStdout: true
                     ).trim().split('\n').findAll { it.isNumber() && it.toInteger() > 0 }.collect { it.toInteger() }.unique()

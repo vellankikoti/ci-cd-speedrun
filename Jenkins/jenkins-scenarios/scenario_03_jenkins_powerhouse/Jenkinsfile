@@ -373,8 +373,8 @@ pipeline {
                         echo "║  🔧 Generating advanced web application..."
                         mkdir -p webapp
                         
-                        # Generate advanced web application using Python
-                        python3 << 'PYEOF'
+                        # Create Python script for HTML generation
+                        cat > generate_webapp.py << 'PYEOF'
 import os
 import json
 from datetime import datetime
@@ -443,7 +443,7 @@ env_config = env_configs.get(environment, env_configs['Development'])
 feature_config = feature_configs.get(features, feature_configs['Basic'])
 
 # Generate HTML content
-html_content = f'''<!DOCTYPE html>
+html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -796,7 +796,7 @@ html_content = f'''<!DOCTYPE html>
         updateMetrics();
     </script>
 </body>
-</html>'''
+</html>"""
         
         # Write HTML file
         with open('webapp/index.html', 'w') as f:
@@ -804,6 +804,12 @@ html_content = f'''<!DOCTYPE html>
         
         print("✅ Advanced web application generated successfully!")
 PYEOF
+                        
+                        # Run the Python script
+                        python3 generate_webapp.py
+                        
+                        # Clean up the script
+                        rm -f generate_webapp.py
                         
                         echo "║     • Advanced web application generated successfully!"
                         echo "║     • Features: ${FEATURES} capabilities"

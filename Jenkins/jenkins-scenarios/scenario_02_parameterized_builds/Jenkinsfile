@@ -227,74 +227,42 @@ pipeline {
             }
         }
         
-        stage('🐳 Dynamic Container Build') {
+        stage('🌐 Web Application Generation') {
             steps {
                 script {
-                    echo "🐳 Building dynamic container..."
-                    
-                    // Create dynamic image tag
-                    def imageTag = "${params.VERSION}-${params.ENVIRONMENT.toLowerCase()}-${params.FEATURES.toLowerCase()}-${env.BUILD_NUMBER}"
+                    echo "🌐 Generating web application based on parameters..."
                     
                     echo ""
                     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                    echo "║                  🐳 DYNAMIC CONTAINER BUILD                                 ║"
+                    echo "║                🌐 WEB APPLICATION GENERATION                               ║"
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                    echo "║  🏗️  Building container with parameters..."
-                    echo "║     • Image: ${env.APP_NAME}:${imageTag}"
-                    echo "║     • Version: ${params.VERSION}"
+                    echo "║  🏗️  Generating web application with parameters..."
                     echo "║     • Environment: ${params.ENVIRONMENT}"
+                    echo "║     • Version: ${params.VERSION}"
                     echo "║     • Features: ${params.FEATURES}"
+                    echo "║     • Run Tests: ${params.RUN_TESTS}"
                     
-                    // Build environment info
+                    // Generate web application using demo script
                     sh '''
-                        BUILD_TIME=$(date)
-                        BUILD_HOST=$(hostname)
-                        DOCKER_VER=$(docker --version 2>/dev/null || echo 'Docker not available')
-                        
                         echo "║"
-                        echo "║  📊 Build Environment:"
-                        echo "║     • Build time: $BUILD_TIME"
-                        echo "║     • Build host: $BUILD_HOST"
-                        echo "║     • Docker version: $DOCKER_VER"
+                        echo "║  🔧 Generating web application..."
+                        python3 demo.py --generate-webapp ${ENVIRONMENT} ${VERSION} ${FEATURES} ${RUN_TESTS} "${DEPLOYMENT_NOTES}"
                     '''
                     
-                    // Feature-specific build steps
-                    echo "║"
-                    echo "║  🔧 Build Configuration:"
-                    if (params.FEATURES == "Basic") {
-                        echo "║     • Base image: alpine:latest"
-                        echo "║     • Dependencies: Minimal"
-                        echo "║     • Size: ~50MB"
-                    } else if (params.FEATURES == "Advanced") {
-                        echo "║     • Base image: ubuntu:20.04"
-                        echo "║     • Dependencies: Standard"
-                        echo "║     • Size: ~200MB"
-                    } else if (params.FEATURES == "Enterprise") {
-                        echo "║     • Base image: ubuntu:20.04"
-                        echo "║     • Dependencies: Full stack"
-                        echo "║     • Size: ~500MB"
-                    }
-                    
-                    // Environment-specific configuration
-                    echo "║"
-                    echo "║  🌍 Environment Configuration:"
-                    if (params.ENVIRONMENT == "Development") {
-                        echo "║     • Debug mode: Enabled"
-                        echo "║     • Logging: Verbose"
-                        echo "║     • Hot reload: Enabled"
-                    } else if (params.ENVIRONMENT == "Staging") {
-                        echo "║     • Debug mode: Disabled"
-                        echo "║     • Logging: Standard"
-                        echo "║     • Performance: Optimized"
-                    } else if (params.ENVIRONMENT == "Production") {
-                        echo "║     • Debug mode: Disabled"
-                        echo "║     • Logging: Minimal"
-                        echo "║     • Performance: Maximum"
-                        echo "║     • Security: Hardened"
-                    }
+                    // Show generated files
+                    sh '''
+                        echo "║"
+                        echo "║  📁 Generated Files:"
+                        if [ -d "webapp" ]; then
+                            ls -la webapp/
+                            echo "║     • Web application ready for deployment"
+                        else
+                            echo "║     • Web application generation in progress..."
+                        fi
+                    '''
                     
                     echo "║"
-                    echo "║  ✅ Container build completed successfully!"
+                    echo "║  ✅ Web application generation completed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
                 }
@@ -380,6 +348,53 @@ pipeline {
                     
                     echo "║"
                     echo "║  ✅ Deployment to ${params.ENVIRONMENT} completed successfully!"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    echo ""
+                }
+            }
+        }
+        
+        stage('🌐 Web Application Deployment') {
+            steps {
+                script {
+                    echo "🌐 Deploying web application..."
+                    
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                🌐 WEB APPLICATION DEPLOYMENT                               ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🚀 Deploying web application..."
+                    
+                    // Start web server
+                    sh '''
+                        echo "║"
+                        echo "║  🔧 Starting web server..."
+                        cd webapp
+                        nohup python3 -m http.server 8080 > webapp.log 2>&1 &
+                        WEBAPP_PID=$!
+                        echo $WEBAPP_PID > webapp.pid
+                        sleep 2
+                        
+                        echo "║     • Web server started on port 8080"
+                        echo "║     • Process ID: $WEBAPP_PID"
+                    '''
+                    
+                    // Get server info
+                    sh '''
+                        HOSTNAME=$(hostname)
+                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        
+                        echo "║"
+                        echo "║  📊 Web Application Info:"
+                        echo "║     • URL: http://$IP_ADDRESS:8080"
+                        echo "║     • Hostname: $HOSTNAME"
+                        echo "║     • Environment: ${ENVIRONMENT}"
+                        echo "║     • Features: ${FEATURES}"
+                        echo "║     • Version: ${VERSION}"
+                    '''
+                    
+                    echo "║"
+                    echo "║  ✅ Web application deployed successfully!"
                     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                     echo ""
                 }

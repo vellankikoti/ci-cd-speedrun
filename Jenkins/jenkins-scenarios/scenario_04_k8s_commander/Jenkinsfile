@@ -951,8 +951,8 @@ class K8sCommanderHandler(SimpleHTTPRequestHandler):
 
                 <div class="card">
                     <h3>🎮 Interactive Features</h3>
-                    <p><strong>Demo Mode:</strong> <span class="status">✅ Enabled</span></p>
-                    <p><strong>Lab Mode:</strong> <span class="status">✅ Enabled</span></p>
+                    <p><strong>Demo Mode:</strong> <span class="status" id="demoStatus">{'✅ Enabled' if os.environ.get('INTERACTIVE_DEMO', 'true') == 'true' else '⏸️  Disabled'}</span></p>
+                    <p><strong>Lab Mode:</strong> <span class="status" id="labStatus">{'✅ Enabled' if os.environ.get('HANDS_ON_LAB', 'true') == 'true' else '⏸️  Disabled'}</span></p>
                     <p><strong>Production Examples:</strong> <span class="status">✅ Active</span></p>
                     <p><strong>YAML Generator:</strong> <span class="status">✅ Ready</span></p>
                 </div>
@@ -1339,10 +1339,36 @@ readinessProbe:
                 }});
         }}
 
+        // Initialize UI based on parameters
+        function initializeUI() {{
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(config => {{
+                    // Hide Labs tab if hands_on_lab is false
+                    if (config.hands_on_lab === 'false') {{
+                        const labsTab = document.querySelector('button[onclick*="labs"]');
+                        const labsContent = document.getElementById('labs');
+                        if (labsTab) labsTab.style.display = 'none';
+                        if (labsContent) labsContent.style.display = 'none';
+                    }}
+
+                    // Show notice if interactive_demo is false
+                    if (config.interactive_demo === 'false') {{
+                        const overview = document.getElementById('overview');
+                        const notice = document.createElement('div');
+                        notice.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px;';
+                        notice.innerHTML = '<strong>ℹ️ Note:</strong> Interactive demonstrations are disabled. Enable INTERACTIVE_DEMO parameter for full interactivity.';
+                        overview.insertBefore(notice, overview.firstChild);
+                    }}
+                }})
+                .catch(error => console.error('Error initializing UI:', error));
+        }}
+
         setInterval(updateTime, 1000);
         setInterval(updateStats, 5000);
 
         // Initialize
+        initializeUI();
         updateTime();
         updateStats();
     </script>

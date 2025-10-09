@@ -247,10 +247,8 @@ pipeline {
                         echo "║"
                         echo "║  🔧 Generating web application..."
                         
-                        # Check if demo.py exists, if not create a simple webapp generator
-                        if [ ! -f "demo.py" ]; then
-                            echo "║     • Creating web application generator..."
-                            cat > webapp_generator.py << 'EOF'
+                        # Create a simple webapp generator
+                        cat > webapp_generator.py << 'EOF'
 #!/usr/bin/env python3
 import os
 import sys
@@ -341,30 +339,6 @@ def generate_webapp(environment, version, features, run_tests, deployment_notes)
             margin: 30px 0;
             text-align: center;
         }}
-        .demo-button {{
-            background: linear-gradient(135deg, {env_config['color']} 0%, #2c3e50 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 10px;
-        }}
-        .demo-button:hover {{ transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }}
-        .demo-output {{
-            background: white;
-            border: 2px solid {env_config['color']}30;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            min-height: 100px;
-            display: none;
-        }}
-        .demo-output.active {{ display: block; animation: fadeIn 0.5s ease-in; }}
-        @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
         .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; }}
     </style>
 </head>
@@ -455,10 +429,9 @@ if __name__ == "__main__":
         print("❌ Failed to generate web application")
         sys.exit(1)
 EOF
-                            python3 webapp_generator.py ${ENVIRONMENT} ${VERSION} ${FEATURES} ${RUN_TESTS} "${DEPLOYMENT_NOTES}"
-                        else
-                            python3 demo.py --generate-webapp ${ENVIRONMENT} ${VERSION} ${FEATURES} ${RUN_TESTS} "${DEPLOYMENT_NOTES}"
-                        fi
+                        
+                        # Run the webapp generator
+                        python3 webapp_generator.py ${ENVIRONMENT} ${VERSION} ${FEATURES} ${RUN_TESTS} "${DEPLOYMENT_NOTES}"
                     '''
                     
                     // Show generated files

@@ -785,17 +785,17 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-    return '''
+    return """
     <html>
     <head><title>CI/CD Mastery - Simple Dashboard</title></head>
     <body style="font-family: Arial; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <h1>🎓 CI/CD Mastery Dashboard</h1>
         <p>Jenkins Pipeline: Working!</p>
-        <p>Port: ''' + str(sys.argv[1] if len(sys.argv) > 1 else 5000) + '''</p>
+        <p>Port: """ + str(sys.argv[1] if len(sys.argv) > 1 else 5000) + """</p>
         <p>Status: ✅ Active</p>
     </body>
     </html>
-    '''
+    """
 
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000

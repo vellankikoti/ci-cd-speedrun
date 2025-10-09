@@ -531,14 +531,26 @@ PYEOF
                             "Development")
                                 BASE_IMAGE="python:3.11-slim"
                                 EXPOSE_PORT="8080"
+                                PACKAGE_MANAGER="apt-get"
+                                PACKAGE_UPDATE="apt-get update"
+                                PACKAGE_INSTALL="apt-get install -y"
+                                PACKAGE_CLEANUP="rm -rf /var/lib/apt/lists/*"
                                 ;;
                             "Staging")
                                 BASE_IMAGE="python:3.11-alpine"
                                 EXPOSE_PORT="8080"
+                                PACKAGE_MANAGER="apk"
+                                PACKAGE_UPDATE="apk update"
+                                PACKAGE_INSTALL="apk add --no-cache"
+                                PACKAGE_CLEANUP=""
                                 ;;
                             "Production")
                                 BASE_IMAGE="python:3.11-slim"
                                 EXPOSE_PORT="8080"
+                                PACKAGE_MANAGER="apt-get"
+                                PACKAGE_UPDATE="apt-get update"
+                                PACKAGE_INSTALL="apt-get install -y"
+                                PACKAGE_CLEANUP="rm -rf /var/lib/apt/lists/*"
                                 ;;
                         esac
                         
@@ -549,11 +561,19 @@ PYEOF
                                 FEATURE_FLAGS="--basic"
                                 ;;
                             "Advanced")
-                                EXTRA_PACKAGES="curl jq"
+                                if [ "${PACKAGE_MANAGER}" = "apk" ]; then
+                                    EXTRA_PACKAGES="curl jq"
+                                else
+                                    EXTRA_PACKAGES="curl jq"
+                                fi
                                 FEATURE_FLAGS="--advanced"
                                 ;;
                             "Enterprise")
-                                EXTRA_PACKAGES="curl jq redis-tools postgresql-client"
+                                if [ "${PACKAGE_MANAGER}" = "apk" ]; then
+                                    EXTRA_PACKAGES="curl jq redis postgresql-client"
+                                else
+                                    EXTRA_PACKAGES="curl jq redis-tools postgresql-client"
+                                fi
                                 FEATURE_FLAGS="--enterprise"
                                 ;;
                         esac
@@ -569,9 +589,9 @@ ENV FEATURES=${FEATURES}
 ENV RUN_TESTS=${RUN_TESTS}
 
 # Install system packages
-RUN apt-get update && apt-get install -y \\
+RUN ${PACKAGE_UPDATE} && ${PACKAGE_INSTALL} \\
     ${EXTRA_PACKAGES} \\
-    && rm -rf /var/lib/apt/lists/*
+    ${PACKAGE_CLEANUP}
 
 # Create app directory
 WORKDIR /app

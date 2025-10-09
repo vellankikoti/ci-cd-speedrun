@@ -601,7 +601,12 @@ EOF
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
                         sh '''
-                        # Find available port (same logic as build stage)
+                        # Clean up any existing k8s-commander containers first
+                        echo "║  🧹 Cleaning up existing containers..."
+                        docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                        docker ps -a --filter "name=k8s-commander" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+                        
+                        # Find available port
                         WEBAPP_PORT=8081
                         while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
                             WEBAPP_PORT=$((WEBAPP_PORT + 1))
@@ -613,10 +618,6 @@ EOF
                         
                         IMAGE_NAME="k8s-commander-${BUILD_NUMBER}"
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
-                        
-                        # Stop any existing container
-                        docker stop $CONTAINER_NAME 2>/dev/null || true
-                        docker rm $CONTAINER_NAME 2>/dev/null || true
                         
                         echo "║  🚀 Starting K8s Commander container..."
                         echo "║     • Image: $IMAGE_NAME"
@@ -665,17 +666,18 @@ EOF
                     echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                     
                     sh '''
-                        # Find available port (same logic as other stages)
-                        WEBAPP_PORT=8081
-                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT " || docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$WEBAPP_PORT"; do
-                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
-                            if [ $WEBAPP_PORT -gt 8090 ]; then
-                                echo "║  ❌ No available ports found (8081-8090)"
-                                exit 1
-                            fi
-                        done
-                        
+                        # Find the running container
                         CONTAINER_NAME="k8s-commander-${BUILD_NUMBER}"
+                        
+                        # Check if container is running and get its port
+                        if docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
+                            # Get the port from the running container
+                            WEBAPP_PORT=$(docker port $CONTAINER_NAME | head -1 | cut -d: -f2)
+                            echo "║  ✅ Found running container on port: $WEBAPP_PORT"
+                        else
+                            echo "║  ❌ Container $CONTAINER_NAME is not running"
+                            exit 1
+                        fi
                         
                         echo "║  🔍 Checking application health..."
                         

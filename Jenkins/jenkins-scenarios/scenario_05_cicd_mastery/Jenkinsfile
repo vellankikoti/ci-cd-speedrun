@@ -734,8 +734,8 @@ EOF
 
                         # Install Flask and start the application
                         echo "║  📦 Installing Flask dependencies..."
-                        pip3 install -r mastery-dashboard/requirements.txt > /dev/null 2>&1
-                        
+                        pip3 install -r mastery-dashboard/requirements.txt
+        
                         echo "║  🚀 Starting dynamic CI/CD Mastery dashboard..."
                         echo "║     • Mastery dashboard created"
                         echo "║     • Real-time metrics enabled"
@@ -761,9 +761,19 @@ EOF
                         
                         echo "║  🚀 Starting Flask mastery dashboard on port $DASHBOARD_PORT..."
                         cd mastery-dashboard
+                        chmod +x app.py
                         nohup python3 app.py $DASHBOARD_PORT > ../mastery-dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
                         echo $WEB_SERVER_PID > ../mastery-dashboard.pid
+                        
+                        # Verify the server started
+                        sleep 3
+                        if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
+                            echo "║  ✅ Flask server started successfully (PID: $WEB_SERVER_PID)"
+                        else
+                            echo "║  ❌ Flask server failed to start. Check mastery-dashboard.log for details."
+                            cat ../mastery-dashboard.log
+                        fi
                         
                         # Wait a moment for server to start
                         sleep 2

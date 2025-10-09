@@ -648,8 +648,8 @@ EOF
 
                         # Install Flask and start the application
                         echo "║  📦 Installing Flask dependencies..."
-                        pip3 install -r dashboard/requirements.txt > /dev/null 2>&1
-                        
+                        pip3 install -r dashboard/requirements.txt
+        
                         echo "║  🚀 Starting dynamic K8s Commander dashboard..."
                         echo "║     • Interactive dashboard created"
                         echo "║     • Real-time progress tracking enabled"
@@ -665,9 +665,19 @@ EOF
                         # Start Flask web server in background
                         echo "║  🚀 Starting Flask web server on port $DASHBOARD_PORT..."
                         cd dashboard
+                        chmod +x app.py
                         nohup python3 app.py $DASHBOARD_PORT > ../dashboard.log 2>&1 &
                         WEB_SERVER_PID=$!
                         echo $WEB_SERVER_PID > ../dashboard.pid
+                        
+                        # Verify the server started
+                        sleep 3
+                        if ps -p $WEB_SERVER_PID > /dev/null 2>&1; then
+                            echo "║  ✅ Flask server started successfully (PID: $WEB_SERVER_PID)"
+                        else
+                            echo "║  ❌ Flask server failed to start. Check dashboard.log for details."
+                            cat ../dashboard.log
+                        fi
                         
                         # Wait a moment for server to start
                         sleep 2

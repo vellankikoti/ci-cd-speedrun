@@ -250,141 +250,116 @@ pipeline {
                         # Create webapp directory
                         mkdir -p webapp
                         
-                        # Environment-specific configurations
-                        case "${ENVIRONMENT}" in
-                            "Development")
-                                ENV_COLOR="#28a745"
-                                ENV_ICON="🛠️"
-                                ENV_DESC="Development Environment"
-                                ENV_DB="Local SQLite"
-                                ENV_LOGGING="Debug"
-                                ENV_MONITORING="Basic"
-                                ENV_SECURITY="Relaxed"
-                                ;;
-                            "Staging")
-                                ENV_COLOR="#ffc107"
-                                ENV_ICON="🧪"
-                                ENV_DESC="Staging Environment"
-                                ENV_DB="PostgreSQL"
-                                ENV_LOGGING="Info"
-                                ENV_MONITORING="Full"
-                                ENV_SECURITY="Standard"
-                                ;;
-                            "Production")
-                                ENV_COLOR="#dc3545"
-                                ENV_ICON="🚀"
-                                ENV_DESC="Production Environment"
-                                ENV_DB="PostgreSQL Cluster"
-                                ENV_LOGGING="Warning"
-                                ENV_MONITORING="Advanced"
-                                ENV_SECURITY="Strict"
-                                ;;
-                        esac
-                        
-                        # Feature-specific configurations
-                        case "${FEATURES}" in
-                            "Basic")
-                                FEATURE_CAPS="User Auth,Basic CRUD,Simple Dashboard"
-                                FEATURE_CPU="1 Core"
-                                FEATURE_MEM="512MB"
-                                FEATURE_PRICE="Free"
-                                FEATURE_SCALING="Manual"
-                                FEATURE_LIST="<li>User Auth</li><li>Basic CRUD</li><li>Simple Dashboard</li>"
-                                ;;
-                            "Advanced")
-                                FEATURE_CAPS="Analytics,API Integration,Custom Dashboards"
-                                FEATURE_CPU="2 Cores"
-                                FEATURE_MEM="1GB"
-                                FEATURE_PRICE="$99/month"
-                                FEATURE_SCALING="Auto"
-                                FEATURE_LIST="<li>Analytics</li><li>API Integration</li><li>Custom Dashboards</li>"
-                                ;;
-                            "Enterprise")
-                                FEATURE_CAPS="AI/ML,Multi-tenant,Custom Workflows"
-                                FEATURE_CPU="4 Cores"
-                                FEATURE_MEM="4GB"
-                                FEATURE_PRICE="Custom"
-                                FEATURE_SCALING="Auto"
-                                FEATURE_LIST="<li>AI/ML</li><li>Multi-tenant</li><li>Custom Workflows</li>"
-                                ;;
-                        esac
-                        
-                        # Generate dynamic HTML
-                        cat > webapp/index.html << EOF
-<!DOCTYPE html>
+                        # Generate dynamic HTML using Python
+                        python3 << 'PYEOF'
+import os
+import sys
+from datetime import datetime
+
+# Get environment variables
+environment = os.environ.get('ENVIRONMENT', 'Development')
+version = os.environ.get('VERSION', '1.0.0')
+features = os.environ.get('FEATURES', 'Basic')
+run_tests = os.environ.get('RUN_TESTS', 'true')
+deployment_notes = os.environ.get('DEPLOYMENT_NOTES', 'Standard deployment')
+build_number = os.environ.get('BUILD_NUMBER', '1')
+git_commit = os.environ.get('GIT_COMMIT', 'unknown')[:8]
+
+# Environment-specific configurations
+env_configs = {
+    "Development": {"color": "#28a745", "icon": "🛠️", "desc": "Development Environment", "db": "Local SQLite", "logging": "Debug", "monitoring": "Basic", "security": "Relaxed"},
+    "Staging": {"color": "#ffc107", "icon": "🧪", "desc": "Staging Environment", "db": "PostgreSQL", "logging": "Info", "monitoring": "Full", "security": "Standard"},
+    "Production": {"color": "#dc3545", "icon": "🚀", "desc": "Production Environment", "db": "PostgreSQL Cluster", "logging": "Warning", "monitoring": "Advanced", "security": "Strict"}
+}
+
+# Feature-specific configurations
+feature_configs = {
+    "Basic": {"caps": ["User Auth", "Basic CRUD", "Simple Dashboard"], "cpu": "1 Core", "mem": "512MB", "price": "Free", "scaling": "Manual"},
+    "Advanced": {"caps": ["Analytics", "API Integration", "Custom Dashboards"], "cpu": "2 Cores", "mem": "1GB", "price": "$99/month", "scaling": "Auto"},
+    "Enterprise": {"caps": ["AI/ML", "Multi-tenant", "Custom Workflows"], "cpu": "4 Cores", "mem": "4GB", "price": "Custom", "scaling": "Auto"}
+}
+
+env_config = env_configs[environment]
+feature_config = feature_configs[features]
+
+# Generate feature list HTML
+feature_list_html = ''.join([f'<li>{cap}</li>' for cap in feature_config['caps']])
+
+# Generate HTML content
+html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jenkins Parameterized Build Demo - ${ENVIRONMENT}</title>
+    <title>Jenkins Parameterized Build Demo - {environment}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, ${ENV_COLOR}20 0%, #f8f9fa 100%);
+            background: linear-gradient(135deg, {env_config['color']}20 0%, #f8f9fa 100%);
             min-height: 100vh;
             padding: 20px;
-        }
-        .container {
+        }}
+        .container {{
             max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, ${ENV_COLOR} 0%, #2c3e50 100%);
+        }}
+        .header {{
+            background: linear-gradient(135deg, {env_config['color']} 0%, #2c3e50 100%);
             color: white;
             padding: 30px;
             text-align: center;
-        }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { font-size: 1.2em; opacity: 0.9; }
-        .content { padding: 40px; }
-        .info-grid {
+        }}
+        .header h1 {{ font-size: 2.5em; margin-bottom: 10px; }}
+        .header p {{ font-size: 1.2em; opacity: 0.9; }}
+        .content {{ padding: 40px; }}
+        .info-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
-        }
-        .info-card {
+        }}
+        .info-card {{
             background: #f8f9fa;
-            border: 2px solid ${ENV_COLOR}30;
+            border: 2px solid {env_config['color']}30;
             border-radius: 10px;
             padding: 20px;
             transition: all 0.3s ease;
-        }
-        .info-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .info-card h3 { color: ${ENV_COLOR}; margin-bottom: 15px; font-size: 1.3em; }
-        .feature-list { list-style: none; padding: 0; }
-        .feature-list li { padding: 8px 0; border-bottom: 1px solid #e9ecef; }
-        .feature-list li:before { content: '✅'; margin-right: 10px; }
-        .metrics {
+        }}
+        .info-card:hover {{ transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }}
+        .info-card h3 {{ color: {env_config['color']}; margin-bottom: 15px; font-size: 1.3em; }}
+        .feature-list {{ list-style: none; padding: 0; }}
+        .feature-list li {{ padding: 8px 0; border-bottom: 1px solid #e9ecef; }}
+        .feature-list li:before {{ content: '✅'; margin-right: 10px; }}
+        .metrics {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-top: 15px;
-        }
-        .metric { text-align: center; padding: 15px; background: white; border-radius: 8px; border: 2px solid ${ENV_COLOR}20; }
-        .metric-value { font-size: 1.5em; font-weight: bold; color: ${ENV_COLOR}; }
-        .metric-label { font-size: 0.9em; color: #6c757d; margin-top: 5px; }
-        .demo-section {
-            background: linear-gradient(135deg, ${ENV_COLOR}10 0%, #f8f9fa 100%);
-            border: 2px solid ${ENV_COLOR}30;
+        }}
+        .metric {{ text-align: center; padding: 15px; background: white; border-radius: 8px; border: 2px solid {env_config['color']}20; }}
+        .metric-value {{ font-size: 1.5em; font-weight: bold; color: {env_config['color']}; }}
+        .metric-label {{ font-size: 0.9em; color: #6c757d; margin-top: 5px; }}
+        .demo-section {{
+            background: linear-gradient(135deg, {env_config['color']}10 0%, #f8f9fa 100%);
+            border: 2px solid {env_config['color']}30;
             border-radius: 15px;
             padding: 30px;
             margin: 30px 0;
             text-align: center;
-        }
-        .docker-section {
+        }}
+        .docker-section {{
             background: #f8f9fa;
-            border: 2px solid ${ENV_COLOR}30;
+            border: 2px solid {env_config['color']}30;
             border-radius: 15px;
             padding: 30px;
             margin: 30px 0;
-        }
-        .docker-command {
+        }}
+        .docker-command {{
             background: #2c3e50;
             color: white;
             padding: 15px;
@@ -392,9 +367,9 @@ pipeline {
             font-family: monospace;
             margin: 10px 0;
             overflow-x: auto;
-        }
-        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; }
-        .status-indicator {
+        }}
+        .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; }}
+        .status-indicator {{
             display: inline-block;
             width: 12px;
             height: 12px;
@@ -402,19 +377,19 @@ pipeline {
             background: #28a745;
             margin-right: 8px;
             animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+        }}
+        @keyframes pulse {{
+            0% {{ opacity: 1; }}
+            50% {{ opacity: 0.5; }}
+            100% {{ opacity: 1; }}
+        }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>${ENV_ICON} ${ENV_DESC}</h1>
-            <p>Version ${VERSION} - Generated by Jenkins Parameterized Build</p>
+            <h1>{env_config['icon']} {env_config['desc']}</h1>
+            <p>Version {version} - Generated by Jenkins Parameterized Build</p>
             <div style="margin-top: 10px;">
                 <span class="status-indicator"></span>
                 <span>LIVE - Real-time deployment</span>
@@ -424,41 +399,41 @@ pipeline {
         <div class="content">
             <div class="info-grid">
                 <div class="info-card">
-                    <h3>🌍 Environment: ${ENVIRONMENT}</h3>
+                    <h3>🌍 Environment: {environment}</h3>
                     <ul class="feature-list">
-                        <li>Environment: ${ENVIRONMENT}</li>
-                        <li>Version: ${VERSION}</li>
-                        <li>Features: ${FEATURES}</li>
-                        <li>Tests: ${RUN_TESTS}</li>
-                        <li>Notes: ${DEPLOYMENT_NOTES}</li>
-                        <li>Database: ${ENV_DB}</li>
-                        <li>Logging: ${ENV_LOGGING}</li>
-                        <li>Security: ${ENV_SECURITY}</li>
+                        <li>Environment: {environment}</li>
+                        <li>Version: {version}</li>
+                        <li>Features: {features}</li>
+                        <li>Tests: {run_tests}</li>
+                        <li>Notes: {deployment_notes}</li>
+                        <li>Database: {env_config['db']}</li>
+                        <li>Logging: {env_config['logging']}</li>
+                        <li>Security: {env_config['security']}</li>
                     </ul>
                     <div class="metrics">
                         <div class="metric">
-                            <div class="metric-value">${FEATURE_CPU}</div>
+                            <div class="metric-value">{feature_config['cpu']}</div>
                             <div class="metric-label">CPU</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${FEATURE_MEM}</div>
+                            <div class="metric-value">{feature_config['mem']}</div>
                             <div class="metric-label">Memory</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${FEATURE_PRICE}</div>
+                            <div class="metric-value">{feature_config['price']}</div>
                             <div class="metric-label">Pricing</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="info-card">
-                    <h3>🎛️ Features: ${FEATURES}</h3>
+                    <h3>🎛️ Features: {features}</h3>
                     <ul class="feature-list">
-                        ${FEATURE_LIST}
+                        {feature_list_html}
                     </ul>
                     <div style="margin-top: 15px;">
-                        <strong>Scaling:</strong> ${FEATURE_SCALING}<br>
-                        <strong>Monitoring:</strong> ${ENV_MONITORING}
+                        <strong>Scaling:</strong> {feature_config['scaling']}<br>
+                        <strong>Monitoring:</strong> {env_config['monitoring']}
                     </div>
                 </div>
             </div>
@@ -467,22 +442,22 @@ pipeline {
                 <h3>🐳 Docker Integration</h3>
                 <p>This deployment creates a real Docker image based on your parameters:</p>
                 <div class="docker-command">
-                    docker build -t jenkins-demo-${ENVIRONMENT,,}-${VERSION} .<br>
-                    docker run -d -p 8080:8080 --name ${ENVIRONMENT,,}-app jenkins-demo-${ENVIRONMENT,,}-${VERSION}
+                    docker build -t jenkins-demo-{environment.lower()}-{version} .<br>
+                    docker run -d -p 8080:8080 --name {environment.lower()}-app jenkins-demo-{environment.lower()}-{version}
                 </div>
-                <p><strong>Image Tag:</strong> jenkins-demo-${ENVIRONMENT,,}-${VERSION}</p>
-                <p><strong>Container Name:</strong> ${ENVIRONMENT,,}-app</p>
+                <p><strong>Image Tag:</strong> jenkins-demo-{environment.lower()}-{version}</p>
+                <p><strong>Container Name:</strong> {environment.lower()}-app</p>
             </div>
             
             <div class="demo-section">
                 <h3>🎮 Real-time Interactive Demo</h3>
                 <p>This web application was generated by Jenkins parameterized builds!</p>
-                <p><strong>Parameters used:</strong> ${ENVIRONMENT} + ${FEATURES} + ${VERSION}</p>
-                <div style="background: ${ENV_COLOR}20; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                    <strong>Jenkins Action:</strong> Successfully deployed ${FEATURES} features to ${ENVIRONMENT} environment
+                <p><strong>Parameters used:</strong> {environment} + {features} + {version}</p>
+                <div style="background: {env_config['color']}20; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <strong>Jenkins Action:</strong> Successfully deployed {features} features to {environment} environment
                 </div>
                 <div style="margin-top: 20px;">
-                    <button onclick="location.reload()" style="background: ${ENV_COLOR}; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    <button onclick="location.reload()" style="background: {env_config['color']}; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
                         🔄 Refresh to see live updates
                     </button>
                 </div>
@@ -490,22 +465,28 @@ pipeline {
         </div>
         
         <div class="footer">
-            <p>Generated by Jenkins Parameterized Build - $(date)</p>
-            <p>Build Number: ${BUILD_NUMBER} | Git Commit: ${GIT_COMMIT:0:8}</p>
+            <p>Generated by Jenkins Parameterized Build - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p>Build Number: {build_number} | Git Commit: {git_commit}</p>
         </div>
     </div>
     
     <script>
         // Real-time updates
-        setInterval(function() {
+        setInterval(function() {{
             const now = new Date();
             document.querySelector('.footer p:last-child').innerHTML = 
-                'Last updated: ' + now.toLocaleTimeString() + ' | Build: ${BUILD_NUMBER}';
-        }, 1000);
+                'Last updated: ' + now.toLocaleTimeString() + ' | Build: {build_number}';
+        }}, 1000);
     </script>
 </body>
-</html>
-EOF
+</html>"""
+
+# Write HTML file
+with open('webapp/index.html', 'w') as f:
+    f.write(html_content)
+
+print("✅ Dynamic web application generated successfully!")
+PYEOF
                         
                         echo "║     • Dynamic web application generated successfully!"
                     '''

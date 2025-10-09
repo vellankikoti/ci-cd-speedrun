@@ -768,23 +768,73 @@ EOF
                         docker stop $CONTAINER_NAME 2>/dev/null || true
                         docker rm $CONTAINER_NAME 2>/dev/null || true
                         
-                        # Find available port for webapp
+                        # Clean up any existing containers that might be using ports
+                        echo "║     • Cleaning up existing containers..."
+                        docker ps -a --filter "name=.*-app" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+                        docker ps -a --filter "name=.*-app" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
+                        
+                        # Wait a moment for cleanup to complete
+                        sleep 2
+                        
+                        # Find available port for webapp (check both netstat and docker port mappings)
+                        echo "║     • Finding available port..."
                         WEBAPP_PORT=8081
-                        while netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; do
-                            WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                        MAX_ATTEMPTS=50
+                        ATTEMPTS=0
+                        
+                        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+                            # Check if port is in use by netstat
+                            if netstat -tuln 2>/dev/null | grep -q ":$WEBAPP_PORT "; then
+                                echo "║     • Port $WEBAPP_PORT in use by netstat, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Check if port is in use by Docker containers
+                            if docker ps --format "{{.Ports}}" | grep -q ":$WEBAPP_PORT->"; then
+                                echo "║     • Port $WEBAPP_PORT in use by Docker, trying next..."
+                                WEBAPP_PORT=$((WEBAPP_PORT + 1))
+                                ATTEMPTS=$((ATTEMPTS + 1))
+                                continue
+                            fi
+                            
+                            # Port is available
+                            echo "║     • Found available port: $WEBAPP_PORT"
+                            break
                         done
                         
+                        if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+                            echo "║     ❌ Could not find available port after $MAX_ATTEMPTS attempts"
+                            exit 1
+                        fi
+                        
                         # Run new container
-                        docker run -d \\
+                        echo "║     • Starting container on port $WEBAPP_PORT..."
+                        CONTAINER_ID=$(docker run -d \\
                             --name $CONTAINER_NAME \\
                             -p $WEBAPP_PORT:8080 \\
                             -e ENVIRONMENT=${ENVIRONMENT} \\
                             -e VERSION=${VERSION} \\
                             -e FEATURES=${FEATURES} \\
-                            $IMAGE_NAME || {
+                            $IMAGE_NAME) || {
                             echo "║     ❌ Docker container deployment failed"
+                            echo "║     • Check if port $WEBAPP_PORT is available"
+                            echo "║     • Check if image $IMAGE_NAME exists"
                             exit 1
                         }
+                        
+                        # Wait for container to start
+                        echo "║     • Waiting for container to start..."
+                        sleep 3
+                        
+                        # Check if container is running
+                        if ! docker ps | grep -q $CONTAINER_NAME; then
+                            echo "║     ❌ Container failed to start"
+                            echo "║     • Container logs:"
+                            docker logs $CONTAINER_NAME 2>/dev/null || true
+                            exit 1
+                        fi
                         
                         # Save port info
                         echo $WEBAPP_PORT > webapp.port

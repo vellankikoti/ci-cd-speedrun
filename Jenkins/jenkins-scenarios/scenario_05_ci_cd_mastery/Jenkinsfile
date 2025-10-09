@@ -638,6 +638,9 @@ DOCKERFILE_END
 
                             # Deploy
                             CONTAINER_NAME="prod-cicd-${BUILD_NUMBER}"
+                            # Remove any existing container with this name
+                            docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
                             if docker run -d \\
                                 --name $CONTAINER_NAME \\
                                 -p $EXTERNAL_PORT:8080 \\
@@ -645,20 +648,29 @@ DOCKERFILE_END
                                 -e TARGET_ENV="${TARGET_ENV}" \\
                                 -e APP_VERSION="${APP_VERSION}" \\
                                 -e BUILD_NUMBER="${BUILD_NUMBER}" \\
-                                $IMAGE_NAME > /dev/null 2>&1; then
+                                $IMAGE_NAME 2>&1; then
 
                                 echo "║     ✅ Deployed on port $EXTERNAL_PORT"
                                 DEPLOY_SUCCESS=true
                                 echo $EXTERNAL_PORT > webapp.port
                                 break
                             else
+                                echo "║     ⚠️  Port $EXTERNAL_PORT failed, trying next port..."
+                                # Clean up failed container
+                                docker rm -f $CONTAINER_NAME 2>/dev/null || true
                                 EXTERNAL_PORT=$((EXTERNAL_PORT + 1))
                                 ATTEMPT=$((ATTEMPT + 1))
                             fi
                         done
 
                         if [ "$DEPLOY_SUCCESS" = "false" ]; then
-                            echo "║     ❌ Deployment failed"
+                            echo "║     ❌ Deployment failed after $MAX_ATTEMPTS attempts"
+                            echo "║     Last port tried: $EXTERNAL_PORT"
+                            echo "║"
+                            echo "║  💡 Troubleshooting:"
+                            echo "║     - Check if all ports 8081-8131 are in use"
+                            echo "║     - Run: docker ps -a --filter \\"name=prod-cicd\\" to see containers"
+                            echo "║     - Clean up: docker ps -a --filter \\"name=prod-cicd\\" | xargs docker rm -f"
                             exit 1
                         fi
 

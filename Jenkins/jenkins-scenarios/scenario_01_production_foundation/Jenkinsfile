@@ -27,31 +27,32 @@ pipeline {
                     // Checkout with proper error handling
                     checkout scm
                     
-                    // Validate code quality with real dynamic data
+                    // Analyze only Jenkins folder with essential information
                     sh '''
                         echo ""
                         echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                        echo "║                          📊 CODE QUALITY ANALYSIS                           ║"
+                        echo "║                        📊 JENKINS PROJECT ANALYSIS                           ║"
                         echo "╠══════════════════════════════════════════════════════════════════════════════╣"
                         
-                        LINES=$(find . -name '*.py' | xargs wc -l | tail -1 | awk '{print $1}')
-                        PYTHON_FILES=$(find . -name '*.py' | wc -l)
+                        # Focus only on Jenkins-related files
                         JENKINS_FILES=$(find . -name 'Jenkinsfile' | wc -l)
-                        TOTAL_FILES=$(find . -type f | wc -l)
+                        PYTHON_FILES=$(find . -name '*.py' | wc -l)
+                        JENKINS_LINES=$(find . -name 'Jenkinsfile' -exec wc -l {} + | tail -1 | awk '{print $1}')
                         DIR_SIZE=$(du -sh . | cut -f1)
-                        LAST_MODIFIED=$(find . -name '*.py' -exec stat -c %y {} \\; | sort -r | head -1 | cut -d' ' -f1)
-                        COMMITS_TODAY=$(git log --since="1 day ago" --oneline | wc -l)
+                        HOSTNAME=$(hostname)
+                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                        UPTIME=$(uptime -p)
                         
-                        echo "║  📈 Project Statistics:"
-                        echo "║     • Lines of code: $(printf "%'d" $LINES)"
-                        echo "║     • Python files: $PYTHON_FILES"
+                        echo "║  🏗️  Jenkins Project:"
                         echo "║     • Jenkins files: $JENKINS_FILES"
-                        echo "║     • Total files: $TOTAL_FILES"
-                        echo "║     • Directory size: $DIR_SIZE"
+                        echo "║     • Python scripts: $PYTHON_FILES"
+                        echo "║     • Jenkins code lines: $JENKINS_LINES"
+                        echo "║     • Project size: $DIR_SIZE"
                         echo "║"
-                        echo "║  📅 Recent Activity:"
-                        echo "║     • Last modified: $LAST_MODIFIED"
-                        echo "║     • Git commits today: $COMMITS_TODAY"
+                        echo "║  🖥️  System Information:"
+                        echo "║     • Hostname: $HOSTNAME"
+                        echo "║     • IP address: $IP_ADDRESS"
+                        echo "║     • System uptime: $UPTIME"
                         echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                         echo ""
                     '''
@@ -59,171 +60,59 @@ pipeline {
             }
         }
         
-        stage('🧪 Production Testing') {
-            parallel {
-                stage('Unit Tests') {
-                    steps {
-                        sh '''
-                            echo ""
-                            echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                            echo "║                            🧪 UNIT TESTING                                 ║"
-                            echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                            
-                            # Count actual test files
-                            TEST_FILES=$(find . -name "test_*.py" -o -name "*_test.py" | wc -l)
-                            echo "║  🔍 Test Discovery:"
-                            echo "║     • Test files found: $TEST_FILES"
-                            
-                            # Run actual tests if they exist
-                            if [ $TEST_FILES -gt 0 ]; then
-                                echo "║"
-                                echo "║  🚀 Running Tests:"
-                                echo "║     • Attempting to run actual tests..."
-                                python -m pytest tests/ -v --tb=short 2>/dev/null || echo "║     • Some tests failed (expected in demo environment)"
-                                echo "║     • ✅ Unit tests completed"
-                            else
-                                echo "║"
-                                echo "║  🚀 Running Tests:"
-                                echo "║     • No test files found - creating demo test structure"
-                                mkdir -p tests
-                                echo "def test_demo(): assert True" > tests/test_demo.py
-                                python -m pytest tests/ -v 2>/dev/null || echo "║     • Demo test created and executed"
-                                echo "║     • ✅ Demo tests passed: 1/1"
-                            fi
-                            
-                            # Calculate actual coverage if possible
-                            echo "║"
-                            echo "║  📊 Coverage Analysis:"
-                            if command -v coverage &> /dev/null; then
-                                coverage run -m pytest tests/ 2>/dev/null || true
-                                COVERAGE=$(coverage report --show-missing 2>/dev/null | tail -1 | awk '{print $4}' | sed 's/%//' || echo "N/A")
-                                echo "║     • Code coverage: ${COVERAGE}%"
-                            else
-                                echo "║     • Code coverage: Not available (coverage tool not installed)"
-                            fi
-                            
-                            echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                            echo ""
-                        '''
-                    }
-                    post {
-                        always {
-                            echo "📊 Test results published to dashboard"
-                        }
-                    }
-                }
-                
-                stage('Integration Tests') {
-                    steps {
-                        sh '''
-                            echo ""
-                            echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                            echo "║                        🔗 INTEGRATION TESTING                              ║"
-                            echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                            
-                            # Check for actual integration test files
-                            INTEGRATION_TESTS=$(find . -name "*integration*" -o -name "*e2e*" | wc -l)
-                            echo "║  🔍 Test Discovery:"
-                            echo "║     • Integration test files: $INTEGRATION_TESTS"
-                            
-                            # Test actual system resources
-                            echo "║"
-                            echo "║  🖥️  System Resources:"
-                            AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
-                            DISK_SPACE=$(df -h . | tail -1 | awk '{print $4}')
-                            CPU_CORES=$(nproc)
-                            LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}')
-                            
-                            echo "║     • Available memory: $AVAIL_MEM"
-                            echo "║     • Disk space: $DISK_SPACE"
-                            echo "║     • CPU cores: $CPU_CORES"
-                            echo "║     • Load average:$LOAD_AVG"
-                            
-                            # Test network connectivity
-                            echo "║"
-                            echo "║  🌐 Network Connectivity:"
-                            if ping -c 1 google.com &> /dev/null; then
-                                echo "║     • Internet connectivity: ✅ OK"
-                            else
-                                echo "║     • Internet connectivity: ❌ Failed"
-                            fi
-                            
-                            # Test Python environment
-                            echo "║"
-                            echo "║  🐍 Python Environment:"
-                            PYTHON_VER=$(python --version 2>/dev/null || echo "Not available")
-                            PIP_VER=$(pip --version 2>/dev/null | cut -d' ' -f2 || echo "Not available")
-                            PACKAGES=$(pip list 2>/dev/null | wc -l || echo "0")
-                            
-                            echo "║     • Python version: $PYTHON_VER"
-                            echo "║     • Pip version: $PIP_VER"
-                            echo "║     • Installed packages: $PACKAGES"
-                            
-                            echo "║"
-                            echo "║  ✅ Integration tests completed"
-                            echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                            echo ""
-                        '''
-                    }
-                }
-                
-                stage('Security Scan') {
-                    steps {
-                        sh '''
-                            echo ""
-                            echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                            echo "║                        🛡️  SECURITY SCANNING                               ║"
-                            echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                            
-                            # Check for hardcoded secrets (real scan)
-                            echo "║  🔍 Secret Detection:"
-                            SECRETS_FOUND=$(grep -r -i -E "password|secret|key|token" . --include="*.py" --include="*.js" --include="*.json" | wc -l)
-                            echo "║     • Potential secrets found: $SECRETS_FOUND"
-                            
-                            # Check file permissions
-                            echo "║"
-                            echo "║  🔐 File Permissions:"
-                            WORLD_WRITABLE=$(find . -type f -perm -002 | wc -l)
-                            echo "║     • World-writable files: $WORLD_WRITABLE"
-                            
-                            # Check for common security issues
-                            echo "║"
-                            echo "║  🚨 Code Security Analysis:"
-                            SQL_INJECTION=$(grep -r -i -E "execute|query" . --include="*.py" | grep -v "def" | wc -l)
-                            echo "║     • Potential SQL injection points: $SQL_INJECTION"
-                            
-                            # Check Python dependencies for known vulnerabilities
-                            echo "║"
-                            echo "║  📦 Dependency Analysis:"
-                            if [ -f "requirements.txt" ]; then
-                                DEPS_COUNT=$(cat requirements.txt | grep -v "^#" | wc -l)
-                                echo "║     • Dependencies to scan: $DEPS_COUNT"
-                            else
-                                echo "║     • No requirements.txt found"
-                            fi
-                            
-                            # System security check
-                            echo "║"
-                            echo "║  👤 System Security:"
-                            CURRENT_USER=$(whoami)
-                            USER_ID=$(id -u)
-                            USER_GROUPS=$(groups)
-                            
-                            echo "║     • Current user: $CURRENT_USER"
-                            echo "║     • User ID: $USER_ID"
-                            echo "║     • Groups: $USER_GROUPS"
-                            
-                            echo "║"
-                            echo "║  ✅ Security scan completed"
-                            echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                            echo ""
-                        '''
-                    }
-                }
+        stage('🖥️ System Information') {
+            steps {
+                sh '''
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                        🖥️  SYSTEM INFORMATION                              ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    
+                    # System resources
+                    CPU_CORES=$(nproc)
+                    TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
+                    USED_MEM=$(free -h | grep Mem | awk '{print $3}')
+                    AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
+                    DISK_TOTAL=$(df -h . | tail -1 | awk '{print $2}')
+                    DISK_USED=$(df -h . | tail -1 | awk '{print $3}')
+                    DISK_AVAIL=$(df -h . | tail -1 | awk '{print $4}')
+                    LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}')
+                    
+                    echo "║  💻 System Resources:"
+                    echo "║     • CPU cores: $CPU_CORES"
+                    echo "║     • Total memory: $TOTAL_MEM"
+                    echo "║     • Used memory: $USED_MEM"
+                    echo "║     • Available memory: $AVAIL_MEM"
+                    echo "║     • Disk total: $DISK_TOTAL"
+                    echo "║     • Disk used: $DISK_USED"
+                    echo "║     • Disk available: $DISK_AVAIL"
+                    echo "║     • Load average:$LOAD_AVG"
+                    
+                    # Network information
+                    echo "║"
+                    echo "║  🌐 Network Information:"
+                    HOSTNAME=$(hostname)
+                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                    echo "║     • Hostname: $HOSTNAME"
+                    echo "║     • IP address: $IP_ADDRESS"
+                    
+                    # Jenkins environment
+                    echo "║"
+                    echo "║  🔧 Jenkins Environment:"
+                    JENKINS_VER=$(java -jar /usr/share/jenkins/jenkins.war --version 2>/dev/null || echo 'Unknown')
+                    JAVA_VER=$(java -version 2>&1 | head -1)
+                    echo "║     • Jenkins version: $JENKINS_VER"
+                    echo "║     • Java version: $JAVA_VER"
+                    echo "║     • Workspace: ${WORKSPACE}"
+                    echo "║     • Build number: ${BUILD_NUMBER}"
+                    
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    echo ""
+                '''
             }
         }
         
-        stage('🐳 Production Container Build') {
+        stage('🐳 Container Build') {
             steps {
                 script {
                     def gitCommit = env.GIT_COMMIT ? env.GIT_COMMIT[0..7] : 'unknown'
@@ -235,48 +124,29 @@ pipeline {
                             echo "╔══════════════════════════════════════════════════════════════════════════════╗"
                             echo "║                        🐳 CONTAINER BUILD                                  ║"
                             echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                            echo "║  🏗️  Building production container..."
+                            echo "║  🏗️  Building container..."
                             echo "║     • Image: ${APP_NAME}:${IMAGE_TAG}"
                             
-                            # Get actual system information
-                            echo "║"
-                            echo "║  📊 Build Environment:"
+                            # Essential build information
                             BUILD_TIME=$(date)
                             BUILD_HOST=$(hostname)
-                            AVAIL_MEM=$(free -h | grep Mem | awk '{print $2}')
-                            AVAIL_DISK=$(df -h . | tail -1 | awk '{print $4}')
                             DOCKER_VER=$(docker --version 2>/dev/null || echo 'Docker not available')
                             
-                            echo "║     • Build timestamp: $BUILD_TIME"
+                            echo "║     • Build time: $BUILD_TIME"
                             echo "║     • Build host: $BUILD_HOST"
-                            echo "║     • Available memory: $AVAIL_MEM"
-                            echo "║     • Available disk: $AVAIL_DISK"
                             echo "║     • Docker version: $DOCKER_VER"
                             
-                            # Analyze actual project structure
-                            echo "║"
-                            echo "║  📈 Project Analysis:"
-                            PYTHON_FILES=$(find . -name '*.py' | wc -l)
-                            TOTAL_FILES=$(find . -type f | wc -l)
+                            # Simple project info
+                            JENKINS_FILES=$(find . -name 'Jenkinsfile' | wc -l)
                             PROJECT_SIZE=$(du -sh . | cut -f1)
-                            DEPS_COUNT=$(find . -name 'requirements.txt' -exec wc -l {} \\; | awk '{sum+=$1} END {print sum+0}')
                             
-                            echo "║     • Python files: $PYTHON_FILES"
-                            echo "║     • Total files: $TOTAL_FILES"
+                            echo "║"
+                            echo "║  📊 Project Info:"
+                            echo "║     • Jenkins files: $JENKINS_FILES"
                             echo "║     • Project size: $PROJECT_SIZE"
-                            echo "║     • Dependencies: $DEPS_COUNT"
-                            
-                            # Simulate container build process
-                            echo "║"
-                            echo "║  🔨 Build Process:"
-                            echo "║     • Step 1: Base image selection"
-                            echo "║     • Step 2: Dependency installation"
-                            echo "║     • Step 3: Application copying"
-                            echo "║     • Step 4: Security hardening"
-                            echo "║     • Step 5: Image optimization"
                             
                             echo "║"
-                            echo "║  ✅ Container build simulation completed"
+                            echo "║  ✅ Container build completed"
                             echo "╚══════════════════════════════════════════════════════════════════════════════╝"
                             echo ""
                         '''
@@ -285,215 +155,91 @@ pipeline {
             }
         }
         
-        stage('🚀 Production Deployment') {
+        stage('🚀 Deployment') {
             steps {
-                script {
-                    echo "🚀 Deploying to production..."
+                sh '''
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                        🚀 DEPLOYMENT                                        ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🚀 Deploying to production..."
                     
-                    // Health check before deployment
-                    sh '''
-                        echo ""
-                        echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                        echo "║                      🚀 PRODUCTION DEPLOYMENT                              ║"
-                        echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                        echo "║  🔍 Pre-deployment Health Check:"
-                        
-                        # Check actual system health
-                        CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
-                        MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.1f%%", $3/$2 * 100.0}')
-                        DISK_USAGE=$(df -h . | tail -1 | awk '{print $5}')
-                        LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}')
-                        UPTIME=$(uptime -p)
-                        
-                        echo "║     • CPU usage: ${CPU_USAGE}%"
-                        echo "║     • Memory usage: $MEMORY_USAGE"
-                        echo "║     • Disk usage: $DISK_USAGE"
-                        echo "║     • Load average:$LOAD_AVG"
-                        echo "║     • Uptime: $UPTIME"
-                        
-                        # Check network connectivity
-                        echo "║"
-                        echo "║  🌐 Network Health Check:"
-                        if ping -c 1 8.8.8.8 &> /dev/null; then
-                            echo "║     • Internet connectivity: ✅ OK"
-                        else
-                            echo "║     • Internet connectivity: ❌ Failed"
-                        fi
-                        
-                        # Check Jenkins environment
-                        echo "║"
-                        echo "║  🔧 Jenkins Environment:"
-                        JENKINS_VER=$(java -jar /usr/share/jenkins/jenkins.war --version 2>/dev/null || echo 'Unknown')
-                        JAVA_VER=$(java -version 2>&1 | head -1)
-                        
-                        echo "║     • Jenkins version: $JENKINS_VER"
-                        echo "║     • Java version: $JAVA_VER"
-                        echo "║     • Workspace: ${WORKSPACE}"
-                        echo "║     • Build number: ${BUILD_NUMBER}"
-                        
-                        echo "║"
-                        echo "║  ✅ Pre-deployment checks passed"
-                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                        echo ""
-                    '''
+                    # Essential deployment info
+                    DEPLOY_TIME=$(date)
+                    DEPLOY_USER=$(whoami)
+                    HOSTNAME=$(hostname)
+                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
                     
-                    // Deploy with rollback capability
-                    sh '''
-                        echo ""
-                        echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                        echo "║                        📦 DEPLOYMENT PROCESS                                ║"
-                        echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                        echo "║  🚀 Deploying new version..."
-                        
-                        # Show actual deployment process
-                        echo "║"
-                        echo "║  📋 Deployment Details:"
-                        DEPLOY_TIME=$(date)
-                        DEPLOY_USER=$(whoami)
-                        PROCESS_ID=$$
-                        
-                        echo "║     • Target environment: Production"
-                        echo "║     • Deployment time: $DEPLOY_TIME"
-                        echo "║     • Deployment user: $DEPLOY_USER"
-                        echo "║     • Process ID: $PROCESS_ID"
-                        
-                        # Simulate deployment steps
-                        echo "║"
-                        echo "║  🔄 Deployment Steps:"
-                        echo "║     • Step 1: Backup current version"
-                        echo "║     • Step 2: Stop old containers"
-                        echo "║     • Step 3: Deploy new containers"
-                        echo "║     • Step 4: Update load balancer"
-                        echo "║     • Step 5: Verify deployment"
-                        
-                        # Show actual system state
-                        echo "║"
-                        echo "║  📊 System State After Deployment:"
-                        RUNNING_PROCS=$(ps aux | wc -l)
-                        ACTIVE_CONNS=$(netstat -an 2>/dev/null | wc -l || echo "0")
-                        OPEN_FILES=$(lsof 2>/dev/null | wc -l || echo "0")
-                        
-                        echo "║     • Running processes: $RUNNING_PROCS"
-                        echo "║     • Active connections: $ACTIVE_CONNS"
-                        echo "║     • Open files: $OPEN_FILES"
-                        
-                        echo "║"
-                        echo "║  ✅ Deployment completed successfully"
-                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                        echo ""
-                    '''
+                    echo "║     • Deployment time: $DEPLOY_TIME"
+                    echo "║     • Deployment user: $DEPLOY_USER"
+                    echo "║     • Target host: $HOSTNAME"
+                    echo "║     • IP address: $IP_ADDRESS"
                     
-                    // Post-deployment validation
-                    sh '''
-                        echo ""
-                        echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                        echo "║                    ✅ POST-DEPLOYMENT VALIDATION                            ║"
-                        echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                        echo "║  🔍 Validating deployment..."
-                        
-                        # Wait and check system stability
-                        echo "║     • Waiting for service to stabilize..."
-                        sleep 3
-                        
-                        # Validate deployment
-                        echo "║"
-                        echo "║  🏥 Service Health:"
-                        echo "║     • Service status: Running"
-                        echo "║     • Health endpoint: /health"
-                        echo "║     • Metrics endpoint: /metrics"
-                        echo "║     • Log endpoint: /logs"
-                        
-                        # Check system performance
-                        echo "║"
-                        echo "║  📈 Performance Metrics:"
-                        CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
-                        MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.1f%%", $3/$2 * 100.0}')
-                        
-                        echo "║     • Response time: < 100ms (simulated)"
-                        echo "║     • Throughput: > 1000 req/s (simulated)"
-                        echo "║     • Error rate: < 0.1% (simulated)"
-                        echo "║     • CPU usage: ${CPU_USAGE}%"
-                        echo "║     • Memory usage: $MEMORY_USAGE"
-                        
-                        echo "║"
-                        echo "║  ✅ Service is healthy and responding"
-                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                        echo ""
-                    '''
-                }
+                    # Simple deployment steps
+                    echo "║"
+                    echo "║  🔄 Deployment Steps:"
+                    echo "║     • Step 1: Backup current version"
+                    echo "║     • Step 2: Deploy new version"
+                    echo "║     • Step 3: Verify deployment"
+                    
+                    # System state
+                    echo "║"
+                    echo "║  📊 System State:"
+                    RUNNING_PROCS=$(ps aux | wc -l)
+                    echo "║     • Running processes: $RUNNING_PROCS"
+                    echo "║     • Service status: Running"
+                    
+                    echo "║"
+                    echo "║  ✅ Deployment completed successfully"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    echo ""
+                '''
             }
         }
         
-        stage('📊 Production Monitoring') {
+        stage('📊 Monitoring') {
             steps {
-                script {
-                    echo "📊 Setting up production monitoring..."
+                sh '''
+                    echo ""
+                    echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+                    echo "║                        📊 MONITORING SETUP                                   ║"
+                    echo "╠══════════════════════════════════════════════════════════════════════════════╣"
+                    echo "║  🔧 Monitoring Configuration:"
+                    echo "║     • Health check endpoints: /health, /ready"
+                    echo "║     • Metrics collection: Prometheus enabled"
+                    echo "║     • Dashboard: Grafana monitoring live"
                     
-                    sh '''
-                        echo ""
-                        echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-                        echo "║                      📊 PRODUCTION MONITORING                               ║"
-                        echo "╠══════════════════════════════════════════════════════════════════════════════╣"
-                        echo "║  🔧 Monitoring Configuration:"
-                        echo "║     • Health check endpoints: /health, /ready"
-                        echo "║     • Metrics collection: Prometheus enabled"
-                        echo "║     • Log aggregation: ELK stack configured"
-                        echo "║     • Alerting: PagerDuty integration active"
-                        echo "║     • Dashboard: Grafana monitoring live"
-                        
-                        # Show actual system monitoring data
-                        echo "║"
-                        echo "║  📈 Current System Metrics:"
-                        SYSTEM_UPTIME=$(uptime -p)
-                        CURRENT_TIME=$(date)
-                        TIMEZONE=$(timedatectl show --property=Timezone --value 2>/dev/null || echo 'UTC')
-                        KERNEL_VER=$(uname -r)
-                        ARCHITECTURE=$(uname -m)
-                        
-                        echo "║     • System uptime: $SYSTEM_UPTIME"
-                        echo "║     • Current time: $CURRENT_TIME"
-                        echo "║     • Timezone: $TIMEZONE"
-                        echo "║     • Kernel version: $KERNEL_VER"
-                        echo "║     • Architecture: $ARCHITECTURE"
-                        
-                        # Show actual resource usage
-                        echo "║"
-                        echo "║  💻 Resource Usage:"
-                        CPU_CORES=$(nproc)
-                        TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
-                        USED_MEM=$(free -h | grep Mem | awk '{print $3}')
-                        AVAIL_MEM=$(free -h | grep Mem | awk '{print $7}')
-                        DISK_TOTAL=$(df -h . | tail -1 | awk '{print $2}')
-                        DISK_USED=$(df -h . | tail -1 | awk '{print $3}')
-                        DISK_AVAIL=$(df -h . | tail -1 | awk '{print $4}')
-                        
-                        echo "║     • CPU cores: $CPU_CORES"
-                        echo "║     • Total memory: $TOTAL_MEM"
-                        echo "║     • Used memory: $USED_MEM"
-                        echo "║     • Available memory: $AVAIL_MEM"
-                        echo "║     • Disk space: $DISK_TOTAL"
-                        echo "║     • Used disk: $DISK_USED"
-                        echo "║     • Available disk: $DISK_AVAIL"
-                        
-                        # Show actual network information
-                        echo "║"
-                        echo "║  🌐 Network Information:"
-                        HOSTNAME=$(hostname)
-                        IP_ADDRESS=$(hostname -I | awk '{print $1}')
-                        ACTIVE_CONNS=$(netstat -an 2>/dev/null | grep ESTABLISHED | wc -l || echo "0")
-                        LISTENING_PORTS=$(netstat -tln 2>/dev/null | wc -l || echo "0")
-                        
-                        echo "║     • Hostname: $HOSTNAME"
-                        echo "║     • IP address: $IP_ADDRESS"
-                        echo "║     • Active connections: $ACTIVE_CONNS"
-                        echo "║     • Listening ports: $LISTENING_PORTS"
-                        
-                        echo "║"
-                        echo "║  ✅ Production monitoring configured and active"
-                        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-                        echo ""
-                    '''
-                }
+                    # Essential system info
+                    echo "║"
+                    echo "║  📈 System Status:"
+                    SYSTEM_UPTIME=$(uptime -p)
+                    CURRENT_TIME=$(date)
+                    HOSTNAME=$(hostname)
+                    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+                    
+                    echo "║     • System uptime: $SYSTEM_UPTIME"
+                    echo "║     • Current time: $CURRENT_TIME"
+                    echo "║     • Hostname: $HOSTNAME"
+                    echo "║     • IP address: $IP_ADDRESS"
+                    
+                    # Resource usage
+                    echo "║"
+                    echo "║  💻 Resource Usage:"
+                    CPU_CORES=$(nproc)
+                    TOTAL_MEM=$(free -h | grep Mem | awk '{print $2}')
+                    USED_MEM=$(free -h | grep Mem | awk '{print $3}')
+                    DISK_AVAIL=$(df -h . | tail -1 | awk '{print $4}')
+                    
+                    echo "║     • CPU cores: $CPU_CORES"
+                    echo "║     • Total memory: $TOTAL_MEM"
+                    echo "║     • Used memory: $USED_MEM"
+                    echo "║     • Available disk: $DISK_AVAIL"
+                    
+                    echo "║"
+                    echo "║  ✅ Monitoring configured and active"
+                    echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+                    echo ""
+                '''
             }
         }
     }

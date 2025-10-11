@@ -1,8 +1,0 @@
-.pod-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 2rem;
-  margin: 2.5rem auto 0 auto;
-  justify-items: center;
-  max-width: 1400px;
-} 

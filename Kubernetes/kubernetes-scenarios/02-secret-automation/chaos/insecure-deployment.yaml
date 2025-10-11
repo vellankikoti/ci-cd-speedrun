@@ -1,0 +1,200 @@
+# 🧨💀 CHAOS AGENT'S SECURITY NIGHTMARE
+# "Your secrets belong to me now!" - Chaos Agent
+#
+# This deployment demonstrates EVERY security anti-pattern possible:
+# ❌ Plain-text passwords visible in YAML
+# ❌ Database exposed to the internet via NodePort
+# ❌ No secret rotation (permanent compromise)
+# ❌ Root user containers (privilege escalation risk)
+# ❌ No resource limits (DoS vulnerability)
+# ❌ No network policies (unrestricted access)
+# ❌ Secrets committed to Git (permanent exposure)
+#
+# WARNING: NEVER use this in production! This is for educational purposes only.
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: insecure-todo
+  labels:
+    security-level: "none"
+    chaos-agent: "owns-this"
+
+---
+# 💀 EXPOSED SECRET #1: Plain-text MySQL Password
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-password
+  namespace: insecure-todo
+type: Opaque
+stringData:
+  # ❌ SECURITY DISASTER: Password visible in plain text!
+  # ❌ This will be committed to Git!
+  # ❌ Anyone with repo access can see this!
+  mysql-password: "super_secret_password_123"  # 🚨 EXPOSED!
+  mysql-root-password: "root_password_456"     # 🚨 EXPOSED!
+
+---
+# 💀 MySQL Database - EXPOSED TO THE INTERNET
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-mysql
+  namespace: insecure-todo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-mysql
+  template:
+    metadata:
+      labels:
+        app: insecure-mysql
+    spec:
+      # ❌ SECURITY DISASTER: Running as root user!
+      # No securityContext defined = runs as root (UID 0)
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-password
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: todo_db
+        - name: MYSQL_USER
+          value: todo_user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-password
+              key: mysql-password
+        # ❌ SECURITY DISASTER: No resource limits!
+        # Container can consume all cluster resources (DoS attack)
+        # ❌ No health checks - no way to know if it's compromised
+        # ❌ No readiness probe - might serve before ready
+
+---
+# 💀 MySQL Service - EXPOSED VIA NODEPORT (Internet accessible!)
+apiVersion: v1
+kind: Service
+metadata:
+  name: insecure-mysql-service
+  namespace: insecure-todo
+  labels:
+    app: insecure-mysql
+spec:
+  type: NodePort  # ❌ SECURITY DISASTER: Database accessible from internet!
+  selector:
+    app: insecure-mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+    nodePort: 30306  # 🚨 EXPOSED: mysql://localhost:30306
+    protocol: TCP
+
+---
+# 💀 Todo App - With Hardcoded Secrets
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-todo-app
+  namespace: insecure-todo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-todo
+  template:
+    metadata:
+      labels:
+        app: insecure-todo
+    spec:
+      # ❌ SECURITY DISASTER: No security context!
+      # Containers running as root, privileged mode possible
+      containers:
+      - name: todo-app
+        image: nginx:alpine  # Simple placeholder for demo
+        ports:
+        - containerPort: 80
+        env:
+        # ❌ SECURITY DISASTER: Database credentials in environment variables
+        # Visible via kubectl describe, container inspection
+        - name: DB_HOST
+          value: "insecure-mysql-service"
+        - name: DB_USER
+          value: "todo_user"
+        - name: DB_PASSWORD
+          value: "super_secret_password_123"  # 🚨 HARDCODED!
+        - name: API_KEY
+          value: "api_key_hardcoded_in_yaml"  # 🚨 HARDCODED!
+        - name: SECRET_TOKEN
+          value: "jwt_secret_token_12345"     # 🚨 HARDCODED!
+        # ❌ No resource limits
+        # ❌ No health checks
+        # ❌ No liveness/readiness probes
+
+---
+# 💀 Todo App Service - NodePort (Public exposure)
+apiVersion: v1
+kind: Service
+metadata:
+  name: insecure-todo-service
+  namespace: insecure-todo
+  labels:
+    app: insecure-todo
+spec:
+  type: NodePort
+  selector:
+    app: insecure-todo
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080  # 🚨 Publicly accessible
+    protocol: TCP
+
+---
+# 💀 ConfigMap with "Secrets" (Wrong approach!)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-secrets  # ❌ SECURITY DISASTER: Secrets in ConfigMap!
+  namespace: insecure-todo
+data:
+  # ❌ ConfigMaps are NOT encrypted at rest!
+  # ❌ Visible in plain text via kubectl get configmap
+  admin-password: "admin123"
+  smtp-password: "email_password_456"
+  stripe-api-key: "sk_live_EXPOSED_API_KEY"
+  aws-access-key: "AKIAIOSFODNN7EXAMPLE"
+  aws-secret-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  github-token: "ghp_EXPOSED_GITHUB_TOKEN_1234567890"
+
+---
+# Summary of Security Disasters:
+# =================================
+# 1. ❌ Plain-text passwords in YAML (committed to Git!)
+# 2. ❌ Database exposed to internet via NodePort
+# 3. ❌ Hardcoded credentials in environment variables
+# 4. ❌ Secrets stored in ConfigMap (not encrypted!)
+# 5. ❌ No secret rotation (compromise = permanent)
+# 6. ❌ Containers running as root (privilege escalation)
+# 7. ❌ No resource limits (DoS vulnerability)
+# 8. ❌ No network policies (unrestricted access)
+# 9. ❌ No Pod Security Standards enforcement
+# 10. ❌ No audit logging of secret access
+#
+# COMPLIANCE STATUS: ❌❌❌ FAILS ALL STANDARDS
+# - SOC2: FAIL (no access controls, no audit logging)
+# - PCI DSS: FAIL (credentials stored insecurely)
+# - GDPR: FAIL (no data protection)
+# - HIPAA: FAIL (no encryption at rest/transit)
+# - ISO 27001: FAIL (no security controls)
+#
+# 🚨 CHAOS AGENT WINS: "Your data belongs to me now!" 🚨

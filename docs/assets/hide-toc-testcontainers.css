@@ -1,4 +1,0 @@
-/* Hide sidebar page TOC only for TestContainers summary page */
-[data-md-page="phases__testcontainers"] .md-nav__toc {
-  display: none !important;
-} 

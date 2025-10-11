@@ -1,0 +1,177 @@
+# ✅ WORKING DEPLOYMENT - Compare this with the broken version!
+# This file has all the fixes needed for successful manual deployment
+
+---
+# First create a namespace to organize our resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vote-app
+  labels:
+    app: vote-app
+
+---
+# Vote App Deployment - Fixed!
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-app
+  namespace: vote-app  # ✅ Fixed: Added namespace
+  labels:
+    app: vote-app
+spec:
+  replicas: 2  # ✅ Best practice: multiple replicas for HA
+  selector:
+    matchLabels:
+      app: vote-app
+  template:
+    metadata:
+      labels:
+        app: vote-app
+    spec:
+      containers:
+      - name: vote-app
+        image: quay.io/sjbylo/flask-vote-app:latest
+        ports:
+        - containerPort: 8080
+        # ✅ No env vars = uses SQLite (simple and works!)
+        # ✅ Added: Resource limits prevent chaos in production
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        # ✅ Added: Health checks so K8s knows when pods are ready
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 3
+
+---
+# Vote App Service - Fixed!
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-app-service
+  namespace: vote-app  # ✅ Fixed: Added namespace
+  labels:
+    app: vote-app
+spec:
+  selector:
+    app: vote-app  # ✅ Fixed: Correct selector matches deployment labels
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 31000  # ✅ Fixed: Valid nodePort range (30000-32767)
+    protocol: TCP
+  type: NodePort
+
+---
+# Result App Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: result-app
+  namespace: vote-app
+  labels:
+    app: result-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: result-app
+  template:
+    metadata:
+      labels:
+        app: result-app
+    spec:
+      containers:
+      - name: result-app
+        image: quay.io/sjbylo/flask-vote-app:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+---
+# Result App Service - ClusterIP (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: result-app-service
+  namespace: vote-app
+  labels:
+    app: result-app
+spec:
+  selector:
+    app: result-app
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: vote-app
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: vote-app
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  type: ClusterIP

@@ -211,14 +211,106 @@ class JenkinsSetup:
         self.print_success("Jenkins image built successfully!")
         return True
     
+    def check_port_availability(self, port):
+        """Check if a port is available and identify what's using it."""
+        self.print_step(f"Checking if port {port} is available...")
+
+        # Get list of containers using this port
+        cmd = f"docker ps --filter publish={port} --format '{{{{.ID}}}}:{{{{.Names}}}}:{{{{.Ports}}}}'"
+        result = self.run_command(cmd, capture_output=True)
+
+        if result and isinstance(result, str) and result.strip():
+            conflicts = result.strip().split('\n')
+            self.print_error(f"Port {port} is already in use!")
+            self.print_info("Conflicting containers:")
+            for conflict in conflicts:
+                if conflict.strip():
+                    parts = conflict.split(':')
+                    if len(parts) >= 2:
+                        container_id, container_name = parts[0], parts[1]
+                        self.print_info(f"  • {container_name} (ID: {container_id[:12]})")
+            return False, conflicts
+
+        self.print_success(f"Port {port} is available")
+        return True, []
+
+    def cleanup_port_conflicts(self, port):
+        """Automatically stop and remove containers using the required port."""
+        self.print_header(f"Resolving Port {port} Conflicts")
+        print("=" * 50)
+
+        available, conflicts = self.check_port_availability(port)
+
+        if available:
+            self.print_success(f"No conflicts found on port {port}")
+            return True
+
+        self.print_step("Automatically cleaning up conflicting containers...")
+
+        for conflict in conflicts:
+            if not conflict.strip():
+                continue
+
+            parts = conflict.split(':')
+            if len(parts) >= 2:
+                container_id = parts[0]
+                container_name = parts[1]
+
+                self.print_step(f"Stopping container: {container_name}")
+                if self.run_command(f"docker stop {container_id}", capture_output=True, check=False):
+                    self.print_success(f"Stopped: {container_name}")
+
+                self.print_step(f"Removing container: {container_name}")
+                if self.run_command(f"docker rm {container_id}", capture_output=True, check=False):
+                    self.print_success(f"Removed: {container_name}")
+
+        # Verify port is now available
+        time.sleep(2)  # Give Docker a moment to release the port
+        available, _ = self.check_port_availability(port)
+
+        if available:
+            self.print_success(f"Port {port} is now available!")
+            return True
+        else:
+            self.print_error(f"Failed to free port {port}. Manual intervention may be required.")
+            return False
+
+    def cleanup_jenkins_resources(self):
+        """Clean up any existing Jenkins resources before setup."""
+        self.print_header("Pre-Setup Cleanup")
+        print("=" * 50)
+
+        self.print_step("Cleaning up any existing Jenkins resources...")
+
+        # Stop and remove existing Jenkins container
+        self.run_command(f"docker stop {self.jenkins_container}", "Stopping existing Jenkins container...", check=False)
+        self.run_command(f"docker rm {self.jenkins_container}", "Removing existing Jenkins container...", check=False)
+
+        # Clean up any orphaned Jenkins containers
+        orphans = self.run_command("docker ps -a --filter name=jenkins --format '{{.Names}}'", capture_output=True)
+        if orphans and isinstance(orphans, str) and orphans.strip():
+            for orphan in orphans.strip().split('\n'):
+                if orphan.strip():
+                    self.print_step(f"Removing orphaned container: {orphan}")
+                    self.run_command(f"docker stop {orphan}", check=False)
+                    self.run_command(f"docker rm {orphan}", check=False)
+
+        self.print_success("Pre-setup cleanup completed")
+        return True
+
     def start_jenkins_container(self):
         """Start the Jenkins container with proper configuration."""
         self.print_header("Starting Jenkins Container")
         print("=" * 50)
-        
-        # Stop and remove existing container if it exists
-        self.run_command(f"docker stop {self.jenkins_container}", "Stopping existing container...", check=False)
-        self.run_command(f"docker rm {self.jenkins_container}", "Removing existing container...", check=False)
+
+        # Clean up existing Jenkins resources
+        self.cleanup_jenkins_resources()
+
+        # Check and resolve port conflicts
+        if not self.cleanup_port_conflicts(self.jenkins_port):
+            self.print_error("Cannot start Jenkins due to port conflicts")
+            self.print_info("Please manually stop services using port 8080 and try again")
+            return False
         
         # Prepare Docker run command with cross-platform path handling
         workspace_mount = str(self.workspace_path)

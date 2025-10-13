@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TestContainers Magic - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        /* Scenario Cards */
+        .scenarios {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .scenario-header {
+            font-size: 32px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .scenario-description {
+            font-size: 18px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .run-button {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .run-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.5);
+        }
+
+        .run-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Results Section */
+        .results-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #4ade80;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            animation: slideIn 0.5s ease;
+        }
+
+        .step.bug {
+            border-left-color: #ef4444;
+        }
+
+        .step.caught {
+            border-left-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .step-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-result {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .step-explanation {
+            font-size: 14px;
+            opacity: 0.8;
+            font-style: italic;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .summary {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .summary-item {
+            font-size: 16px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .magic-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .comparison-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .comparison-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* Interactive Voting Section */
+        .interactive-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .voting-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .vote-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .vote-option:hover {
+            transform: translateY(-5px);
+            border-color: #4ade80;
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.3);
+        }
+
+        .vote-option.selected {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.2);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+            animation: slideIn 0.5s ease;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 2px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .alert-magic {
+            background: rgba(251, 191, 36, 0.2);
+            border: 2px solid #fbbf24;
+            color: #fbbf24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4ade80;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .scenarios {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧪 TestContainers Magic</h1>
+            <p>Interactive Demo: See Why Real Database Testing Beats Mocks</p>
+            <p style="margin-top: 10px; font-size: 16px; opacity: 0.7;">⏱️ 10 minutes • Scenario 1 of 8</p>
+        </div>
+
+        <!-- Guided Scenarios -->
+        <div class="scenarios">
+            <!-- Scenario 1: Mock Problem -->
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    ❌ Scenario 1: The Problem
+                </div>
+                <div class="scenario-description">
+                    See how mock databases can lie and let bugs slip through to production.
+                    Mocks don't enforce database constraints, giving false confidence in tests.
+                </div>
+                <button class="run-button" onclick="runScenario('mock')" id="mockButton">
+                    🚀 Run Mock Scenario
+                </button>
+            </div>
+
+            <!-- Scenario 2: TestContainers Solution -->
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    ✅ Scenario 2: The Solution
+                </div>
+                <div class="scenario-description">
+                    See how TestContainers uses real PostgreSQL with real constraints to catch bugs
+                    that mocks would miss. This is the magic moment!
+                </div>
+                <button class="run-button" onclick="runScenario('testcontainers')" id="testcontainersButton">
+                    🎯 Run TestContainers Scenario
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-title" id="resultsTitle"></div>
+            <div id="stepsContainer"></div>
+            <div class="summary" id="summaryContainer"></div>
+        </div>
+
+        <!-- Interactive Hands-On Section -->
+        <div class="interactive-section">
+            <h2 style="margin-bottom: 20px;">🎮 Hands-On: Try It Yourself!</h2>
+            <p style="margin-bottom: 20px; font-size: 16px;">
+                Vote for your favorite language, then try voting again to see TestContainers catch the duplicate!
+            </p>
+
+            <div class="voting-options">
+                <div class="vote-option" data-choice="Python" onclick="selectChoice('Python')">
+                    <div style="font-size: 48px;">🐍</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Python</div>
+                </div>
+                <div class="vote-option" data-choice="JavaScript" onclick="selectChoice('JavaScript')">
+                    <div style="font-size: 48px;">🟨</div>
+                    <div style="font-weight: bold; margin-top: 10px;">JavaScript</div>
+                </div>
+                <div class="vote-option" data-choice="Go" onclick="selectChoice('Go')">
+                    <div style="font-size: 48px;">🐹</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Go</div>
+                </div>
+                <div class="vote-option" data-choice="Rust" onclick="selectChoice('Rust')">
+                    <div style="font-size: 48px;">🦀</div>
+                    <div style="font-weight: bold; margin-top: 10px;">Rust</div>
+                </div>
+            </div>
+
+            <button class="run-button" onclick="submitVote()" id="voteButton" disabled>
+                🗳️ Submit Vote
+            </button>
+
+            <div id="voteResults"></div>
+
+            <button class="run-button" onclick="resetVotes()" style="margin-top: 20px; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);">
+                🔄 Reset & Try Again
+            </button>
+        </div>
+
+        <!-- Key Takeaways -->
+        <div class="summary" style="margin-top: 40px;">
+            <div class="summary-title">🎯 Key Takeaways</div>
+            <div class="summary-item">
+                💡 <strong>Mocks can lie</strong>: They don't enforce real database constraints
+            </div>
+            <div class="summary-item">
+                ✅ <strong>TestContainers tells the truth</strong>: Real database with real constraints
+            </div>
+            <div class="summary-item">
+                🎯 <strong>The Magic</strong>: UNIQUE constraints prevent duplicate votes in production
+            </div>
+            <div class="summary-item">
+                🚀 <strong>Best Practice</strong>: Use TestContainers for integration tests
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedChoice = null;
+
+        // Run scenario
+        async function runScenario(scenarioName) {
+            const button = document.getElementById(scenarioName + 'Button');
+            button.disabled = true;
+            button.textContent = '⏳ Running...';
+
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.classList.add('show');
+
+            document.getElementById('resultsTitle').innerHTML = '<div class="loading"><div class="spinner"></div>Running scenario...</div>';
+
+            try {
+                const response = await fetch(`/api/scenario/${scenarioName}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                displayResults(data);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('resultsTitle').textContent = 'Error running scenario';
+            } finally {
+                button.disabled = false;
+                button.textContent = scenarioName === 'mock' ? '🚀 Run Mock Scenario' : '🎯 Run TestContainers Scenario';
+            }
+        }
+
+        // Display scenario results
+        function displayResults(data) {
+            document.getElementById('resultsTitle').textContent = data.title;
+
+            const stepsContainer = document.getElementById('stepsContainer');
+            stepsContainer.innerHTML = '';
+
+            data.steps.forEach(step => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = `step ${step.status}`;
+
+                let html = `
+                    <div class="step-header">
+                        <span>Step ${step.step}: ${step.action}</span>
+                        ${step.status === 'caught' ? '<span class="magic-badge">🎯 MAGIC!</span>' : ''}
+                    </div>
+                    <div class="step-result">${step.result}</div>
+                `;
+
+                if (step.votes_count !== undefined) {
+                    html += `<div class="step-result">📊 Total votes in database: <strong>${step.votes_count}</strong></div>`;
+                }
+
+                if (step.explanation) {
+                    html += `<div class="step-explanation">${step.explanation}</div>`;
+                }
+
+                if (step.constraint) {
+                    html += `<div class="step-explanation">🔒 Constraint: ${step.constraint}</div>`;
+                }
+
+                stepDiv.innerHTML = html;
+                stepsContainer.appendChild(stepDiv);
+            });
+
+            const summaryContainer = document.getElementById('summaryContainer');
+            summaryContainer.innerHTML = `
+                <div class="summary-title">${data.scenario === 'mock' ? '💥 The Problem' : '✨ The Solution'}</div>
+                <div class="summary-item">📊 <strong>Total Votes:</strong> ${data.total_votes}</div>
+                <div class="summary-item">${data.scenario === 'mock' ? '🚨' : '✅'} <strong>Impact:</strong> ${data.impact}</div>
+                <div class="summary-item">💡 <strong>Lesson:</strong> ${data.lesson}</div>
+                ${data.magic ? `<div class="summary-item">🎯 <strong>Magic:</strong> ${data.magic}</div>` : ''}
+            `;
+
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Interactive voting
+        function selectChoice(choice) {
+            document.querySelectorAll('.vote-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            document.querySelector(`[data-choice="${choice}"]`).classList.add('selected');
+            selectedChoice = choice;
+            document.getElementById('voteButton').disabled = false;
+        }
+
+        async function submitVote() {
+            if (!selectedChoice) return;
+
+            const button = document.getElementById('voteButton');
+            button.disabled = true;
+            button.textContent = '⏳ Submitting...';
+
+            try {
+                const response = await fetch('/api/vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ choice: selectedChoice })
+                });
+
+                const data = await response.json();
+                const voteResults = document.getElementById('voteResults');
+
+                if (response.ok) {
+                    voteResults.innerHTML = `
+                        <div class="alert alert-success">
+                            ${data.message}
+                            <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                                ${data.note}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    voteResults.innerHTML = `
+                        <div class="alert alert-magic">
+                            <div style="font-size: 20px; margin-bottom: 10px;">🎯 ${data.message}</div>
+                            <div style="font-size: 16px;">${data.detail}</div>
+                            <div style="font-size: 16px; margin-top: 10px;">
+                                <strong>${data.magic_moment}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Load results
+                loadResults();
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                button.textContent = '🗳️ Submit Vote';
+            }
+        }
+
+        async function resetVotes() {
+            try {
+                const response = await fetch('/api/reset', { method: 'POST' });
+                const data = await response.json();
+
+                document.getElementById('voteResults').innerHTML = `
+                    <div class="alert alert-success">
+                        ${data.message}
+                    </div>
+                `;
+
+                document.getElementById('voteButton').disabled = false;
+                selectedChoice = null;
+                document.querySelectorAll('.vote-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+
+                loadResults();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadResults() {
+            try {
+                const response = await fetch('/api/results');
+                const data = await response.json();
+                // Could display results if needed
+            } catch (error) {
+                console.error('Error loading results:', error);
+            }
+        }
+
+        // Load results on page load
+        loadResults();
+    </script>
+</body>
+</html>

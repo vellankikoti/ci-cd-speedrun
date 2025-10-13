@@ -591,16 +591,64 @@ python3 app.py
 
 ---
 
-### Issue 8: "Page not loading in Codespaces"
+### Issue 8: "Page not loading in Codespaces" or "HTTP ERROR 502"
 
-**Problem**: Can't access http://localhost:5001 in Codespaces
+**Problem**: Can't access the app or seeing "HTTP ERROR 502" in Codespaces
 
 **Solution**:
 
-1. **Check the PORTS tab** in VS Code
-2. Make sure port 5001 is listed
-3. Click the **globe icon** next to port 5001
-4. If not visible, try: **Ports** → **Forward a Port** → Enter `5001`
+**Step 1: Check if app is running**
+```bash
+# Check if app process is running
+ps aux | grep "app.py" | grep -v grep
+
+# If not running, start it:
+python3 app.py
+```
+
+**Step 2: Verify app is responding locally**
+```bash
+# Test health endpoint
+curl http://localhost:5001/api/health
+
+# Should return: {"status":"healthy","scenario":1,...}
+# If this works, app is running fine!
+```
+
+**Step 3: Fix Codespaces port forwarding**
+
+1. **Check the PORTS tab** in VS Code (bottom panel)
+2. Look for port **5001** in the list
+3. **If port 5001 is NOT listed**:
+   - Click **"Forward a Port"** button
+   - Enter `5001`
+   - Press Enter
+
+4. **If port 5001 IS listed**:
+   - Right-click on port 5001
+   - Select **"Port Visibility"** → **"Public"** (important!)
+   - Click the **globe icon** (🌐) to open in browser
+   - Or copy the URL and open in a new tab
+
+**Step 4: Restart if needed**
+```bash
+# Stop the app (Ctrl+C in terminal)
+# Then restart:
+python3 app.py
+
+# Port should auto-forward in Codespaces
+```
+
+**Step 5: Alternative - Use Preview**
+- In the PORTS tab, right-click port 5001
+- Select **"Preview in Editor"** instead of browser
+- This opens the app inside VS Code
+
+**Common 502 causes**:
+- ❌ App not running → Run `python3 app.py`
+- ❌ Port not forwarded → Check PORTS tab
+- ❌ Port visibility is "Private" → Change to "Public"
+- ❌ Wrong URL → Use the Codespaces-generated URL from PORTS tab
 
 ---
 

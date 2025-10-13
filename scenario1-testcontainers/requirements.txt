@@ -1,0 +1,23 @@
+# Scenario 1: TestContainers Magic - Dependencies
+# ================================================
+# Real database testing that catches bugs mocks miss
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+
+# TestContainers - Real database testing
+testcontainers==4.13.2
+
+# Database Drivers
+psycopg[binary]>=3.1.0
+
+# Testing Framework
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Docker (for TestContainers)
+docker==7.0.0
+
+# Utilities
+requests==2.31.0

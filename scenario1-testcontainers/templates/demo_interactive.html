@@ -526,6 +526,7 @@
                 const response = await fetch('/api/vote', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',  // Include session cookie
                     body: JSON.stringify({ choice: selectedChoice })
                 });
 
@@ -564,12 +565,18 @@
 
         async function resetVotes() {
             try {
-                const response = await fetch('/api/reset', { method: 'POST' });
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    credentials: 'same-origin'  // Include session cookie
+                });
                 const data = await response.json();
 
                 document.getElementById('voteResults').innerHTML = `
                     <div class="alert alert-success">
                         ${data.message}
+                        <div style="margin-top: 10px; font-size: 14px;">
+                            New Session ID: ${data.new_user_id}
+                        </div>
                     </div>
                 `;
 
@@ -578,6 +585,9 @@
                 document.querySelectorAll('.vote-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
+
+                // Re-enable vote button
+                document.getElementById('voteButton').textContent = '🗳️ Submit Vote';
 
                 loadResults();
             } catch (error) {

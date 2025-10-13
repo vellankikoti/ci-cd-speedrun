@@ -1,7 +1,5 @@
 # 🧪 Scenario 1: TestContainers Magic
 
-> **Real database testing that catches bugs mocks miss**
-
 **Scenario 1 of 8** in the CI/CD Speed Run workshop. Learn how TestContainers provides real database testing that catches bugs that mocks would miss.
 
 ---
@@ -26,7 +24,13 @@ In **10 minutes**, you'll learn:
 
 ### The Scenario
 
-You're building a voting system where each user can only vote once. With mocks, your tests pass but production allows unlimited votes! TestContainers catches this bug before deployment.
+You're building a **real voting system** where:
+- Multiple users can vote from different browsers/devices
+- Each user can only vote once (enforced by database constraint)
+- With mocks, your tests pass but production allows unlimited votes!
+- TestContainers catches this bug before deployment
+
+**Perfect for GitHub Codespaces** - accessible globally, works for everyone!
 
 ---
 
@@ -137,7 +141,6 @@ You should see:
 🎯 Learning: Real database testing vs mocks
 🔧 Technology: Python + PostgreSQL + TestContainers
 ⏱️  Time: 10 minutes
-
 🚀 Pre-starting PostgreSQL container...
 ✅ PostgreSQL ready! (startup: 1.4s)
 ✅ Ready!
@@ -146,16 +149,16 @@ You should see:
 ==================================================
 ```
 
-#### Step 6: Open the Web Interface
+#### Step 6: Get Your Public URL for Sharing
 
 In Codespaces, you'll see a popup saying **"Your application running on port 5001 is available"**.
 
-- Click **"Open in Browser"** or **"Open in Preview"**
-
-Alternatively:
-- Go to the **PORTS** tab in VS Code
-- Find port **5001**
-- Click the **globe icon** to open in browser
+**To share with workshop attendees:**
+1. Go to the **PORTS** tab in VS Code
+2. Find port **5001** in the list
+3. Right-click and select **"Port Visibility"** → **"Public"**
+4. Copy the public URL (looks like `https://your-codespace-1234.github.dev`)
+5. Share this URL with your workshop attendees!
 
 #### Step 7: Experience the Magic! 🎯
 
@@ -262,10 +265,16 @@ Open http://localhost:5001 in your browser.
 **Test 2: The Magic Moment! 🎯**
 1. Try to vote again (click Submit Vote again)
 2. ✅ You should see: "You already voted!"
-3. ✅ Message should say: "Real database caught duplicate vote (UNIQUE constraint)"
+3. ✅ Message should say: "Real database UNIQUE constraint prevented duplicate vote"
 4. ✅ This is the magic moment - TestContainers caught the bug!
 
-**Test 3: Reset and Vote Again**
+**Test 3: Multiple Users (Real-World Scenario)**
+1. Open the same URL in a **new browser tab** or **incognito window**
+2. Vote for a different language (e.g., JavaScript)
+3. ✅ New vote should be recorded (different user session)
+4. ✅ This simulates multiple users voting from different devices
+
+**Test 4: Reset and Vote Again**
 1. Click **Reset All Votes**
 2. Confirm the reset
 3. ✅ Results should show 0 votes
@@ -293,10 +302,10 @@ curl http://localhost:5001/api/results
 ```
 
 ```bash
-# Test metrics endpoint
-curl http://localhost:5001/api/metrics
+# Test stats endpoint
+curl http://localhost:5001/api/stats
 
-# Expected: {"container":{...},"database":{...},"testcontainers_benefits":[...]}
+# Expected: {"total_votes":X,"unique_users":Y,"results":[...],"constraint":"UNIQUE(user_id) prevents duplicate votes"}
 ```
 
 ---
@@ -366,7 +375,22 @@ python3 tests/test_with_testcontainers.py
 
 ---
 
-#### ✅ Step 7: Demo Script Validation
+#### ✅ Step 7: Multi-User Testing (Real-World Scenario)
+
+```bash
+python3 test_multiple_users.py
+```
+
+**Expected**:
+- ✅ Shows multiple users voting from different browsers
+- ✅ Shows each user can only vote once
+- ✅ Shows same user trying to vote again (should fail)
+- ✅ Shows reset functionality
+- ✅ Shows real-world voting system behavior
+
+---
+
+#### ✅ Step 8: Demo Script Validation
 
 ```bash
 python3 demo.py
@@ -392,9 +416,10 @@ python3 demo.py
 - [ ] Reset function works
 - [ ] Health API endpoint works
 - [ ] Results API endpoint works
-- [ ] Metrics API endpoint works
+- [ ] Stats API endpoint works
 - [ ] Mock tests run and show the problem
 - [ ] TestContainers tests run and show the solution
+- [ ] Multi-user test runs successfully
 - [ ] Demo script runs successfully
 
 **If all items are checked**, Scenario 1 is working perfectly! ✅
@@ -419,7 +444,21 @@ python3 demo.py
 
 This shows a side-by-side comparison of mock vs TestContainers approaches.
 
-### Option 3: Manual Testing
+### Option 3: Test Multiple Users (Real-World Scenario)
+
+```bash
+# Run the multi-user test script
+python3 test_multiple_users.py
+```
+
+This script simulates:
+- ✅ Multiple users voting from different browsers
+- ✅ Each user can only vote once (real constraint)
+- ✅ Same user trying to vote again (should fail)
+- ✅ Reset functionality
+- ✅ Real-world voting system behavior
+
+### Option 4: Manual Testing
 
 ```bash
 # Start the app
@@ -430,10 +469,13 @@ curl -X POST http://localhost:5001/api/vote \
   -H "Content-Type: application/json" \
   -d '{"choice":"Python"}'
 
-# Try voting again (should fail)
+# Try voting again (should fail - same session)
 curl -X POST http://localhost:5001/api/vote \
   -H "Content-Type: application/json" \
   -d '{"choice":"Python"}'
+
+# Check stats
+curl http://localhost:5001/api/stats
 ```
 
 ---
@@ -684,8 +726,8 @@ scenario1-testcontainers/
 ├── setup.py                    # Cross-platform setup script
 ├── requirements.txt            # Python dependencies
 ├── Dockerfile                  # Container configuration
-├── README.md                   # This file
-├── VERIFICATION.md             # Verification report
+├── README.md                   # This comprehensive guide
+├── test_multiple_users.py      # Multi-user testing script
 ├── templates/
 │   └── voting.html            # Web interface
 └── tests/
@@ -749,6 +791,23 @@ When you try to vote twice:
 
 ---
 
+#### 4. Real-World Voting System
+
+**Session-based user identification**:
+```python
+# Each browser session gets unique ID
+if 'user_id' not in session:
+    session['user_id'] = str(uuid.uuid4())
+```
+
+**Real-world behavior**:
+- ✅ Multiple users can vote from different browsers
+- ✅ Each user can only vote once
+- ✅ Perfect for global workshops
+- ✅ No local setup required for attendees
+
+---
+
 ## 🎓 Learning Outcomes
 
 After completing this scenario, you will understand:
@@ -804,8 +863,6 @@ What you're running:
 
 ## 🤝 Contributing
 
-Found a bug or want to improve this scenario?
-
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -819,7 +876,7 @@ Need help?
 
 - **GitHub Issues**: [Create an issue](https://github.com/vellankikoti/ci-cd-speedrun/issues)
 - **Email**: vellankikoti@gmail.com
-- **Documentation**: This README and [VERIFICATION.md](VERIFICATION.md)
+- **Documentation**: This README
 
 ---
 

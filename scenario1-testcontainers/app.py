@@ -274,9 +274,12 @@ def vote():
     data = request.json
     choice = data.get('choice')
 
-    # Generate unique user ID for each vote attempt (for demo purposes)
-    # In real app, this would be actual user authentication
-    user_id = session.get('user_id', str(uuid.uuid4())[:8])
+    # Generate unique user ID for each browser session
+    # In real app, this would be proper user authentication
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    
+    user_id = session['user_id']
 
     if not choice:
         return jsonify({
@@ -304,8 +307,9 @@ def vote():
         return jsonify({
             "status": "success",
             "message": f"✅ Vote for {choice} recorded!",
-            "user_id": user_id,
-            "note": "Try voting again to see the constraint in action!"
+            "user_id": user_id[:8] + "...",  # Show partial ID for privacy
+            "note": "Your vote is secure! Try voting again to see the constraint in action!",
+            "learning": "Real database ensures each user votes only once"
         })
 
     except IntegrityError:
@@ -313,9 +317,11 @@ def vote():
         return jsonify({
             "status": "error",
             "message": "🎯 You already voted!",
-            "detail": "Real database UNIQUE constraint prevented duplicate",
+            "detail": "Real database UNIQUE constraint prevented duplicate vote",
             "magic_moment": "This is TestContainers magic!",
-            "user_id": user_id
+            "user_id": user_id[:8] + "...",  # Show partial ID for privacy
+            "learning": "Each user can only vote once - this is how real voting works!",
+            "demo_note": "Open in a new browser/incognito to vote as a different user"
         }), 400
 
     finally:
@@ -323,8 +329,89 @@ def vote():
         conn.close()
 
 @app.route('/api/reset', methods=['POST'])
-def reset():
-    """Reset votes and generate new session"""
+def reset_votes():
+    """Reset all votes for testing purposes"""
+    container = get_postgres_container()
+    conn = psycopg.connect(
+        host=container.get_container_host_ip(),
+        port=container.get_exposed_port(5432),
+        user=container.username,
+        password=container.password,
+        dbname=container.dbname
+    )
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("DELETE FROM votes")
+        conn.commit()
+        
+        return jsonify({
+            "status": "success",
+            "message": "🔄 All votes reset! You can vote again now.",
+            "learning": "This demonstrates how TestContainers makes testing easy",
+            "demo_note": "Perfect for workshop demonstrations!"
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to reset votes: {str(e)}"
+        }), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/stats')
+def get_stats():
+    """Get voting statistics for demonstration"""
+    container = get_postgres_container()
+    conn = psycopg.connect(
+        host=container.get_container_host_ip(),
+        port=container.get_exposed_port(5432),
+        user=container.username,
+        password=container.password,
+        dbname=container.dbname
+    )
+    cur = conn.cursor()
+    
+    try:
+        # Get total votes
+        cur.execute("SELECT COUNT(*) FROM votes")
+        total_votes = cur.fetchone()[0]
+        
+        # Get unique users
+        cur.execute("SELECT COUNT(DISTINCT user_id) FROM votes")
+        unique_users = cur.fetchone()[0]
+        
+        # Get votes by choice
+        cur.execute("""
+            SELECT choice, COUNT(*) as count 
+            FROM votes 
+            GROUP BY choice 
+            ORDER BY count DESC
+        """)
+        results = cur.fetchall()
+        
+        return jsonify({
+            "total_votes": total_votes,
+            "unique_users": unique_users,
+            "results": [{"choice": choice, "count": count} for choice, count in results],
+            "database": "real PostgreSQL (TestContainers)",
+            "constraint": "UNIQUE(user_id) prevents duplicate votes",
+            "learning": "Each user can only vote once - real voting system!"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to get stats: {str(e)}"
+        }), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/reset-session', methods=['POST'])
+def reset_session():
+    """Reset session for testing"""
     # Generate new session ID
     session['user_id'] = str(uuid.uuid4())[:8]
 

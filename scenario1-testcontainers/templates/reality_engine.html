@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 The Reality Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: 95vh;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .tagline {
+            font-size: 1.2em;
+            color: #ffaa00;
+            font-style: italic;
+        }
+
+        .panel {
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .panel h2 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #ffaa00;
+            padding-bottom: 10px;
+        }
+
+        /* Lifecycle Feed */
+        .lifecycle-feed {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .event {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #00ff00;
+            background: #1a1a1a;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .event.starting { border-left-color: #ffaa00; }
+        .event.ready { border-left-color: #00ff00; }
+        .event.chaos { border-left-color: #ff0000; }
+        .event.rate_limited { border-left-color: #ff6600; }
+        .event.vote_blocked { border-left-color: #ff00ff; }
+
+        .event-time {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .event-type {
+            color: #ffaa00;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .event-container {
+            color: #00ffff;
+            font-weight: bold;
+        }
+
+        /* Leaderboard */
+        .leaderboard {
+            margin-top: 20px;
+        }
+
+        .vote-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            border-left: 4px solid #00ff00;
+        }
+
+        .vote-bar {
+            height: 30px;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 1em;
+            font-family: inherit;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #00ff00;
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        button.active {
+            background: #ffaa00;
+            border-color: #ffaa00;
+            color: #000;
+        }
+
+        button.danger {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        button.danger:hover {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        /* QR Code */
+        .qr-section {
+            text-align: center;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .instruction {
+            color: #ffaa00;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        /* Status */
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .status.on {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .status.off {
+            background: #666;
+            color: #fff;
+        }
+
+        .magic-moment {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔥 THE REALITY ENGINE 🔥</h1>
+            <p class="tagline">"If your tests don't face reality, your users will."</p>
+        </div>
+
+        <!-- Left Panel: Lifecycle Feed -->
+        <div class="panel">
+            <h2>📡 Container Lifecycle (Live)</h2>
+            <div id="lifecycle-feed" class="lifecycle-feed">
+                <div class="event">
+                    <span class="event-time">Waiting for events...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Leaderboard + Controls -->
+        <div class="panel">
+            <h2>📊 Voting Results (Real-Time)</h2>
+            <div id="leaderboard" class="leaderboard">
+                <p style="color: #666;">No votes yet. Scan QR code to vote!</p>
+            </div>
+
+            <h2 style="margin-top: 30px;">🎮 Presenter Controls</h2>
+            <div class="controls">
+                <button id="rate-limit-btn" onclick="toggleRateLimit()">
+                    Enable Rate Limit (Redis)
+                    <span class="status off" id="rate-status">OFF</span>
+                </button>
+                <button id="chaos-btn" class="danger" onclick="toggleChaos()">
+                    Inject Chaos (Kill Redis)
+                    <span class="status off" id="chaos-status">OFF</span>
+                </button>
+                <button onclick="resetAll()">🔄 Reset Everything</button>
+                <button onclick="openQR()">📱 Show QR Code</button>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <p class="instruction">👆 Audience: Pull out your phones!</p>
+                <div class="qr-code" id="qr-code">
+                    <canvas id="qr-canvas"></canvas>
+                </div>
+                <p style="color: #00ffff; font-size: 1.1em;" id="vote-url">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Event Stream
+        const eventSource = new EventSource('/api/events');
+        const feedDiv = document.getElementById('lifecycle-feed');
+
+        eventSource.onmessage = function(e) {
+            const event = JSON.parse(e.data);
+            addEvent(event);
+        };
+
+        function addEvent(event) {
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `event ${event.type}`;
+
+            const time = new Date(event.timestamp).toLocaleTimeString();
+            const details = JSON.stringify(event.details);
+
+            eventDiv.innerHTML = `
+                <div>
+                    <span class="event-time">${time}</span>
+                    <span class="event-type">${event.type}</span>
+                    <span class="event-container">${event.container}</span>
+                </div>
+                <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                    ${details}
+                </div>
+            `;
+
+            feedDiv.insertBefore(eventDiv, feedDiv.firstChild);
+
+            // Add magic moment effect for key events
+            if (event.type === 'vote_blocked' || event.type === 'chaos') {
+                eventDiv.classList.add('magic-moment');
+                setTimeout(() => eventDiv.classList.remove('magic-moment'), 3000);
+            }
+
+            // Keep only last 20 events visible
+            while (feedDiv.children.length > 20) {
+                feedDiv.removeChild(feedDiv.lastChild);
+            }
+        }
+
+        // Stats Polling
+        function updateStats() {
+            fetch('/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    const leaderboard = document.getElementById('leaderboard');
+
+                    if (data.results.length === 0) {
+                        leaderboard.innerHTML = '<p style="color: #666;">No votes yet. Scan QR to vote!</p>';
+                        return;
+                    }
+
+                    const maxVotes = Math.max(...data.results.map(r => r.count));
+
+                    leaderboard.innerHTML = data.results.map(r => {
+                        const percentage = maxVotes > 0 ? (r.count / maxVotes * 100) : 0;
+                        return `
+                            <div class="vote-option">
+                                <div style="flex: 1;">
+                                    <div style="font-size: 1.2em; margin-bottom: 5px;">${r.choice}</div>
+                                    <div class="vote-bar" style="width: ${percentage}%">
+                                        ${r.count} votes
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Update feature status
+                    document.getElementById('rate-status').textContent = data.rate_limit_enabled ? 'ON' : 'OFF';
+                    document.getElementById('rate-status').className = data.rate_limit_enabled ? 'status on' : 'status off';
+
+                    document.getElementById('chaos-status').textContent = data.chaos_mode ? 'ON' : 'OFF';
+                    document.getElementById('chaos-status').className = data.chaos_mode ? 'status on' : 'status off';
+                });
+        }
+
+        setInterval(updateStats, 1000);
+        updateStats();
+
+        // Controls
+        async function toggleRateLimit() {
+            const res = await fetch('/api/control/rate-limit', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+        }
+
+        async function toggleChaos() {
+            const res = await fetch('/api/control/chaos', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+        }
+
+        async function resetAll() {
+            if (confirm('Reset all votes and events?')) {
+                const res = await fetch('/api/control/reset', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                location.reload();
+            }
+        }
+
+        function openQR() {
+            window.open('/qr', 'QR Code', 'width=800,height=600');
+        }
+
+        // Generate QR Code
+        window.onload = function() {
+            const url = window.location.origin + '/qr';
+            document.getElementById('vote-url').textContent = url;
+
+            new QRCode(document.getElementById('qr-canvas'), {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+            });
+        };
+    </script>
+</body>
+</html>

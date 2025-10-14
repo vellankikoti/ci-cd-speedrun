@@ -7,6 +7,25 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-blue?style=flat&logo=kubernetes)](https://kubernetes.io)
 [![Jenkins](https://img.shields.io/badge/Jenkins-Ready-blue?style=flat&logo=jenkins)](https://jenkins.io)
 [![Testcontainers](https://img.shields.io/badge/Testcontainers-Ready-blue?style=flat&logo=testcontainers)](https://testcontainers.com)
+[![Codespaces](https://img.shields.io/badge/Codespaces-Ready-green?style=flat&logo=github)](./CODESPACES.md)
+
+---
+
+## 🚀 Quick Start Options
+
+### Option A: GitHub Codespaces (RECOMMENDED - Zero Setup!)
+
+**Just 3 commands. No installation required!**
+
+1. Open this repo in Codespaces
+2. Navigate to a scenario (e.g., `cd scenario1-testcontainers`)
+3. Run the workshop: `python3 setup.py && source venv/bin/activate && python3 workshop.py`
+
+📚 **[Full Codespaces Guide →](CODESPACES.md)**
+
+### Option B: Local Setup (Traditional)
+
+Install dependencies and run locally. See [Prerequisites](#-prerequisites) below.
 
 ---
 

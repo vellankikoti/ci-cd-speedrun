@@ -498,6 +498,96 @@ def health():
             "error": str(e)
         }), 500
 
+@app.route('/api/metrics')
+def get_metrics():
+    """Get comprehensive TestContainers and database metrics"""
+    container = get_postgres_container()
+    
+    # Get real database statistics
+    conn = psycopg.connect(
+        host=container.get_container_host_ip(),
+        port=container.get_exposed_port(5432),
+        user=container.username,
+        password=container.password,
+        dbname=container.dbname
+    )
+    cur = conn.cursor()
+    
+    # Get database stats
+    cur.execute("SELECT version()")
+    db_version = cur.fetchone()[0]
+    
+    cur.execute("SELECT COUNT(*) FROM votes")
+    total_votes = cur.fetchone()[0]
+    
+    cur.execute("SELECT COUNT(DISTINCT user_id) FROM votes")
+    unique_users = cur.fetchone()[0]
+    
+    # Get table constraints - simplified query
+    cur.execute("""
+        SELECT 
+            conname,
+            contype,
+            pg_get_constraintdef(oid) as definition
+        FROM pg_constraint 
+        WHERE conrelid = 'votes'::regclass
+    """)
+    constraints = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        "container": {
+            "image": "postgres:15-alpine",
+            "status": "running",
+            "startup_time": f"{container_start_time:.1f}s" if container_start_time else "N/A",
+            "memory_usage": "~50-100 MB",
+            "size": "77 MB (Alpine)",
+            "architecture": "x86_64",
+            "docker_api_version": "1.41+"
+        },
+        "database": {
+            "version": db_version,
+            "constraints": [row[2] for row in constraints],
+            "constraint_details": [
+                {
+                    "name": row[0],
+                    "type": row[1],
+                    "definition": row[2]
+                } for row in constraints
+            ],
+            "transactions": "ACID compliant",
+            "isolation": "READ COMMITTED",
+            "total_votes": total_votes,
+            "unique_users": unique_users,
+            "constraint_enforcement": "Active"
+        },
+        "testcontainers_benefits": [
+            "Real database constraints (UNIQUE, PRIMARY KEY)",
+            "Fast container startup (~1-3s)",
+            "Automatic cleanup and isolation",
+            "Production-like testing environment",
+            "No mock limitations or false positives",
+            "Real SQL query execution",
+            "Transaction isolation testing",
+            "Database migration testing"
+        ],
+        "technical_details": {
+            "container_runtime": "Docker",
+            "database_driver": "psycopg3",
+            "connection_pooling": "Single connection (demo)",
+            "transaction_isolation": "READ COMMITTED",
+            "constraint_types": ["UNIQUE", "PRIMARY KEY", "NOT NULL"],
+            "test_containers_version": "4.13.2"
+        },
+        "learning": "This is why TestContainers beats mocks!",
+        "impact": "✅ In production: Only one vote per user, business logic protected",
+        "lesson": "TestContainers catches bugs that mocks would miss",
+        "magic": "🎯 The UNIQUE constraint prevented duplicate votes!",
+        "next_level": "Try adding FOREIGN KEY constraints or complex business rules!"
+    })
+
 if __name__ == '__main__':
     print("🧪 Scenario 1: TestContainers Magic - Interactive Demo")
     print("=" * 60)

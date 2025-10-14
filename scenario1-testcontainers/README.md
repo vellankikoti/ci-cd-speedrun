@@ -1,926 +1,495 @@
-# 🧪 Scenario 1: TestContainers Magic
+# 🔥 Scenario 1: TestContainers Magic
 
-**Scenario 1 of 8** in the CI/CD Speed Run workshop. Learn how TestContainers provides real database testing that catches bugs that mocks would miss.
+> **"If your tests don't face reality, your users will."**
+
+An interactive workshop designed for **GitHub Codespaces** where 100+ participants can run simultaneously without Docker image download delays or WiFi congestion.
 
 ---
 
-## 📋 Quick Links
+## 🚀 START HERE (GitHub Codespaces - RECOMMENDED)
 
-- [GitHub Codespaces Setup](#-github-codespaces-setup-recommended) ⭐ **START HERE**
-- [Local Setup](#-local-setup-alternative)
-- [How to Validate](#-validation--testing-checklist)
-- [Troubleshooting](#-troubleshooting)
+### Why Codespaces?
+
+✅ **No Docker image downloads** - Pre-downloaded in container
+✅ **No WiFi congestion** - No 100 people downloading 500MB images
+✅ **No setup time** - Ready in 30 seconds
+✅ **Same environment** - Everyone has identical setup
+✅ **Just works** - No "it works on my machine"
+
+---
+
+## 📋 Quick Start (3 Steps)
+
+### Step 1: Open in Codespaces (10 seconds)
+
+**Option A: From GitHub UI**
+1. Click **Code** button
+2. Click **Codespaces** tab
+3. Click **Create codespace on main**
+
+**Option B: Direct URL**
+```
+https://github.com/YOUR-USERNAME/YOUR-REPO/codespaces
+```
+
+### Step 2: Wait for Setup (20 seconds)
+
+Codespace automatically:
+- ✅ Installs Python 3.11
+- ✅ Sets up Docker-in-Docker
+- ✅ **Pre-downloads postgres:15-alpine & redis:7-alpine** (NO WiFi delay!)
+- ✅ Installs Python dependencies
+- ✅ Forwards port 5001
+
+You'll see: `🎉 Codespace setup complete!`
+
+### Step 3: Choose Your Experience
+
+```bash
+cd scenario1-testcontainers
+```
+
+Then pick one:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  🎭 THE SHOW (8 minutes)                                    │
+│     For: Live presentation, audience participation         │
+│     Run: python3 reality_engine.py                         │
+│     URL: Codespaces auto-forwards to browser               │
+│                                                             │
+│  ────────────────────────────────────────────────────────  │
+│                                                             │
+│  🎓 THE WORKSHOP (15 minutes)                               │
+│     For: Self-paced learning, deep understanding           │
+│     Run: python3 workshop.py                               │
+│                                                             │
+│  ────────────────────────────────────────────────────────  │
+│                                                             │
+│  🧪 THE TESTS (See the proof)                               │
+│     Fantasy: pytest tests/test_fantasy.py -v               │
+│     Reality: pytest tests/test_reality.py -v               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 🎯 What You'll Learn
 
-In **10 minutes**, you'll learn:
+1. **Reality beats mocks** - Real databases catch bugs mocks miss
+2. **Confidence is a feature** - Disposable infrastructure = zero flake
+3. **Resilience is testable** - Prove graceful failure & recovery
 
-1. **The Problem**: Why mock databases give false confidence
-2. **The Solution**: How TestContainers provides real database testing
-3. **The Magic Moment**: See real constraints catch bugs that mocks miss
-4. **Best Practices**: Production-ready integration testing
+**The Core Concept:**
 
-### The Scenario
+```python
+# ❌ Mock - NO constraints
+db.insert_vote("user123", "Python")
+db.insert_vote("user123", "Python")  # ✅ Passes (BUG!)
 
-You're building a **real voting system** where:
-- Multiple users can vote from different browsers/devices
-- Each user can only vote once (enforced by database constraint)
-- With mocks, your tests pass but production allows unlimited votes!
-- TestContainers catches this bug before deployment
-
-**Perfect for GitHub Codespaces** - accessible globally, works for everyone!
-
----
-
-## ⚡ GitHub Codespaces Setup (RECOMMENDED)
-
-### Option 1: One-Click Setup (Easiest)
-
-If you're in GitHub Codespaces, everything is already set up! Just run:
-
-```bash
-# Navigate to scenario 1
-cd scenario1-testcontainers
-
-# Run setup (creates venv, installs dependencies, tests Docker)
-python3 setup.py
-
-# Start the application
-python3 app.py
-```
-
-That's it! Open http://localhost:5001 in your browser.
-
----
-
-### Option 2: Step-by-Step Setup (If you want to understand each step)
-
-#### Step 1: Open Terminal in Codespaces
-
-Click on **Terminal** → **New Terminal** in VS Code.
-
-#### Step 2: Navigate to Scenario 1
-
-```bash
-cd scenario1-testcontainers
-```
-
-#### Step 3: Verify Prerequisites
-
-Check Python and Docker are available:
-
-```bash
-# Check Python version (should be 3.11+)
-python3 --version
-
-# Check Docker is running (should show "CONTAINER ID" header)
-docker ps
-```
-
-Expected output:
-```
-Python 3.11+ (or higher)
-CONTAINER ID   IMAGE   ...
-```
-
-#### Step 4: Run Setup Script
-
-This script creates a virtual environment, installs dependencies, and tests TestContainers:
-
-```bash
-python3 setup.py
-```
-
-You should see:
-```
-🧪 Scenario 1: TestContainers Magic - Setup
-==================================================
-⚡ CI/CD Speed Run - PyCon ES 2025
-🐍 Pure Python Setup - Cross Platform
-
-🐍 Checking Python version...
-✅ Python 3.X.X - Compatible
-🐳 Checking Docker...
-✅ Docker found: Docker version X.X.X
-✅ Docker is running
-✅ All prerequisites met
-
-📦 Creating virtual environment...
-✅ Virtual environment created
-📚 Installing dependencies...
-✅ Dependencies installed successfully
-
-🧪 Testing TestContainers...
-✅ TestContainers imports successful
-✅ PostgreSQL test successful: PostgreSQL 15.X
-✅ TestContainers test passed!
-
-🎉 Setup Complete!
-==================================================
-✅ All checks passed
-✅ Dependencies installed
-✅ TestContainers working
-
-🚀 Ready to run Scenario 1!
-```
-
-#### Step 5: Start the Application
-
-```bash
-python3 app.py
-```
-
-You should see:
-```
-🧪 Scenario 1: TestContainers Magic
-==================================================
-⚡ CI/CD Speed Run - PyCon ES 2025
-
-🎯 Learning: Real database testing vs mocks
-🔧 Technology: Python + PostgreSQL + TestContainers
-⏱️  Time: 10 minutes
-🚀 Pre-starting PostgreSQL container...
-✅ PostgreSQL ready! (startup: 1.4s)
-✅ Ready!
-📊 App: http://localhost:5001
-🎮 Try voting twice to see the magic!
-==================================================
-```
-
-#### Step 6: Get Your Public URL for Sharing
-
-In Codespaces, you'll see a popup saying **"Your application running on port 5001 is available"**.
-
-**To share with workshop attendees:**
-1. Go to the **PORTS** tab in VS Code
-2. Find port **5001** in the list
-3. Right-click and select **"Port Visibility"** → **"Public"**
-4. Copy the public URL (looks like `https://your-codespace-1234.github.dev`)
-5. Share this URL with your workshop attendees!
-
-#### Step 7: Experience the Magic! 🎯
-
-1. **Vote for a language** (Python, JavaScript, Go, or Rust)
-2. **Try to vote again** → 🎯 **MAGIC MOMENT!** Real database catches the duplicate!
-3. **See the difference** between mock and TestContainers approaches
-4. **Explore the metrics** to understand the benefits
-
----
-
-## 🖥️ Local Setup (Alternative)
-
-### Prerequisites
-
-Before you begin, ensure you have:
-
-- **Python 3.11+** ([Download](https://www.python.org/downloads/))
-- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop/))
-- **Git** (for cloning)
-
-### Setup Steps
-
-```bash
-# 1. Clone the repository (if not already cloned)
-git clone https://github.com/vellankikoti/ci-cd-speedrun.git
-cd ci-cd-speedrun/scenario1-testcontainers
-
-# 2. Run setup
-python3 setup.py
-
-# 3. Start the application
-python3 app.py
-
-# 4. Open your browser
-open http://localhost:5001
+# ✅ TestContainers - REAL constraints
+with PostgresContainer("postgres:15-alpine") as pg:
+    cursor.execute("INSERT ...")  # ✅ First succeeds
+    cursor.execute("INSERT ...")  # ❌ BLOCKED! (Caught!)
 ```
 
 ---
 
-## ✅ Validation & Testing Checklist
+## 🎭 The Show: Reality Engine (8-Min Demo)
 
-### Quick Validation (2 minutes)
+**Perfect for presenting to an audience in Codespaces**
 
-Use this checklist to confirm everything is working:
-
-#### ✅ Step 1: Setup Validation
+### Run It
 
 ```bash
-cd scenario1-testcontainers
-python3 setup.py
+python3 reality_engine.py
 ```
 
-**Expected**:
-- ✅ Python version check passes
-- ✅ Docker check passes
-- ✅ Virtual environment created
-- ✅ Dependencies installed
-- ✅ TestContainers test passes
+**What happens:**
+- Codespaces shows popup: "Application available on port 5001"
+- Click **Open in Browser** → Dashboard opens
+- QR code displayed → Audience scans with phones
+- Split screen: Lifecycle events (left) + Voting (right)
 
-**If any step fails**, see [Troubleshooting](#-troubleshooting) below.
+### The Experience
+
+| Time | What Happens | Audience Sees |
+|------|-------------|---------------|
+| 0:00 | Cold open | "Tests were green. Monday: outage." |
+| 1:30 | QR voting | Everyone votes on phones → Try twice! |
+| 2:00 | Magic moment | "You already voted!" → UNIQUE constraint blocked it |
+| 3:30 | Test comparison | Fantasy (lie) vs Reality (truth) |
+| 4:30 | Chaos | Kill Redis → System continues → **Resilience!** |
+| 7:30 | Mic drop | "If tests don't face reality, users will." |
+
+### Presenter Controls
+
+- **Enable Rate Limit** → Spins up Redis, enforces 3 req/min
+- **Inject Chaos** → Kills Redis, shows graceful degradation
+- **Reset Everything** → Clean slate for next demo
+
+### QR Code for Audience
+
+**In Codespaces:**
+- Dashboard shows QR automatically
+- Audience scans → Opens `/qr` page
+- Phones hit **real PostgreSQL** with **real UNIQUE constraints**
+- Try voting twice → Second vote **BLOCKED!** ← Magic moment
 
 ---
 
-#### ✅ Step 2: Application Validation
+## 🎓 The Workshop: Interactive CLI (15-Min Learning)
+
+**Perfect for self-paced deep learning**
+
+### Run It
 
 ```bash
-python3 app.py
+python3 workshop.py
 ```
 
-**Expected**:
-- ✅ PostgreSQL container starts (~1-3 seconds)
-- ✅ App runs on http://localhost:5001
-- ✅ No error messages
+### What Happens
 
-**To verify**:
-1. You should see "PostgreSQL ready!" message
-2. App should say "Running on http://0.0.0.0:5001"
+**Section 1: The Problem (5 min)**
+- See mock tests pass with duplicate votes (the lie)
+
+**Section 2: The Magic (5 min)**
+- PostgreSQL container starts in <2s (pre-downloaded!)
+- Real constraint blocks duplicates (the truth)
+- Watch containers in real-time
+
+**Section 3: Comparison (2 min)**
+- Side-by-side: Mock vs TestContainers
+
+**Section 4: Hands-On (3 min)**
+- Write your own test
+- E-commerce SKU uniqueness
+
+### Watch Containers (Optional)
+
+**Open a 2nd terminal:**
+
+```bash
+python3 watch_containers.py
+```
+
+See containers appear/disappear in real-time!
 
 ---
 
-#### ✅ Step 3: Web Interface Validation
+## 🧪 The Tests: Fantasy vs Reality
 
-Open http://localhost:5001 in your browser.
-
-**Expected to see**:
-- ✅ Beautiful purple gradient page
-- ✅ Title: "🧪 TestContainers Magic"
-- ✅ Four voting options (Python, JavaScript, Go, Rust)
-- ✅ Submit Vote button
-- ✅ Live Results section
-- ✅ Mock vs TestContainers Demo section
-- ✅ TestContainers Metrics section
-
----
-
-#### ✅ Step 4: Core Functionality Validation
-
-**Test 1: First Vote**
-1. Click on **Python** (or any language)
-2. Click **Submit Vote**
-3. ✅ You should see: "Vote for Python recorded!"
-4. ✅ Results should show: Python: 1
-
-**Test 2: The Magic Moment! 🎯**
-1. Try to vote again (click Submit Vote again)
-2. ✅ You should see: "You already voted!"
-3. ✅ Message should say: "Real database UNIQUE constraint prevented duplicate vote"
-4. ✅ This is the magic moment - TestContainers caught the bug!
-
-**Test 3: Multiple Users (Real-World Scenario)**
-1. Open the same URL in a **new browser tab** or **incognito window**
-2. Vote for a different language (e.g., JavaScript)
-3. ✅ New vote should be recorded (different user session)
-4. ✅ This simulates multiple users voting from different devices
-
-**Test 4: Reset and Vote Again**
-1. Click **Reset All Votes**
-2. Confirm the reset
-3. ✅ Results should show 0 votes
-4. Vote for a different language
-5. ✅ New vote should be recorded
-
----
-
-#### ✅ Step 5: API Validation
-
-Test the API endpoints:
+### Run Both
 
 ```bash
-# Test health endpoint
-curl http://localhost:5001/api/health
+# The lie (mocks allow duplicates)
+pytest tests/test_fantasy.py -v
 
-# Expected: {"status":"healthy","scenario":1,"database":"connected","testcontainers":"working"}
-```
+# The truth (TestContainers blocks duplicates)
+pytest tests/test_reality.py -v
 
-```bash
-# Test results endpoint
-curl http://localhost:5001/api/results
-
-# Expected: {"results":[...],"total_votes":X,"database":"real PostgreSQL (TestContainers)"}
-```
-
-```bash
-# Test stats endpoint
-curl http://localhost:5001/api/stats
-
-# Expected: {"total_votes":X,"unique_users":Y,"results":[...],"constraint":"UNIQUE(user_id) prevents duplicate votes"}
-```
-
----
-
-#### ✅ Step 6: Testing Validation
-
-**Test with Mocks (Shows the Problem)**
-
-```bash
-cd scenario1-testcontainers
-python3 tests/test_with_mock.py
-```
-
-**Expected output**:
-```
-❌ MOCK DATABASE TESTING - THE PROBLEM
-==================================================
-📝 Test 1: First vote
-   Result: ✅ PASS
-   Votes in mock: 1
-
-📝 Test 2: Duplicate vote (should fail in production)
-   Result: ✅ PASS
-   Votes in mock: 2
-   ⚠️  PROBLEM: Mock allows duplicate vote!
-
-📝 Test 3: Multiple duplicates
-   Vote 3: ✅ PASS
-   Vote 4: ✅ PASS
-   Vote 5: ✅ PASS
-   Total votes in mock: 5
-   ⚠️  PROBLEM: Same user voted 5 times!
-```
-
-✅ **This demonstrates the problem**: Mocks allow unlimited votes!
-
----
-
-**Test with TestContainers (Shows the Solution)**
-
-```bash
-python3 tests/test_with_testcontainers.py
-```
-
-**Expected output**:
-```
-✅ TESTCONTAINERS TESTING - THE SOLUTION
-==================================================
-🚀 Starting real PostgreSQL container...
-✅ PostgreSQL ready! (startup: 2.3s)
-
-📝 Test 1: First vote
-   Result: ✅ PASS
-   Votes in database: 1
-
-📝 Test 2: Duplicate vote (should fail)
-   Result: ❌ FAIL
-   🎯 MAGIC: Real database caught duplicate vote!
-   Votes in database: 1
-
-📝 Test 3: Different user, same choice
-   Result: ✅ PASS
-   Total votes in database: 2
-```
-
-✅ **This demonstrates the solution**: TestContainers prevents duplicate votes!
-
----
-
-#### ✅ Step 7: Multi-User Testing (Real-World Scenario)
-
-```bash
-python3 test_multiple_users.py
-```
-
-**Expected**:
-- ✅ Shows multiple users voting from different browsers
-- ✅ Shows each user can only vote once
-- ✅ Shows same user trying to vote again (should fail)
-- ✅ Shows reset functionality
-- ✅ Shows real-world voting system behavior
-
----
-
-#### ✅ Step 8: Demo Script Validation
-
-```bash
-python3 demo.py
-```
-
-**Expected**:
-- ✅ Shows mock problem demonstration
-- ✅ Shows TestContainers solution demonstration
-- ✅ Shows side-by-side comparison
-- ✅ All with clear output and explanations
-
----
-
-### Complete Validation Checklist
-
-- [ ] Setup script runs successfully
-- [ ] App starts without errors
-- [ ] PostgreSQL container starts (~1-3 seconds)
-- [ ] Web interface loads at http://localhost:5001
-- [ ] Can vote successfully (first time)
-- [ ] Duplicate vote is blocked (magic moment! 🎯)
-- [ ] Results update in real-time
-- [ ] Reset function works
-- [ ] Health API endpoint works
-- [ ] Results API endpoint works
-- [ ] Stats API endpoint works
-- [ ] Mock tests run and show the problem
-- [ ] TestContainers tests run and show the solution
-- [ ] Multi-user test runs successfully
-- [ ] Demo script runs successfully
-
-**If all items are checked**, Scenario 1 is working perfectly! ✅
-
----
-
-## 🧪 Additional Testing Options
-
-### Option 1: Run All Tests with pytest
-
-```bash
-cd scenario1-testcontainers
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Compare side-by-side
 pytest tests/ -v
 ```
 
-### Option 2: Run Interactive Demo
-
-```bash
-python3 demo.py
+**Output:**
 ```
+test_fantasy.py::test_duplicate_vote_should_fail ✅ PASSED (LIE!)
+test_reality.py::test_duplicate_vote_is_blocked ✅ PASSED (TRUTH!)
 
-This shows a side-by-side comparison of mock vs TestContainers approaches.
-
-### Option 3: Test Multiple Users (Real-World Scenario)
-
-```bash
-# Run the multi-user test script
-python3 test_multiple_users.py
-```
-
-This script simulates:
-- ✅ Multiple users voting from different browsers
-- ✅ Each user can only vote once (real constraint)
-- ✅ Same user trying to vote again (should fail)
-- ✅ Reset functionality
-- ✅ Real-world voting system behavior
-
-### Option 4: Manual Testing
-
-```bash
-# Start the app
-python3 app.py
-
-# In another terminal, test the API
-curl -X POST http://localhost:5001/api/vote \
-  -H "Content-Type: application/json" \
-  -d '{"choice":"Python"}'
-
-# Try voting again (should fail - same session)
-curl -X POST http://localhost:5001/api/vote \
-  -H "Content-Type: application/json" \
-  -d '{"choice":"Python"}'
-
-# Check stats
-curl http://localhost:5001/api/stats
+Fantasy: 3 passed in 0.01s (all green, all wrong)
+Reality: 4 passed in 1.90s (green means proof!)
 ```
 
 ---
 
-## 🐳 Docker Testing (Optional)
+## 🏗️ How It Works (Architecture)
 
-### Build and Run with Docker
-
-```bash
-# Build the Docker image
-docker build -t scenario1-testcontainers .
-
-# Run the container
-docker run -p 5001:5001 -v /var/run/docker.sock:/var/run/docker.sock scenario1-testcontainers
-
-# Open http://localhost:5001
+```
+Your Browser (Codespaces forwarded)
+    ↕
+Flask App (reality_engine.py)
+    ↕
+PostgreSQL Container (pre-downloaded!)
+    - UNIQUE constraint on user_id
+    - Blocks duplicate votes
+    - Real production behavior
 ```
 
-**Note**: The `-v /var/run/docker.sock:/var/run/docker.sock` is required for TestContainers to work inside Docker.
+**Key Point:** PostgreSQL image is **pre-downloaded** when Codespace starts. No waiting, no WiFi congestion!
 
 ---
 
-## 🔧 Troubleshooting
+## 🔧 Codespaces-Specific Features
 
-### Issue 1: "Python version not compatible"
+### Automatic Port Forwarding
 
-**Problem**: Python version is less than 3.11
+When you run `python3 reality_engine.py`:
+1. Codespaces detects port 5001
+2. Shows notification: "Application available"
+3. Click **Open in Browser** → Dashboard opens
+4. Share URL with audience for QR voting
 
-**Solution**:
+### Pre-Downloaded Docker Images
+
+`.devcontainer/setup.sh` runs on Codespace creation:
 ```bash
-# Check your Python version
-python3 --version
-
-# If < 3.11, install Python 3.11+ from:
-# https://www.python.org/downloads/
+docker pull postgres:15-alpine  # Downloaded once, used by all
+docker pull redis:7-alpine      # No WiFi delay during workshop!
 ```
 
----
+### Split Terminal Setup
 
-### Issue 2: "Docker not found or not running"
-
-**Problem**: Docker is not installed or not running
-
-**Solution**:
-
-**For GitHub Codespaces**:
-```bash
-# Docker should already be installed and running
-# Try restarting the Codespace if Docker is not working
 ```
-
-**For Local Setup**:
-```bash
-# 1. Install Docker Desktop from:
-#    https://www.docker.com/products/docker-desktop/
-
-# 2. Start Docker Desktop
-
-# 3. Verify Docker is running:
-docker ps
-
-# Should show "CONTAINER ID" header
+┌──────────────────────────────────────────┐
+│ Terminal 1    │ Terminal 2               │
+│ Workshop      │ Container Monitor        │
+│               │                          │
+│ $ python3     │ $ python3                │
+│   reality_    │   watch_containers.py    │
+│   engine.py   │                          │
+│               │ 🔍 Live container feed   │
+└──────────────────────────────────────────┘
 ```
 
 ---
 
-### Issue 3: "Virtual environment already exists"
+## 🛠️ All Python Scripts (No Bash!)
 
-**Problem**: Setup script finds existing venv
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `setup.py` | One-time environment setup | Auto-run by Codespaces |
+| `reality_engine.py` | 8-min theatrical demo | Presenting to audience |
+| `workshop.py` | 15-min interactive learning | Self-paced exploration |
+| `watch_containers.py` | Real-time container monitor | Optional 2nd terminal |
+| `cleanup.py` | Remove all containers/cache | Between demos or after workshop |
 
-**Solution**:
+**No shell scripts = Works everywhere (Windows, Mac, Linux, Codespaces)**
+
+---
+
+## 🧹 Cleanup (After Workshop)
+
 ```bash
-# Remove old virtual environment
-rm -rf venv
+python3 cleanup.py
+```
 
-# Run setup again
-python3 setup.py
+**What it does:**
+- Stops Flask apps
+- Removes all TestContainers
+- Removes PostgreSQL & Redis containers
+- Cleans orphaned networks/volumes
+- Clears pytest cache
+
+---
+
+## 📊 Performance in Codespaces
+
+**With Pre-Downloaded Images:**
+
+| Action | Time | Notes |
+|--------|------|-------|
+| Codespace startup | 30s | One-time setup |
+| Image pull | 0s | Already downloaded! |
+| PostgreSQL start | 1-2s | Fast! |
+| Redis start | 1s | Instant! |
+| Workshop runtime | 15min | Smooth experience |
+
+**Why This Matters:**
+- **100 participants** × **0 seconds image download** = **No WiFi congestion!**
+- Everyone starts at the same time
+- No "waiting for Docker" delays
+- Professional workshop experience
+
+---
+
+## 🎓 Workshop Flow (For Instructors)
+
+### Before Workshop (5 minutes)
+
+```bash
+# 1. Open Codespace
+# 2. Verify setup
+cd scenario1-testcontainers
+docker images | grep postgres  # Should see postgres:15-alpine
+docker images | grep redis     # Should see redis:7-alpine
+
+# 3. Test run
+python3 reality_engine.py     # Verify it starts
+# Ctrl+C to stop
+
+# 4. Ready!
+```
+
+### During Workshop (15 minutes)
+
+```bash
+# Option A: Live demo
+python3 reality_engine.py
+# Share Codespaces URL for QR voting
+# Run through 8-minute show
+
+# Option B: Self-paced
+python3 workshop.py
+# Participants follow along
+```
+
+### After Workshop (2 minutes)
+
+```bash
+# Cleanup
+python3 cleanup.py
+
+# Verify clean
+docker ps  # Should show nothing
 ```
 
 ---
 
-### Issue 4: "Port 5001 already in use"
+## 🔧 Troubleshooting (Codespaces)
 
-**Problem**: Another application is using port 5001
+### Port Not Forwarding?
 
-**Solution**:
+**Solution:**
+1. Go to **PORTS** tab (next to Terminal)
+2. Find port 5001
+3. Right-click → **Port Visibility** → **Public**
+4. Click **globe icon** to open
+
+### Containers Not Starting?
+
+**Solution:**
 ```bash
-# Find what's using port 5001
-lsof -i :5001  # macOS/Linux
-netstat -ano | findstr :5001  # Windows
+# Check Docker
+docker ps  # Should work (auto-available in Codespaces)
 
-# Kill the process or change the port in app.py (line 354):
-# app.run(host='0.0.0.0', port=5002, debug=True)
-```
+# Check images
+docker images | grep postgres  # Should see postgres:15-alpine
 
----
-
-### Issue 5: "TestContainers connection failed"
-
-**Problem**: TestContainers can't connect to Docker
-
-**Solution**:
-```bash
-# Check Docker socket permissions
-ls -la /var/run/docker.sock
-
-# If permission denied, try:
-sudo chmod 666 /var/run/docker.sock  # Linux
-
-# Or run with sudo (not recommended):
-sudo python3 app.py
-```
-
----
-
-### Issue 6: "Module not found" errors
-
-**Problem**: Dependencies not installed
-
-**Solution**:
-```bash
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
-
-# Install dependencies manually
-pip install -r requirements.txt
-
-# Verify installation
-pip list | grep flask
-pip list | grep testcontainers
-pip list | grep psycopg
-```
-
----
-
-### Issue 7: "PostgreSQL container won't start"
-
-**Problem**: Container startup fails
-
-**Solution**:
-```bash
-# Check Docker logs
-docker logs $(docker ps -q -f ancestor=postgres:15-alpine)
-
-# Pull the image manually
+# If missing, manually pull
 docker pull postgres:15-alpine
+```
 
-# Clean up old containers
-docker rm -f $(docker ps -aq)
+### QR Code Not Working?
 
-# Try again
-python3 app.py
+**Solution:**
+- QR code uses Codespaces forwarded URL automatically
+- Make sure port 5001 is set to **Public** visibility
+- Share the URL from PORTS tab with audience
+
+---
+
+## 🎯 Key Concepts & Best Practices
+
+### Production Parity
+
+```python
+# ❌ Mock: Simulates, doesn't enforce
+mock.insert()  # Always succeeds
+
+# ✅ Reality: Same engine as production
+cursor.execute("INSERT ...")  # Real constraints!
+```
+
+### Hermetic Testing
+
+```python
+def test_a():
+    with PostgresContainer() as pg:  # Fresh!
+        # Isolated, no state pollution
+
+def test_b():
+    with PostgresContainer() as pg:  # Fresh again!
+        # Each test independent
+```
+
+### Fast Enough to Matter
+
+```bash
+$ time pytest tests/test_reality.py
+# 1.90 seconds total (including container startup!)
+# Fast enough for CI, fast enough for local dev
 ```
 
 ---
 
-### Issue 8: "Page not loading in Codespaces" or "HTTP ERROR 502"
+## 📚 Resources
 
-**Problem**: Can't access the app or seeing "HTTP ERROR 502" in Codespaces
-
-**Solution**:
-
-**Step 1: Check if app is running**
-```bash
-# Check if app process is running
-ps aux | grep "app.py" | grep -v grep
-
-# If not running, start it:
-python3 app.py
-```
-
-**Step 2: Verify app is responding locally**
-```bash
-# Test health endpoint
-curl http://localhost:5001/api/health
-
-# Should return: {"status":"healthy","scenario":1,...}
-# If this works, app is running fine!
-```
-
-**Step 3: Fix Codespaces port forwarding**
-
-1. **Check the PORTS tab** in VS Code (bottom panel)
-2. Look for port **5001** in the list
-3. **If port 5001 is NOT listed**:
-   - Click **"Forward a Port"** button
-   - Enter `5001`
-   - Press Enter
-
-4. **If port 5001 IS listed**:
-   - Right-click on port 5001
-   - Select **"Port Visibility"** → **"Public"** (important!)
-   - Click the **globe icon** (🌐) to open in browser
-   - Or copy the URL and open in a new tab
-
-**Step 4: Restart if needed**
-```bash
-# Stop the app (Ctrl+C in terminal)
-# Then restart:
-python3 app.py
-
-# Port should auto-forward in Codespaces
-```
-
-**Step 5: Alternative - Use Preview**
-- In the PORTS tab, right-click port 5001
-- Select **"Preview in Editor"** instead of browser
-- This opens the app inside VS Code
-
-**Common 502 causes**:
-- ❌ App not running → Run `python3 app.py`
-- ❌ Port not forwarded → Check PORTS tab
-- ❌ Port visibility is "Private" → Change to "Public"
-- ❌ Wrong URL → Use the Codespaces-generated URL from PORTS tab
+- **TestContainers Python:** https://testcontainers-python.readthedocs.io/
+- **GitHub Codespaces:** https://docs.github.com/en/codespaces
+- **Workshop Repository:** [Your GitHub link]
 
 ---
 
-### Issue 9: "Tests failing"
+## ❓ FAQ
 
-**Problem**: Tests don't pass
+**Q: Why Codespaces instead of local?**
+A: For workshops with 100+ participants, Codespaces eliminates:
+- Docker image download delays (pre-downloaded)
+- WiFi congestion (everyone pulling 500MB images)
+- "Works on my machine" issues (identical environments)
 
-**Solution**:
+**Q: Do I need a GitHub Codespaces subscription?**
+A: Free tier includes 60 hours/month (enough for multiple workshops)
+
+**Q: Can I still run locally?**
+A: Yes! Just run `python3 setup.py` and follow along. But Codespaces is highly recommended for workshops.
+
+**Q: What if Codespaces is slow?**
+A: Unlikely! Images are pre-downloaded. If it happens, check `.devcontainer/setup.sh` ran successfully.
+
+---
+
+## 🎉 The Promise
+
+After this scenario:
+
+✅ You'll never trust mock-only tests
+✅ You'll understand production parity viscerally
+✅ You'll test with real infrastructure confidently
+✅ You'll remember: **"If tests don't face reality, users will."**
+
+---
+
+## 🚀 Ready? Open in Codespaces!
+
 ```bash
-# Make sure Docker is running
-docker ps
+# In Codespaces terminal
+cd scenario1-testcontainers
 
-# Activate virtual environment
-source venv/bin/activate
+# Pick your experience
+python3 reality_engine.py  # The Show (8 min)
+python3 workshop.py        # The Workshop (15 min)
+pytest tests/ -v           # The Tests (compare)
 
-# Run tests with more verbosity
-python3 tests/test_with_testcontainers.py
-
-# Check for specific error messages
+# Dive in! 🔥
 ```
 
 ---
 
-## 📚 Understanding the Code
-
-### File Structure
+## 📁 File Structure
 
 ```
 scenario1-testcontainers/
-├── app.py                      # Main Flask application
-├── demo.py                     # CLI demonstration script
-├── run.py                      # One-command runner
-├── setup.py                    # Cross-platform setup script
-├── requirements.txt            # Python dependencies
-├── Dockerfile                  # Container configuration
-├── README.md                   # This comprehensive guide
-├── test_multiple_users.py      # Multi-user testing script
+├── README.md                 📚 This file (Codespaces-optimized!)
+├── reality_engine.py         🎭 8-min show (with pre-flight checks)
+├── workshop.py               🎓 15-min workshop
+├── tests/
+│   ├── test_fantasy.py       ❌ Mocks (the lie)
+│   └── test_reality.py       ✅ TestContainers (truth)
 ├── templates/
-│   └── voting.html            # Web interface
-└── tests/
-    ├── test_with_mock.py      # Mock database tests (shows problem)
-    └── test_with_testcontainers.py  # Real tests (shows solution)
+│   ├── reality_engine.html   Dashboard
+│   └── qr_vote.html          Mobile voting
+├── setup.py                  Environment setup
+├── requirements.txt          Python dependencies
+├── cleanup.py                🧹 Cleanup script (Python!)
+└── watch_containers.py       👀 Container monitor (Python!)
+
+../.devcontainer/
+├── devcontainer.json         Codespaces config
+└── setup.sh                  Pre-download Docker images
 ```
 
-### Key Concepts
-
-#### 1. Mock Database Problem
-
-**test_with_mock.py** demonstrates how mocks can lie:
-
-```python
-class MockDatabase:
-    def execute(self, query, params=None):
-        # Mock ALWAYS allows inserts - no constraint checking!
-        self.votes.append({'user_id': params[0], 'choice': params[1]})
-        return True  # ❌ Always succeeds, even for duplicates!
-```
-
-**Result**: Tests pass, but production allows unlimited votes! 💥
-
----
-
-#### 2. TestContainers Solution
-
-**test_with_testcontainers.py** shows real database testing:
-
-```python
-with PostgresContainer("postgres:15-alpine") as postgres:
-    conn = psycopg.connect(...)
-
-    # First vote succeeds
-    submit_vote(conn, "user1", "Python")  # ✅
-
-    # Second vote fails - REAL DATABASE CONSTRAINT!
-    submit_vote(conn, "user1", "Python")  # ❌ Caught by UNIQUE constraint!
-```
-
-**Result**: Test catches the bug before production! ✅
-
----
-
-#### 3. The Magic Moment 🎯
-
-The **UNIQUE constraint** in the database:
-
-```sql
-CREATE TABLE votes (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(100) UNIQUE NOT NULL,  -- 🎯 This catches duplicates!
-    choice VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-When you try to vote twice:
-- **Mock**: Allows it (bug slips through)
-- **TestContainers**: Blocks it (bug caught!)
-
----
-
-#### 4. Real-World Voting System
-
-**Session-based user identification**:
-```python
-# Each browser session gets unique ID
-if 'user_id' not in session:
-    session['user_id'] = str(uuid.uuid4())
-```
-
-**Real-world behavior**:
-- ✅ Multiple users can vote from different browsers
-- ✅ Each user can only vote once
-- ✅ Perfect for global workshops
-- ✅ No local setup required for attendees
-
----
-
-## 🎓 Learning Outcomes
-
-After completing this scenario, you will understand:
-
-### Problems with Mock Databases ❌
-
-1. **No constraint enforcement** - Mocks don't enforce UNIQUE, PRIMARY KEY, etc.
-2. **No real SQL behavior** - Mocks don't test actual database logic
-3. **False confidence** - Tests pass but production fails
-4. **Miss real bugs** - Data integrity issues slip through
-
-### Benefits of TestContainers ✅
-
-1. **Real database constraints** - Actual PostgreSQL with real constraints
-2. **Real SQL behavior** - Tests actual database logic and queries
-3. **Real confidence** - If tests pass, production will work
-4. **Catch real bugs** - Data integrity issues caught before production
-5. **Fast startup** - Containers start in ~1-3 seconds
-6. **Automatic cleanup** - No manual database setup/teardown
-
-### Best Practices Learned
-
-1. Use TestContainers for integration tests
-2. Test with production-like databases
-3. Verify constraints work correctly
-4. Catch bugs before they reach production
-5. Automate database testing
-
----
-
-## 🚀 Next Steps
-
-After completing Scenario 1:
-
-1. **✅ Mark complete**: Update your progress in the dashboard
-2. **🎯 Move to Scenario 2**: Docker Optimization (2.5GB → 150MB)
-3. **📖 Explore more**: Try modifying the database schema
-4. **🧪 Experiment**: Add new constraints and test them
-
----
-
-## 📊 Performance Metrics
-
-What you're running:
-
-- **Container**: PostgreSQL 15 Alpine (77 MB)
-- **Startup Time**: ~1-3 seconds
-- **Memory Usage**: ~50-100 MB
-- **Response Time**: <100ms for API calls
-- **Test Execution**: ~5-10 seconds
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## 📞 Support
-
-Need help?
-
-- **GitHub Issues**: [Create an issue](https://github.com/vellankikoti/ci-cd-speedrun/issues)
-- **Email**: vellankikoti@gmail.com
-- **Documentation**: This README
-
----
-
-## 📝 Additional Resources
-
-### Official Documentation
-
-- [TestContainers Python](https://testcontainers-python.readthedocs.io/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [Docker Documentation](https://docs.docker.com/)
-- [psycopg3 Documentation](https://www.psycopg.org/psycopg3/)
-
-### Related Topics
-
-- Integration testing best practices
-- Database constraint design
-- Docker container management
-- CI/CD pipeline testing
-
----
-
-## 🌟 Key Takeaways
-
-### Remember These Points
-
-1. **Mocks can lie** - They don't test real database behavior
-2. **TestContainers tells the truth** - Real database, real constraints
-3. **Constraints are your friends** - They prevent data integrity bugs
-4. **Test like production** - Use production-like databases in tests
-5. **Catch bugs early** - Integration tests catch bugs before deployment
-
-### The Magic Moment 🎯
-
-When the real database catches a duplicate vote that mocks would miss - that's the power of TestContainers!
-
----
-
-**Ready to experience TestContainers magic? Let's go! 🚀**
-
-**Start here**: [GitHub Codespaces Setup](#-github-codespaces-setup-recommended)
-
-*This scenario demonstrates why real database testing beats mock testing - catch bugs before they reach production!*
-
----
-
-**Made with ❤️ for PyCon ES 2025**
+**All Python. No shell scripts. Works everywhere.** ✨

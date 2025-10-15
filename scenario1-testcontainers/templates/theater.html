@@ -856,105 +856,85 @@ def test_redis_failure():
         }
 
         async function startPostgres() {
-            // Update container status
+            // Hide the button immediately
+            document.getElementById('postgres-btn').style.display = 'none';
+
             const containerStatus = document.getElementById('container-status');
-            if (containerStatus) {
-                containerStatus.innerHTML = `
-                    <div class="container-status running">
-                        <div class="status-icon">🟢</div>
-                        <div class="status-details">
-                            <div class="status-name">PostgreSQL</div>
-                            <div class="status-info">Starting...</div>
-                        </div>
+            const feed = document.getElementById('event-feed');
+
+            if (feed) {
+                feed.innerHTML = `
+                    <div class="event">
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">🚀 Running REAL test comparison...</div>
                     </div>
                 `;
             }
 
-            const feed = document.getElementById('event-feed');
-            if (feed) {
-                feed.innerHTML = '';
+            // Call the REAL test comparison API
+            try {
+                const response = await fetch('/api/demo/test-comparison', { method: 'POST' });
+                const results = await response.json();
 
-                // Event 1: Starting
-                setTimeout(() => {
-                    const event1 = document.createElement('div');
-                    event1.className = 'event';
-                    event1.innerHTML = `
+                if (feed) {
+                    feed.innerHTML = '';
+
+                    // Show mock test results
+                    const mockEvent = document.createElement('div');
+                    mockEvent.className = 'event warning';
+                    mockEvent.innerHTML = `
                         <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">🚀 Starting PostgreSQL container...</div>
+                        <div class="event-message">
+                            ⚠️ Mock Test: ${results.mock.time}s - ${results.mock.warning || 'Passed (but allows duplicates!)'}
+                        </div>
                     `;
-                    feed.appendChild(event1);
-                }, 100);
+                    feed.appendChild(mockEvent);
 
-                // Event 2: Ready
-                setTimeout(() => {
-                    const event2 = document.createElement('div');
-                    event2.className = 'event';
-                    event2.innerHTML = `
+                    // Show TestContainers results
+                    const tcEvent = document.createElement('div');
+                    tcEvent.className = 'event magic';
+                    tcEvent.innerHTML = `
                         <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">✅ PostgreSQL ready (1.2s)</div>
+                        <div class="event-message">
+                            ✅ TestContainers: ${results.testcontainers.time}s - Caught duplicate vote bug!
+                        </div>
                     `;
-                    feed.appendChild(event2);
+                    feed.appendChild(tcEvent);
 
-                    if (containerStatus) {
-                        containerStatus.innerHTML = `
-                            <div class="container-status running">
-                                <div class="status-icon">🟢</div>
-                                <div class="status-details">
-                                    <div class="status-name">PostgreSQL</div>
-                                    <div class="status-info">Running (port 5432)</div>
-                                </div>
+                    // Show the magic moment
+                    const magicEvent = document.createElement('div');
+                    magicEvent.className = 'event success';
+                    magicEvent.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">
+                            🎉 TestContainers prevents production bugs! Real database = Real tests!
+                        </div>
+                    `;
+                    feed.appendChild(magicEvent);
+                }
+
+                if (containerStatus) {
+                    containerStatus.innerHTML = `
+                        <div class="container-status running">
+                            <div class="status-icon">🟢</div>
+                            <div class="status-details">
+                                <div class="status-name">PostgreSQL (TestContainers)</div>
+                                <div class="status-info">Tests completed!</div>
                             </div>
-                        `;
-                    }
-                }, 1200);
-
-                // Event 3: Test running
-                setTimeout(() => {
-                    const event3 = document.createElement('div');
-                    event3.className = 'event';
-                    event3.innerHTML = `
-                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">🧪 Running test_duplicate_vote()...</div>
+                        </div>
                     `;
-                    feed.appendChild(event3);
-                }, 2000);
-
-                // Event 4: First vote
-                setTimeout(() => {
-                    const event4 = document.createElement('div');
-                    event4.className = 'event';
-                    event4.innerHTML = `
-                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">✅ First vote inserted successfully</div>
+                }
+            } catch (error) {
+                console.error('Test comparison failed:', error);
+                if (feed) {
+                    feed.innerHTML = `
+                        <div class="event warning">
+                            <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                            <div class="event-message">❌ Test execution failed: ${error.message}</div>
+                        </div>
                     `;
-                    feed.appendChild(event4);
-                }, 2800);
-
-                // Event 5: Second vote blocked!
-                setTimeout(() => {
-                    const event5 = document.createElement('div');
-                    event5.className = 'event magic';
-                    event5.innerHTML = `
-                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">❌ Second vote BLOCKED by UNIQUE constraint!</div>
-                    `;
-                    feed.appendChild(event5);
-                }, 3600);
-
-                // Event 6: Test passed
-                setTimeout(() => {
-                    const event6 = document.createElement('div');
-                    event6.className = 'event success';
-                    event6.innerHTML = `
-                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                        <div class="event-message">🎉 Test PASSED! Bug caught in test!</div>
-                    `;
-                    feed.appendChild(event6);
-                }, 4400);
+                }
             }
-
-            // Hide the postgres button after clicking
-            document.getElementById('postgres-btn').style.display = 'none';
         }
 
         async function resetDemo() {

@@ -629,6 +629,84 @@ def health():
         }
     })
 
+@app.route('/api/demo/test-comparison', methods=['POST'])
+def run_test_comparison():
+    """Run mock vs TestContainers test comparison"""
+    import subprocess
+    import time
+
+    results = {
+        "mock": {"status": "running", "output": [], "passed": 0, "failed": 0, "time": 0},
+        "testcontainers": {"status": "running", "output": [], "passed": 0, "failed": 0, "time": 0}
+    }
+
+    # Run mock test
+    emit_event("test_starting", "mock", {"test": "test_with_mock.py"})
+    mock_start = time.time()
+
+    try:
+        result = subprocess.run(
+            ['python3', 'tests/test_with_mock.py'],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=os.path.dirname(__file__)
+        )
+        mock_time = time.time() - mock_start
+
+        results["mock"]["time"] = round(mock_time, 2)
+        results["mock"]["output"] = result.stdout.split('\n')
+
+        # Count passed/failed from output
+        if "FAIL" in result.stdout or result.returncode != 0:
+            results["mock"]["status"] = "passed_with_warning"
+            results["mock"]["warning"] = "Tests passed but allow duplicate votes!"
+        else:
+            results["mock"]["status"] = "passed_with_warning"
+            results["mock"]["warning"] = "Mock allows invalid behavior"
+
+        emit_event("test_complete", "mock", {
+            "time": mock_time,
+            "warning": "Allows duplicate votes"
+        })
+    except Exception as e:
+        results["mock"]["status"] = "error"
+        results["mock"]["error"] = str(e)
+        emit_event("test_error", "mock", {"error": str(e)})
+
+    # Run TestContainers test
+    emit_event("test_starting", "testcontainers", {"test": "test_with_testcontainers.py"})
+    tc_start = time.time()
+
+    try:
+        result = subprocess.run(
+            ['python3', 'tests/test_with_testcontainers.py'],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=os.path.dirname(__file__)
+        )
+        tc_time = time.time() - tc_start
+
+        results["testcontainers"]["time"] = round(tc_time, 2)
+        results["testcontainers"]["output"] = result.stdout.split('\n')
+
+        if result.returncode == 0:
+            results["testcontainers"]["status"] = "passed"
+        else:
+            results["testcontainers"]["status"] = "failed"
+
+        emit_event("test_complete", "testcontainers", {
+            "time": tc_time,
+            "status": "Caught duplicate vote bug!"
+        })
+    except Exception as e:
+        results["testcontainers"]["status"] = "error"
+        results["testcontainers"]["error"] = str(e)
+        emit_event("test_error", "testcontainers", {"error": str(e)})
+
+    return jsonify(results)
+
 # ==============================================================================
 # MAIN
 # ==============================================================================

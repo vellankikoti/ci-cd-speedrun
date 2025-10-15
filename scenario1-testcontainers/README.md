@@ -47,13 +47,7 @@ You'll see: `🎉 Codespace setup complete!`
 
 ```bash
 cd scenario1-testcontainers
-
-# Option A: Simple launcher (recommended)
-python3 run_show.py
-
-# Option B: Manual (if you prefer)
-source venv/bin/activate
-python3 reality_engine.py
+source venv/bin/activate && python3 reality_engine.py
 ```
 
 **Codespaces will auto-forward port 5001** - Click "Open in Browser" when prompted.
@@ -128,7 +122,7 @@ python3 reality_engine.py
 
 ## 🎓 The Workshop: Interactive CLI
 
-**Run:** `python3 run_workshop.py` (or `python3 workshop.py` with venv activated)
+**Run:** `source venv/bin/activate && python3 workshop.py`
 
 **⚠️ Note:** Workshop requires an interactive terminal (not background processes)
 
@@ -451,13 +445,8 @@ docker ps  # Should show nothing
 
 **Solution:**
 ```bash
-# The virtual environment isn't activated!
-# Use the simple launcher instead:
-python3 run_show.py
-
-# Or activate manually:
-source venv/bin/activate
-python3 reality_engine.py
+# Always activate virtual environment first:
+source venv/bin/activate && python3 reality_engine.py
 ```
 
 ### ❌ "Docker not found" Error
@@ -473,8 +462,8 @@ ls -la /usr/local/bin/docker
 # Test Docker directly
 /usr/local/bin/docker ps
 
-# If that works, the script will now find it automatically
-python3 run_show.py
+# If that works, try running the script again
+source venv/bin/activate && python3 reality_engine.py
 ```
 
 **Local development:** If running locally and you get this error, Docker Desktop may not be started.

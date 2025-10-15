@@ -51,8 +51,8 @@ def main():
     
     # Run the workshop
     try:
-        # Run in interactive mode
-        subprocess.run([python_cmd, "workshop.py"], check=True, stdin=sys.stdin)
+        # Use shell=True to ensure proper environment inheritance
+        subprocess.run(f"{python_cmd} workshop.py", shell=True, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Error running workshop: {e}")
         print("   Note: Workshop requires interactive terminal")

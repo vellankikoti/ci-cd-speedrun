@@ -51,7 +51,8 @@ def main():
     
     # Run the reality engine
     try:
-        subprocess.run([python_cmd, "reality_engine.py"], check=True)
+        # Use shell=True to ensure proper environment inheritance
+        subprocess.run(f"{python_cmd} reality_engine.py", shell=True, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Error running reality engine: {e}")
         sys.exit(1)

@@ -307,6 +307,11 @@
             background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
         }
 
+        .control-btn.success {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #fff;
+        }
+
         /* QR Code Section */
         .qr-container {
             text-align: center;
@@ -520,7 +525,7 @@ def test_duplicate_vote():
 </div>
                     <h3>🎯 The Magic Moment</h3>
                     <p>Real PostgreSQL catches the bug BEFORE production!</p>
-                    <p><strong>Click "Start PostgreSQL" → </strong></p>
+                    <p><strong>👇 Click the green "🐘 Start PostgreSQL" button below!</strong></p>
                 `,
                 demo: "real_test",
                 actions: ["next", "prev", "start_postgres"]
@@ -576,7 +581,7 @@ def test_redis_failure():
             vote("user2")  # ✅ Still works!
 </div>
                     <p style="margin-top: 20px;">
-                        <strong>Click "Kill Redis" to see it live! →</strong>
+                        <strong>👇 Click the red "💥 Inject Chaos" button below to kill Redis!</strong>
                     </p>
                 `,
                 demo: "chaos",

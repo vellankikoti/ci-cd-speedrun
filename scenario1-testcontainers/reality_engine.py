@@ -38,15 +38,20 @@ logger = logging.getLogger(__name__)
 
 def check_docker():
     """Verify Docker is running and accessible"""
-    import shutil
-
-    # Try to find Docker in common locations
+    # Try Docker locations (Codespaces first!)
     docker_paths = [
-        shutil.which('docker'),
-        '/usr/local/bin/docker',
-        '/usr/bin/docker',
-        '/opt/homebrew/bin/docker'
+        '/usr/local/bin/docker',  # Codespaces + macOS
+        '/usr/bin/docker',         # Linux
+        '/opt/homebrew/bin/docker' # macOS ARM
     ]
+
+    # Also try which command
+    try:
+        which_result = subprocess.run(['which', 'docker'], capture_output=True, text=True, timeout=2)
+        if which_result.returncode == 0 and which_result.stdout.strip():
+            docker_paths.insert(0, which_result.stdout.strip())
+    except:
+        pass
 
     docker_cmd = None
     for path in docker_paths:
@@ -56,41 +61,25 @@ def check_docker():
 
     if not docker_cmd:
         print("❌ Docker not found!")
-        print("\n💡 Install Docker:")
-        print("   • macOS: brew install --cask docker")
-        print("   • Windows: https://docs.docker.com/desktop/install/windows-install/")
-        print("   • Linux: https://docs.docker.com/engine/install/")
-        print("\n💡 Or use the launcher: python3 run_show.py")
+        print(f"\n💡 Checked: {', '.join(p for p in docker_paths if p)}")
+        print("\n💡 Solutions:")
+        print("   • Codespaces: Should be at /usr/local/bin/docker")
+        print("   • Local: Start Docker Desktop")
         sys.exit(1)
 
-    # Add Docker directory to PATH
-    docker_dir = os.path.dirname(docker_cmd)
-    if docker_dir not in os.environ.get('PATH', ''):
-        os.environ['PATH'] = f"{docker_dir}:{os.environ.get('PATH', '')}"
-
+    # Test Docker
     try:
-        result = subprocess.run(
-            [docker_cmd, 'ps'],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        result = subprocess.run([docker_cmd, 'ps'], capture_output=True, text=True, timeout=5)
         if result.returncode != 0:
-            print("❌ Docker is not running!")
+            print("❌ Docker not running!")
+            print(f"   Path: {docker_cmd}")
             print(f"   Error: {result.stderr}")
-            print("\n💡 Solutions:")
-            print("   • macOS/Windows: Start Docker Desktop")
-            print("   • Linux: sudo systemctl start docker")
-            print(f"   • Verify: {docker_cmd} ps")
             sys.exit(1)
-        logger.info(f"✅ Docker is running (found at {docker_cmd})")
+
+        logger.info(f"✅ Docker running at {docker_cmd}")
         return True
-    except subprocess.TimeoutExpired:
-        print("❌ Docker command timed out!")
-        print("   Docker may be starting. Wait a moment and try again.")
-        sys.exit(1)
     except Exception as e:
-        print(f"❌ Error checking Docker: {e}")
+        print(f"❌ Docker error: {e}")
         sys.exit(1)
 
 def check_port(port=5001):

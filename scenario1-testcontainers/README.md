@@ -43,13 +43,16 @@ Codespace automatically:
 
 You'll see: `🎉 Codespace setup complete!`
 
-### Step 3: Choose Your Experience
+### Step 3: Run the Show
 
 ```bash
 cd scenario1-testcontainers
+python3 reality_engine.py
 ```
 
-Then pick **ONE** of these:
+**Codespaces will auto-forward port 5001** - Click "Open in Browser" when prompted.
+
+**Choose your path:**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -433,25 +436,22 @@ docker ps  # Should show nothing
 
 ### ❌ "Docker not found" Error
 
-The script auto-detects Docker in common locations. If it fails:
+**This should NOT happen in Codespaces!** Docker is pre-installed at `/usr/local/bin/docker`.
+
+If you see this error:
 
 ```bash
-# Check if Docker is installed
-docker ps
+# Verify Docker exists
+ls -la /usr/local/bin/docker
 
-# If not found, add Docker to PATH
-export PATH="/usr/local/bin:$PATH"
+# Test Docker directly
+/usr/local/bin/docker ps
 
-# Then run again
+# If that works, the script will now find it automatically
 python3 reality_engine.py
 ```
 
-**Why this happens:** Your terminal session may not have Docker in PATH, even though Docker Desktop is running.
-
-**Permanent fix:** Add to your `~/.zshrc` or `~/.bashrc`:
-```bash
-export PATH="/usr/local/bin:$PATH"
-```
+**Local development:** If running locally and you get this error, Docker Desktop may not be started.
 
 ---
 

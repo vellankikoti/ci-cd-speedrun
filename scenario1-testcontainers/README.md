@@ -43,6 +43,11 @@ Codespace automatically:
 
 You'll see: `🎉 Codespace setup complete!`
 
+**If you get virtual environment errors:**
+```bash
+python3 fix_venv.py  # Automatically fixes venv issues
+```
+
 ### Step 3: Choose Your Experience
 
 ```bash
@@ -350,6 +355,22 @@ docker ps  # Should show nothing
 
 ## 🔧 Troubleshooting (Codespaces)
 
+### Virtual Environment Issues?
+
+**Symptom:** `cannot execute: required file not found` or `pip3: command not found`
+
+**Solution:**
+```bash
+# Automatic fix
+python3 fix_venv.py
+
+# Manual fix
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 ### Port Not Forwarding?
 
 **Solution:**
@@ -378,6 +399,20 @@ docker pull postgres:15-alpine
 - QR code uses Codespaces forwarded URL automatically
 - Make sure port 5001 is set to **Public** visibility
 - Share the URL from PORTS tab with audience
+
+### App Won't Start?
+
+**Solution:**
+```bash
+# Check if port is in use
+lsof -i :5001
+
+# Kill process if needed
+pkill -f "python.*app.py"
+
+# Restart
+python reality_engine.py
+```
 
 ---
 

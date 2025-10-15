@@ -725,11 +725,18 @@ def test_redis_failure():
                             <h3>📡 System Health</h3>
                             <div class="event-feed" id="chaos-feed">
                                 <div class="event">
-                                    <div class="event-message">System healthy. Click "Kill Redis" to inject chaos!</div>
+                                    <div class="event-message">System healthy. Click "💥 Inject Chaos" to kill Redis!</div>
                                 </div>
                             </div>
                         </div>
                     `;
+                    // Enable rate limiting to start Redis
+                    fetch('/api/control/rate-limit', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log('Rate limiting enabled for chaos demo:', data);
+                        })
+                        .catch(err => console.error('Failed to enable rate limiting:', err));
                     break;
             }
         }
@@ -826,32 +833,67 @@ def test_redis_failure():
         }
 
         async function injectChaos() {
-            const response = await fetch('/api/control/chaos', { method: 'POST' });
-            const data = await response.json();
+            try {
+                const response = await fetch('/api/control/chaos', { method: 'POST' });
+                const data = await response.json();
 
-            // Update visual
-            const redisStatus = document.getElementById('redis-status');
-            if (redisStatus) {
-                redisStatus.className = 'container-status stopped';
-                redisStatus.innerHTML = `
-                    <div class="status-icon">💀</div>
-                    <div class="status-details">
-                        <div class="status-name">Redis</div>
-                        <div class="status-info">KILLED! 💥</div>
-                    </div>
-                `;
-            }
+                console.log('Chaos response:', data);
 
-            // Add event
-            const feed = document.getElementById('chaos-feed');
-            if (feed) {
-                const event = document.createElement('div');
-                event.className = 'event magic';
-                event.innerHTML = `
-                    <div class="event-time">${new Date().toLocaleTimeString()}</div>
-                    <div class="event-message">💥 Redis killed! System still works (graceful degradation)!</div>
-                `;
-                feed.insertBefore(event, feed.firstChild);
+                // Update visual
+                const redisStatus = document.getElementById('redis-status');
+                if (redisStatus) {
+                    if (data.chaos_mode) {
+                        // Redis killed
+                        redisStatus.className = 'container-status stopped';
+                        redisStatus.innerHTML = `
+                            <div class="status-icon">💀</div>
+                            <div class="status-details">
+                                <div class="status-name">Redis</div>
+                                <div class="status-info">KILLED! 💥</div>
+                            </div>
+                        `;
+                    } else {
+                        // Redis restored
+                        redisStatus.className = 'container-status running';
+                        redisStatus.innerHTML = `
+                            <div class="status-icon">🟢</div>
+                            <div class="status-details">
+                                <div class="status-name">Redis</div>
+                                <div class="status-info">Restored - Rate limiting</div>
+                            </div>
+                        `;
+                    }
+                }
+
+                // Add event
+                const feed = document.getElementById('chaos-feed');
+                if (feed) {
+                    const event = document.createElement('div');
+                    event.className = data.chaos_mode ? 'event magic' : 'event';
+                    event.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">${data.chaos_mode ? '💥 Redis killed! System still works (graceful degradation)!' : '✅ Redis restored! System back to normal.'}</div>
+                    `;
+                    feed.insertBefore(event, feed.firstChild);
+                }
+
+                // Update button text
+                const chaosBtn = document.getElementById('chaos-btn');
+                if (chaosBtn) {
+                    chaosBtn.innerHTML = data.chaos_mode ? '🔄 Restore Redis' : '💥 Inject Chaos';
+                }
+            } catch (error) {
+                console.error('Chaos injection failed:', error);
+                const feed = document.getElementById('chaos-feed');
+                if (feed) {
+                    const event = document.createElement('div');
+                    event.className = 'event warning';
+                    event.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">❌ Chaos injection failed: ${error.message}</div>
+                    `;
+                    feed.insertBefore(event, feed.firstChild);
+                }
             }
         }
 

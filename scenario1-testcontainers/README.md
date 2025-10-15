@@ -54,29 +54,60 @@ python3 fix_venv.py  # Automatically fixes venv issues
 cd scenario1-testcontainers
 ```
 
-Then pick one:
+**🎭 THE SHOW (8 minutes) - RECOMMENDED FOR PRESENTATIONS**
 
+```bash
+# Easy way (handles everything automatically)
+python3 run_show.py
+
+# Manual way (if you know what you're doing)
+source venv/bin/activate
+python3 reality_engine.py
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  🎭 THE SHOW (8 minutes)                                    │
-│     For: Live presentation, audience participation         │
-│     Run: python3 reality_engine.py                         │
-│     URL: Codespaces auto-forwards to browser               │
-│                                                             │
-│  ────────────────────────────────────────────────────────  │
-│                                                             │
-│  🎓 THE WORKSHOP (15 minutes)                               │
-│     For: Self-paced learning, deep understanding           │
-│     Run: python3 workshop.py                               │
-│                                                             │
-│  ────────────────────────────────────────────────────────  │
-│                                                             │
-│  🧪 THE TESTS (See the proof)                               │
-│     Fantasy: pytest tests/test_fantasy.py -v               │
-│     Reality: pytest tests/test_reality.py -v               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+
+**What You'll See:**
+- **Scene 1:** The disaster (tests green, prod broken)
+- **Scene 2:** The lie (mock tests hide bugs)
+- **Scene 3:** The truth (TestContainers catches bugs)
+- **Scene 4:** Audience participation (QR code voting)
+- **Scene 5:** Chaos engineering (kill Redis, system survives)
+
+**Controls:**
+- ▶️ **Next Scene** - Advance through the story
+- ⏮️ **Previous** - Go back if needed
+- 📱 **Show QR** - Display QR code for audience
+- 💥 **Inject Chaos** - Kill dependencies (Scene 5)
+- 🔄 **Reset** - Start over
+
+**Open:** `http://localhost:5001` (auto-opens)
+
+---
+
+**🎓 THE WORKSHOP (15 minutes) - SELF-PACED LEARNING**
+
+```bash
+python3 workshop.py
+```
+
+Interactive CLI that walks you through:
+- Section 1: The Problem (mock tests)
+- Section 2: The Magic (TestContainers)
+- Section 3: Comparison
+- Section 4: Hands-on exercise
+
+---
+
+**🧪 THE TESTS (Compare Fantasy vs Reality)**
+
+```bash
+# The lie (mocks allow duplicates)
+pytest tests/test_fantasy.py -v
+
+# The truth (TestContainers blocks duplicates)
+pytest tests/test_reality.py -v
+
+# Run both side-by-side
+pytest tests/ -v
 ```
 
 ---

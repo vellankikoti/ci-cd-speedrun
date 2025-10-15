@@ -47,6 +47,12 @@ You'll see: `🎉 Codespace setup complete!`
 
 ```bash
 cd scenario1-testcontainers
+
+# Option A: Simple launcher (recommended)
+python3 run_show.py
+
+# Option B: Manual (if you prefer)
+source venv/bin/activate
 python3 reality_engine.py
 ```
 
@@ -122,7 +128,9 @@ python3 reality_engine.py
 
 ## 🎓 The Workshop: Interactive CLI
 
-**Run:** `python3 workshop.py`
+**Run:** `python3 run_workshop.py` (or `python3 workshop.py` with venv activated)
+
+**⚠️ Note:** Workshop requires an interactive terminal (not background processes)
 
 **15-minute guided learning:**
 - **Section 1:** The Problem (mock tests lie)
@@ -139,6 +147,9 @@ python3 reality_engine.py
 **Compare both approaches:**
 
 ```bash
+# Activate virtual environment first
+source venv/bin/activate
+
 # The lie (mocks allow duplicates)
 pytest tests/test_fantasy.py -v
 
@@ -434,6 +445,21 @@ docker ps  # Should show nothing
 
 ## 🔧 Troubleshooting
 
+### ❌ "ModuleNotFoundError: No module named 'flask_cors'"
+
+**Symptom:** `ModuleNotFoundError: No module named 'flask_cors'` or similar import errors
+
+**Solution:**
+```bash
+# The virtual environment isn't activated!
+# Use the simple launcher instead:
+python3 run_show.py
+
+# Or activate manually:
+source venv/bin/activate
+python3 reality_engine.py
+```
+
 ### ❌ "Docker not found" Error
 
 **This should NOT happen in Codespaces!** Docker is pre-installed at `/usr/local/bin/docker`.
@@ -448,7 +474,7 @@ ls -la /usr/local/bin/docker
 /usr/local/bin/docker ps
 
 # If that works, the script will now find it automatically
-python3 reality_engine.py
+python3 run_show.py
 ```
 
 **Local development:** If running locally and you get this error, Docker Desktop may not be started.

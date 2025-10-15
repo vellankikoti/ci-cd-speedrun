@@ -38,33 +38,47 @@ logger = logging.getLogger(__name__)
 
 def check_docker():
     """Verify Docker is running and accessible"""
-    # Try Docker locations (Codespaces first!)
-    docker_paths = [
-        '/usr/local/bin/docker',  # Codespaces + macOS
-        '/usr/bin/docker',         # Linux
-        '/opt/homebrew/bin/docker' # macOS ARM
-    ]
-
-    # Also try which command
+    # First try to find Docker using which/where
+    docker_cmd = None
+    
+    # Try which command first (works in most environments)
     try:
         which_result = subprocess.run(['which', 'docker'], capture_output=True, text=True, timeout=2)
         if which_result.returncode == 0 and which_result.stdout.strip():
-            docker_paths.insert(0, which_result.stdout.strip())
+            docker_cmd = which_result.stdout.strip()
     except:
         pass
-
-    docker_cmd = None
-    for path in docker_paths:
-        if path and os.path.exists(path):
-            docker_cmd = path
-            break
+    
+    # If which didn't work, try common paths
+    if not docker_cmd:
+        docker_paths = [
+            '/usr/local/bin/docker',  # Codespaces + macOS
+            '/usr/bin/docker',         # Linux
+            '/opt/homebrew/bin/docker', # macOS ARM
+            '/usr/bin/docker.io',      # Some Linux distros
+            'docker'                   # Fallback to PATH
+        ]
+        
+        for path in docker_paths:
+            if path == 'docker':
+                # Try direct command
+                try:
+                    result = subprocess.run(['docker', '--version'], capture_output=True, text=True, timeout=2)
+                    if result.returncode == 0:
+                        docker_cmd = 'docker'
+                        break
+                except:
+                    continue
+            elif os.path.exists(path):
+                docker_cmd = path
+                break
 
     if not docker_cmd:
         print("❌ Docker not found!")
-        print(f"\n💡 Checked: {', '.join(p for p in docker_paths if p)}")
         print("\n💡 Solutions:")
-        print("   • Codespaces: Should be at /usr/local/bin/docker")
+        print("   • Codespaces: Docker should be pre-installed")
         print("   • Local: Start Docker Desktop")
+        print("   • Check: which docker")
         sys.exit(1)
 
     # Test Docker
@@ -74,6 +88,9 @@ def check_docker():
             print("❌ Docker not running!")
             print(f"   Path: {docker_cmd}")
             print(f"   Error: {result.stderr}")
+            print("\n💡 Solutions:")
+            print("   • Codespaces: Docker should auto-start")
+            print("   • Local: Start Docker Desktop")
             sys.exit(1)
 
         logger.info(f"✅ Docker running at {docker_cmd}")

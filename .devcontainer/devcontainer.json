@@ -1,5 +1,5 @@
 {
-  "name": "CI/CD Chaos Workshop",
+  "name": "CI/CD Speed RUn Workshop",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
 
   "features": {

@@ -75,10 +75,21 @@ def check_docker():
 
     if not docker_cmd:
         print("❌ Docker not found!")
-        print("\n💡 Solutions:")
-        print("   • Codespaces: Docker should be pre-installed")
-        print("   • Local: Start Docker Desktop")
-        print("   • Check: which docker")
+        print()
+        in_codespaces = os.getenv('CODESPACES') == 'true'
+
+        if in_codespaces:
+            print("💡 FIX: Your Codespace needs Docker installed")
+            print()
+            print("   Run this Python script for detailed instructions:")
+            print("   → python3 check_environment.py")
+            print()
+            print("   Quick fix: Rebuild your Codespace")
+            print("   • Press F1 → 'Codespaces: Rebuild Container'")
+        else:
+            print("💡 Solutions:")
+            print("   • Run: python3 check_environment.py")
+            print("   • Install Docker Desktop")
         sys.exit(1)
 
     # Test Docker

@@ -47,10 +47,31 @@ You'll see: `🎉 Codespace setup complete!`
 
 ```bash
 cd scenario1-testcontainers
-source venv/bin/activate && python3 reality_engine.py
+
+# IMPORTANT: First-time check (run this once)
+python3 check_environment.py
+
+# If check passes, start the show
+python3 reality_engine.py
 ```
 
+**⚠️ CRITICAL for Workshop Presenters:**
+
+If `check_environment.py` shows **"Docker is NOT installed"**:
+
+**Your Codespace needs to be rebuilt to install Docker!**
+
+**Fix (takes 2-3 minutes):**
+1. Press `F1` (or `Ctrl+Shift+P`)
+2. Type: `Codespaces: Rebuild Container`
+3. Select it and wait for rebuild to complete
+4. After rebuild: `python3 reality_engine.py`
+
+**Why?** The `.devcontainer/devcontainer.json` has Docker-in-Docker configured, but it only installs when Codespace is created or rebuilt. If you created this Codespace before the devcontainer config was added, Docker won't be there.
+
 **Codespaces will auto-forward port 5001** - Click "Open in Browser" when prompted.
+
+---
 
 **Choose your path:**
 
@@ -349,11 +370,13 @@ docker pull redis:7-alpine      # No WiFi delay during workshop!
 
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
-| `setup.py` | One-time environment setup | Auto-run by Codespaces |
+| `check_environment.py` | **Pre-flight check** | **Run FIRST before workshop** |
 | `reality_engine.py` | 8-min theatrical demo | Presenting to audience |
 | `workshop.py` | 15-min interactive learning | Self-paced exploration |
 | `watch_containers.py` | Real-time container monitor | Optional 2nd terminal |
 | `cleanup.py` | Remove all containers/cache | Between demos or after workshop |
+| `test_docker.py` | Debug Docker detection | Troubleshooting only |
+| `debug_docker.py` | Advanced debugging | Troubleshooting only |
 
 **No shell scripts = Works everywhere (Windows, Mac, Linux, Codespaces)**
 
@@ -394,9 +417,62 @@ python3 cleanup.py
 
 ---
 
-## 🎓 Workshop Flow (For Instructors)
+## 🎓 Workshop Presenter Checklist
 
-### Before Workshop (5 minutes)
+### 📋 Before Workshop Day (Do This First!)
+
+**1. Create/Open Your Codespace**
+```bash
+# Go to: https://github.com/codespaces
+# Open or create Codespace for this repo
+```
+
+**2. CRITICAL: Verify Docker is Installed**
+```bash
+cd scenario1-testcontainers
+python3 check_environment.py
+```
+
+**Expected output:**
+```
+✅ Environment is ready!
+🚀 Next steps:
+   python3 reality_engine.py
+```
+
+**If you see "❌ Docker is NOT installed!"**
+- **STOP!** Don't proceed without fixing this
+- **Fix:** Press `F1` → `Codespaces: Rebuild Container`
+- **Wait:** 2-3 minutes for rebuild
+- **Re-test:** `python3 check_environment.py`
+- **Confirm:** Should now show ✅
+
+**3. Test Run the Show**
+```bash
+python3 reality_engine.py
+# Should start successfully
+# Ctrl+C to stop
+```
+
+**4. Verify Pre-Downloaded Images**
+```bash
+docker images | grep -E "postgres|redis"
+# Should show:
+# postgres:15-alpine
+# redis:7-alpine
+```
+
+**If images are missing:**
+```bash
+docker pull postgres:15-alpine
+docker pull redis:7-alpine
+```
+
+---
+
+### 🎬 Workshop Flow (Day Of)
+
+**Before Workshop (5 minutes)**
 
 ```bash
 # 1. Open Codespace
@@ -449,24 +525,43 @@ docker ps  # Should show nothing
 source venv/bin/activate && python3 reality_engine.py
 ```
 
-### ❌ "Docker not found" Error
+### ❌ "Docker not found" Error (MOST COMMON ISSUE!)
 
-**This should NOT happen in Codespaces!** Docker is pre-installed at `/usr/local/bin/docker`.
-
-If you see this error:
-
-```bash
-# Verify Docker exists
-ls -la /usr/local/bin/docker
-
-# Test Docker directly
-/usr/local/bin/docker ps
-
-# If that works, try running the script again
-source venv/bin/activate && python3 reality_engine.py
+**Symptom:**
+```
+❌ Docker not found!
+💡 Solutions:
+   • Codespaces: Docker should be pre-installed
 ```
 
-**Local development:** If running locally and you get this error, Docker Desktop may not be started.
+**Root Cause:** Your Codespace was created **before** Docker-in-Docker was configured in `.devcontainer/devcontainer.json`.
+
+**Solution:**
+```bash
+# Step 1: Confirm Docker is missing
+python3 check_environment.py
+
+# Step 2: Rebuild Codespace (this installs Docker)
+# Press F1 → Type: "Codespaces: Rebuild Container"
+# Wait 2-3 minutes
+
+# Step 3: Verify Docker is now installed
+python3 check_environment.py
+# Should show: ✅ Environment is ready!
+
+# Step 4: Run the show
+python3 reality_engine.py
+```
+
+**Why rebuild?** The `.devcontainer/devcontainer.json` has:
+```json
+"features": {
+  "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+}
+```
+This only installs when Codespace is created/rebuilt.
+
+**Prevention:** Always rebuild Codespace after cloning or pulling major changes.
 
 ---
 

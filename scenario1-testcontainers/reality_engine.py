@@ -38,9 +38,39 @@ logger = logging.getLogger(__name__)
 
 def check_docker():
     """Verify Docker is running and accessible"""
+    import shutil
+
+    # Try to find Docker in common locations
+    docker_paths = [
+        shutil.which('docker'),
+        '/usr/local/bin/docker',
+        '/usr/bin/docker',
+        '/opt/homebrew/bin/docker'
+    ]
+
+    docker_cmd = None
+    for path in docker_paths:
+        if path and os.path.exists(path):
+            docker_cmd = path
+            break
+
+    if not docker_cmd:
+        print("❌ Docker not found!")
+        print("\n💡 Install Docker:")
+        print("   • macOS: brew install --cask docker")
+        print("   • Windows: https://docs.docker.com/desktop/install/windows-install/")
+        print("   • Linux: https://docs.docker.com/engine/install/")
+        print("\n💡 Or use the launcher: python3 run_show.py")
+        sys.exit(1)
+
+    # Add Docker directory to PATH
+    docker_dir = os.path.dirname(docker_cmd)
+    if docker_dir not in os.environ.get('PATH', ''):
+        os.environ['PATH'] = f"{docker_dir}:{os.environ.get('PATH', '')}"
+
     try:
         result = subprocess.run(
-            ['docker', 'ps'],
+            [docker_cmd, 'ps'],
             capture_output=True,
             text=True,
             timeout=5
@@ -51,17 +81,10 @@ def check_docker():
             print("\n💡 Solutions:")
             print("   • macOS/Windows: Start Docker Desktop")
             print("   • Linux: sudo systemctl start docker")
-            print("   • Verify: docker ps")
+            print(f"   • Verify: {docker_cmd} ps")
             sys.exit(1)
-        logger.info("✅ Docker is running")
+        logger.info(f"✅ Docker is running (found at {docker_cmd})")
         return True
-    except FileNotFoundError:
-        print("❌ Docker not found!")
-        print("\n💡 Install Docker:")
-        print("   • macOS: brew install --cask docker")
-        print("   • Windows: https://docs.docker.com/desktop/install/windows-install/")
-        print("   • Linux: https://docs.docker.com/engine/install/")
-        sys.exit(1)
     except subprocess.TimeoutExpired:
         print("❌ Docker command timed out!")
         print("   Docker may be starting. Wait a moment and try again.")

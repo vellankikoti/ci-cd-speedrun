@@ -43,61 +43,97 @@ Codespace automatically:
 
 You'll see: `🎉 Codespace setup complete!`
 
-**If you get virtual environment errors:**
-```bash
-python3 fix_venv.py  # Automatically fixes venv issues
-```
-
 ### Step 3: Choose Your Experience
 
 ```bash
 cd scenario1-testcontainers
 ```
 
-**🎭 THE SHOW (8 minutes) - RECOMMENDED FOR PRESENTATIONS**
+Then pick **ONE** of these:
 
-```bash
-# Easy way (handles everything automatically)
-python3 run_show.py
-
-# Manual way (if you know what you're doing)
-source venv/bin/activate
-python3 reality_engine.py
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  🎭 THE SHOW (8 minutes) - Theatrical Presentation          │
+│     Command: python3 reality_engine.py                     │
+│     Opens:   http://localhost:5001                         │
+│                                                             │
+│  ────────────────────────────────────────────────────────  │
+│                                                             │
+│  🎓 THE WORKSHOP (15 minutes) - Self-Paced Learning         │
+│     Command: python3 workshop.py                           │
+│                                                             │
+│  ────────────────────────────────────────────────────────  │
+│                                                             │
+│  🧪 THE TESTS (See the Proof)                               │
+│     Command: pytest tests/ -v                              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**What You'll See:**
-- **Scene 1:** The disaster (tests green, prod broken)
-- **Scene 2:** The lie (mock tests hide bugs)
-- **Scene 3:** The truth (TestContainers catches bugs)
-- **Scene 4:** Audience participation (QR code voting)
-- **Scene 5:** Chaos engineering (kill Redis, system survives)
+---
+
+## 🎭 The Show: 5-Scene Experience
+
+**Run:** `python3 reality_engine.py`
+**Open:** http://localhost:5001
+
+**What happens:**
+
+**Scene 1: The Cold Open (1 min)**
+- Monday morning disaster: "Users can vote multiple times!"
+- All tests were GREEN ✅ but production broke 💥
+- Question: How did this happen?
+
+**Scene 2: The Lie - Mock Tests (2 min)**
+- Shows actual code with mock database
+- Explains why test passed (no constraints!)
+- Visual: Mock allows duplicates ❌
+
+**Scene 3: The Truth - TestContainers (2 min)**
+- Shows real TestContainers code
+- Watch PostgreSQL container start (live!)
+- See UNIQUE constraint catch the bug ✅
+
+**Scene 4: Audience Participation (2 min)**
+- **📱 Scan QR code with your phone**
+- Vote for favorite language
+- **Try voting TWICE!** → Blocked! ❌
+- This is the "aha moment" 💡
+
+**Scene 5: Chaos Engineering (1 min)**
+- Shows Redis rate limiting running
+- **Click "💥 Inject Chaos"** to kill Redis
+- System continues working (graceful degradation)
+- Proof: Resilience is testable! ✅
 
 **Controls:**
-- ▶️ **Next Scene** - Advance through the story
-- ⏮️ **Previous** - Go back if needed
-- 📱 **Show QR** - Display QR code for audience
-- 💥 **Inject Chaos** - Kill dependencies (Scene 5)
-- 🔄 **Reset** - Start over
-
-**Open:** `http://localhost:5001` (auto-opens)
-
----
-
-**🎓 THE WORKSHOP (15 minutes) - SELF-PACED LEARNING**
-
-```bash
-python3 workshop.py
-```
-
-Interactive CLI that walks you through:
-- Section 1: The Problem (mock tests)
-- Section 2: The Magic (TestContainers)
-- Section 3: Comparison
-- Section 4: Hands-on exercise
+- **▶️ Next Scene** - Advance through story
+- **⏮️ Previous** - Go back if needed
+- **📱 Show QR** - Display QR for audience
+- **💥 Inject Chaos** - Kill dependencies (Scene 5)
+- **🔄 Reset** - Start over
+- **🖥️ Fullscreen** - Top-right button
 
 ---
 
-**🧪 THE TESTS (Compare Fantasy vs Reality)**
+## 🎓 The Workshop: Interactive CLI
+
+**Run:** `python3 workshop.py`
+
+**15-minute guided learning:**
+- **Section 1:** The Problem (mock tests lie)
+- **Section 2:** The Magic (TestContainers truth)
+- **Section 3:** Comparison (fantasy vs reality)
+- **Section 4:** Hands-on exercise (write your own test)
+
+**You control the pace:** Press ENTER to advance each section.
+
+---
+
+## 🧪 The Tests: Fantasy vs Reality
+
+**Compare both approaches:**
 
 ```bash
 # The lie (mocks allow duplicates)
@@ -108,6 +144,15 @@ pytest tests/test_reality.py -v
 
 # Run both side-by-side
 pytest tests/ -v
+```
+
+**Output:**
+```
+test_fantasy.py::test_duplicate_vote_should_fail ✅ PASSED (LIE!)
+test_reality.py::test_duplicate_vote_is_blocked ✅ PASSED (TRUTH!)
+
+Fantasy: 3 passed in 0.01s (all green, all wrong)
+Reality: 4 passed in 1.90s (green means proof!)
 ```
 
 ---
@@ -380,6 +425,32 @@ python3 cleanup.py
 
 # Verify clean
 docker ps  # Should show nothing
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### ❌ "Docker not found" Error
+
+The script auto-detects Docker in common locations. If it fails:
+
+```bash
+# Check if Docker is installed
+docker ps
+
+# If not found, add Docker to PATH
+export PATH="/usr/local/bin:$PATH"
+
+# Then run again
+python3 reality_engine.py
+```
+
+**Why this happens:** Your terminal session may not have Docker in PATH, even though Docker Desktop is running.
+
+**Permanent fix:** Add to your `~/.zshrc` or `~/.bashrc`:
+```bash
+export PATH="/usr/local/bin:$PATH"
 ```
 
 ---

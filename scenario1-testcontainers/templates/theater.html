@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 TestContainers Theater</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Stage Layout */
+        .stage {
+            display: grid;
+            grid-template-areas:
+                "title title"
+                "story demo"
+                "controls controls";
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 1fr 1fr;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Title Section */
+        .title-section {
+            grid-area: title;
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid #00ff88;
+        }
+
+        .title-section h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #ffaa00;
+            font-style: italic;
+        }
+
+        .scene-indicator {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #00ffff;
+        }
+
+        /* Story Section (Left) */
+        .story-section {
+            grid-area: story;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid #00ff88;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .story-content {
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+
+        .story-content h2 {
+            color: #00ff88;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .story-content h3 {
+            color: #ffaa00;
+            margin: 25px 0 15px 0;
+            font-size: 1.3em;
+        }
+
+        .code-block {
+            background: #000;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-block.bad {
+            border-left-color: #ff4444;
+        }
+
+        .code-block.good {
+            border-left-color: #00ff88;
+        }
+
+        .highlight {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .highlight.good {
+            color: #00ff88;
+        }
+
+        /* Demo Section (Right) */
+        .demo-section {
+            grid-area: demo;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid #00ff88;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .demo-section h2 {
+            color: #00ff88;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        /* Live Visualization */
+        .visualization {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viz-box {
+            background: #000;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #333;
+            min-height: 100px;
+        }
+
+        .viz-box h3 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+        }
+
+        .container-status {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #666;
+        }
+
+        .container-status.running {
+            border-left-color: #00ff88;
+        }
+
+        .container-status.starting {
+            border-left-color: #ffaa00;
+            animation: pulse 1s infinite;
+        }
+
+        .container-status.stopped {
+            border-left-color: #ff4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .status-details {
+            flex: 1;
+        }
+
+        .status-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .status-info {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Event Feed */
+        .event-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event {
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #00ff88;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .event.error {
+            border-left-color: #ff4444;
+        }
+
+        .event.warning {
+            border-left-color: #ffaa00;
+        }
+
+        .event.magic {
+            border-left-color: #ff00ff;
+            animation: slideIn 0.3s ease-out, glowPulse 1s infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 10px #ff00ff; }
+            50% { box-shadow: 0 0 20px #ff00ff; }
+        }
+
+        .event-time {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .event-message {
+            margin-top: 5px;
+        }
+
+        /* Controls Section */
+        .controls-section {
+            grid-area: controls;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px solid #00ff88;
+            padding: 25px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .control-btn {
+            padding: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .control-btn.next {
+            background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
+        }
+
+        .control-btn.danger {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: #fff;
+        }
+
+        .control-btn.warning {
+            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+        }
+
+        /* QR Code Section */
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 15px 0;
+        }
+
+        .qr-instruction {
+            color: #ffaa00;
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+
+        .qr-url {
+            color: #00ffff;
+            font-size: 1.1em;
+            word-break: break-all;
+        }
+
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #333;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-label {
+            color: #888;
+            margin-top: 5px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        /* Fullscreen Button */
+        .fullscreen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            cursor: pointer;
+            font-size: 1.1em;
+            z-index: 1000;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
+
+    <div class="stage">
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1>🎭 TestContainers Magic Show</h1>
+            <p class="subtitle">"Watch bugs get caught in real-time"</p>
+            <p class="scene-indicator">Scene <span id="scene-number">1</span> of 5 • <span id="scene-title">The Cold Open</span></p>
+        </div>
+
+        <!-- Story Section (Left Panel) -->
+        <div class="story-section">
+            <div class="story-content" id="story-content">
+                <!-- Story content will be injected here -->
+            </div>
+        </div>
+
+        <!-- Demo Section (Right Panel) -->
+        <div class="demo-section">
+            <h2>🔬 Live Demo</h2>
+            <div class="visualization" id="visualization">
+                <!-- Visualization content will be injected here -->
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <div class="controls-grid" id="controls">
+                <button class="control-btn next" onclick="nextScene()" id="next-btn">
+                    ▶️ Start Scene 1
+                </button>
+                <button class="control-btn" onclick="prevScene()" id="prev-btn" disabled>
+                    ⏮️ Previous
+                </button>
+                <button class="control-btn warning" onclick="showQR()" id="qr-btn" style="display: none;">
+                    📱 Show QR Code
+                </button>
+                <button class="control-btn danger" onclick="injectChaos()" id="chaos-btn" style="display: none;">
+                    💥 Inject Chaos
+                </button>
+                <button class="control-btn" onclick="resetDemo()" id="reset-btn">
+                    🔄 Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        let currentScene = 0;
+        let eventSource = null;
+
+        const scenes = [
+            {
+                title: "The Cold Open",
+                story: `
+                    <h2>🎬 Monday Morning, 9:47 AM</h2>
+                    <p><strong>The Slack message everyone dreads:</strong></p>
+                    <div class="code-block bad">
+                    🚨 #incident-prod-down<br>
+                    <span class="highlight">Users can vote multiple times!</span><br>
+                    Election results are invalid. CEO is FURIOUS.
+                    </div>
+                    <p>You check CI/CD. All tests are GREEN ✅</p>
+                    <p>You check last deploy. Tests passed ✅</p>
+                    <h3>How did this happen?</h3>
+                    <p>Let's rewind and find out...</p>
+                `,
+                demo: "intro",
+                actions: ["next"]
+            },
+            {
+                title: "The Lie (Mock Tests)",
+                story: `
+                    <h2>❌ Last Week: The Mock Test</h2>
+                    <p>Your teammate wrote this test:</p>
+                    <div class="code-block bad">
+def test_duplicate_vote():
+    <span class="highlight">mock_db</span> = MockDatabase()  # ← The lie
+
+    # First vote
+    mock_db.insert_vote("user123", "Python")
+    assert True  # ✅ Passes
+
+    # Second vote (same user!)
+    mock_db.insert_vote("user123", "Python")
+    assert True  # ✅ Passes again!
+</div>
+                    <h3>Why did this pass?</h3>
+                    <p><strong>Mock has NO constraints!</strong></p>
+                    <ul style="margin-left: 30px; margin-top: 15px;">
+                        <li>No UNIQUE constraint on user_id</li>
+                        <li>No database validation</li>
+                        <li>Test is green, but it's a LIE</li>
+                    </ul>
+                    <p style="margin-top: 20px; color: #ff4444; font-size: 1.2em;">
+                        <strong>Bug ships to production. 💥</strong>
+                    </p>
+                `,
+                demo: "mock_test",
+                actions: ["next", "prev"]
+            },
+            {
+                title: "The Truth (TestContainers)",
+                story: `
+                    <h2>✅ The Fix: Real Database</h2>
+                    <p>Now watch what happens with <strong>TestContainers</strong>:</p>
+                    <div class="code-block good">
+def test_duplicate_vote():
+    <span class="highlight good">with PostgresContainer("postgres:15-alpine") as pg:</span>
+        conn = psycopg.connect(pg.get_connection_url())
+
+        # Create table with UNIQUE constraint
+        cursor.execute("""
+            CREATE TABLE votes (
+                user_id VARCHAR(100) <span class="highlight good">UNIQUE NOT NULL</span>,
+                choice VARCHAR(50) NOT NULL
+            )
+        """)
+
+        # First vote succeeds
+        cursor.execute("INSERT INTO votes ...")
+        conn.commit()  # ✅
+
+        # Second vote BLOCKED
+        <span class="highlight good">with pytest.raises(IntegrityError):</span>
+            cursor.execute("INSERT INTO votes ...")
+            conn.commit()  # ❌ Caught!
+</div>
+                    <h3>🎯 The Magic Moment</h3>
+                    <p>Real PostgreSQL catches the bug BEFORE production!</p>
+                    <p><strong>Click "Start PostgreSQL" → </strong></p>
+                `,
+                demo: "real_test",
+                actions: ["next", "prev", "start_postgres"]
+            },
+            {
+                title: "Live Audience Test",
+                story: `
+                    <h2>📱 Your Turn!</h2>
+                    <h3>Let's prove it works:</h3>
+                    <ol style="margin-left: 30px; font-size: 1.1em; line-height: 2;">
+                        <li>📱 Pull out your phone</li>
+                        <li>📷 Scan the QR code →</li>
+                        <li>🗳️ Vote for your favorite language</li>
+                        <li>🔁 <strong>Try voting TWICE!</strong></li>
+                    </ol>
+                    <h3 style="margin-top: 30px;">What you'll see:</h3>
+                    <div class="code-block good">
+✅ First vote: "Vote recorded!"
+<span class="highlight">❌ Second vote: "You already voted!"</span>
+</div>
+                    <p style="margin-top: 20px; font-size: 1.2em;">
+                        That's the <strong>UNIQUE constraint</strong> working!
+                    </p>
+                    <p style="color: #00ffff;">
+                        This is production parity. Same database as prod.
+                    </p>
+                `,
+                demo: "audience_vote",
+                actions: ["next", "prev", "qr"]
+            },
+            {
+                title: "Chaos Engineering",
+                story: `
+                    <h2>💥 What if Dependencies Fail?</h2>
+                    <p>We added Redis for rate limiting (3 votes/minute).</p>
+                    <p><strong>Question:</strong> What happens if Redis dies?</p>
+                    <h3>Old way (hope):</h3>
+                    <div class="code-block bad">
+# No way to test this 🤷
+# Hope it works in prod
+</div>
+                    <h3>New way (proof):</h3>
+                    <div class="code-block good">
+def test_redis_failure():
+    with PostgresContainer() as pg:
+        with RedisContainer() as redis:
+            # Everything works
+            vote("user1")  # ✅
+
+            <span class="highlight good">redis.stop()  # Kill Redis!</span>
+
+            # System still works (graceful degradation)
+            vote("user2")  # ✅ Still works!
+</div>
+                    <p style="margin-top: 20px;">
+                        <strong>Click "Kill Redis" to see it live! →</strong>
+                    </p>
+                `,
+                demo: "chaos",
+                actions: ["prev", "chaos", "reset"]
+            }
+        ];
+
+        function renderScene(sceneIndex) {
+            const scene = scenes[sceneIndex];
+
+            // Update title
+            document.getElementById('scene-number').textContent = sceneIndex + 1;
+            document.getElementById('scene-title').textContent = scene.title;
+
+            // Update story
+            document.getElementById('story-content').innerHTML = scene.story;
+
+            // Update demo
+            updateDemo(scene.demo);
+
+            // Update controls
+            updateControls(scene.actions, sceneIndex);
+        }
+
+        function updateDemo(demoType) {
+            const viz = document.getElementById('visualization');
+
+            switch(demoType) {
+                case 'intro':
+                    viz.innerHTML = `
+                        <div class="viz-box">
+                            <h3>📊 The Stats</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-value">✅</div>
+                                    <div class="stat-label">All Tests Pass</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">💥</div>
+                                    <div class="stat-label">Prod Broken</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">😱</div>
+                                    <div class="stat-label">CEO Reaction</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'mock_test':
+                    viz.innerHTML = `
+                        <div class="viz-box">
+                            <h3>🧪 Test Execution</h3>
+                            <div class="event-feed">
+                                <div class="event">
+                                    <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                                    <div class="event-message">✅ test_duplicate_vote PASSED</div>
+                                </div>
+                                <div class="event warning">
+                                    <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                                    <div class="event-message">⚠️ But it's a lie! Mock allowed duplicate.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-box">
+                            <h3>🗃️ Mock Database</h3>
+                            <div style="text-align: center; padding: 20px;">
+                                <p style="color: #ff4444; font-size: 1.3em;">No constraints enforced!</p>
+                                <p style="margin-top: 10px; color: #888;">Duplicates allowed ❌</p>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'real_test':
+                    viz.innerHTML = `
+                        <div class="viz-box">
+                            <h3>🐳 Container Status</h3>
+                            <div id="container-status">
+                                <div class="container-status">
+                                    <div class="status-icon">⏸️</div>
+                                    <div class="status-details">
+                                        <div class="status-name">PostgreSQL</div>
+                                        <div class="status-info">Ready to start</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-box">
+                            <h3>📡 Event Log</h3>
+                            <div class="event-feed" id="event-feed">
+                                <div class="event">
+                                    <div class="event-message">Click "Start PostgreSQL" to begin...</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'audience_vote':
+                    viz.innerHTML = `
+                        <div class="qr-container">
+                            <p class="qr-instruction">👇 Scan with your phone</p>
+                            <div class="qr-code" id="qr-code-display"></div>
+                            <p class="qr-url" id="vote-url">Loading...</p>
+                        </div>
+                        <div class="viz-box" style="margin-top: 20px;">
+                            <h3>📊 Live Results</h3>
+                            <div id="vote-results">
+                                <p style="color: #888; text-align: center;">Waiting for votes...</p>
+                            </div>
+                        </div>
+                    `;
+                    generateQR();
+                    startVotePolling();
+                    break;
+
+                case 'chaos':
+                    viz.innerHTML = `
+                        <div class="viz-box">
+                            <h3>🐳 Container Status</h3>
+                            <div id="chaos-containers">
+                                <div class="container-status running">
+                                    <div class="status-icon">🟢</div>
+                                    <div class="status-details">
+                                        <div class="status-name">PostgreSQL</div>
+                                        <div class="status-info">Running - Stores votes</div>
+                                    </div>
+                                </div>
+                                <div class="container-status running" id="redis-status">
+                                    <div class="status-icon">🟢</div>
+                                    <div class="status-details">
+                                        <div class="status-name">Redis</div>
+                                        <div class="status-info">Running - Rate limiting</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-box">
+                            <h3>📡 System Health</h3>
+                            <div class="event-feed" id="chaos-feed">
+                                <div class="event">
+                                    <div class="event-message">System healthy. Click "Kill Redis" to inject chaos!</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        function updateControls(actions, sceneIndex) {
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const qrBtn = document.getElementById('qr-btn');
+            const chaosBtn = document.getElementById('chaos-btn');
+
+            // Reset visibility
+            nextBtn.style.display = actions.includes('next') ? 'block' : 'none';
+            prevBtn.style.display = actions.includes('prev') ? 'block' : 'none';
+            prevBtn.disabled = sceneIndex === 0;
+            qrBtn.style.display = actions.includes('qr') ? 'block' : 'none';
+            chaosBtn.style.display = actions.includes('chaos') ? 'block' : 'none';
+
+            // Update next button text
+            if (sceneIndex === 0) {
+                nextBtn.textContent = '▶️ Start Scene 1';
+            } else if (sceneIndex === scenes.length - 1) {
+                nextBtn.textContent = '🎬 End Show';
+            } else {
+                nextBtn.textContent = '▶️ Next Scene';
+            }
+        }
+
+        function nextScene() {
+            if (currentScene < scenes.length - 1) {
+                currentScene++;
+                renderScene(currentScene);
+            } else {
+                // End of show
+                alert('🎭 Show complete! Thank you!');
+            }
+        }
+
+        function prevScene() {
+            if (currentScene > 0) {
+                currentScene--;
+                renderScene(currentScene);
+            }
+        }
+
+        function generateQR() {
+            const url = window.location.origin + '/qr';
+            document.getElementById('vote-url').textContent = url;
+
+            new QRCode(document.getElementById('qr-code-display'), {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff'
+            });
+        }
+
+        function startVotePolling() {
+            setInterval(async () => {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                if (data.results.length > 0) {
+                    const resultsHtml = data.results.map(r => `
+                        <div class="container-status running">
+                            <div class="status-icon">${getLanguageEmoji(r.choice)}</div>
+                            <div class="status-details">
+                                <div class="status-name">${r.choice}</div>
+                                <div class="status-info">${r.count} votes</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('vote-results').innerHTML = resultsHtml;
+                }
+            }, 2000);
+        }
+
+        function getLanguageEmoji(lang) {
+            const emojis = {
+                'Python': '🐍',
+                'JavaScript': '📜',
+                'Go': '🐹',
+                'Rust': '🦀',
+                'Java': '☕'
+            };
+            return emojis[lang] || '📝';
+        }
+
+        function showQR() {
+            window.open('/qr', 'QR Code', 'width=800,height=600');
+        }
+
+        async function injectChaos() {
+            const response = await fetch('/api/control/chaos', { method: 'POST' });
+            const data = await response.json();
+
+            // Update visual
+            const redisStatus = document.getElementById('redis-status');
+            if (redisStatus) {
+                redisStatus.className = 'container-status stopped';
+                redisStatus.innerHTML = `
+                    <div class="status-icon">💀</div>
+                    <div class="status-details">
+                        <div class="status-name">Redis</div>
+                        <div class="status-info">KILLED! 💥</div>
+                    </div>
+                `;
+            }
+
+            // Add event
+            const feed = document.getElementById('chaos-feed');
+            if (feed) {
+                const event = document.createElement('div');
+                event.className = 'event magic';
+                event.innerHTML = `
+                    <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                    <div class="event-message">💥 Redis killed! System still works (graceful degradation)!</div>
+                `;
+                feed.insertBefore(event, feed.firstChild);
+            }
+        }
+
+        async function resetDemo() {
+            if (confirm('Reset the entire demo?')) {
+                await fetch('/api/control/reset', { method: 'POST' });
+                location.reload();
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initialize
+        renderScene(0);
+
+        // Connect to SSE for live updates
+        eventSource = new EventSource('/api/events');
+        eventSource.onmessage = function(e) {
+            const event = JSON.parse(e.data);
+            // Handle live events if needed
+        };
+    </script>
+</body>
+</html>

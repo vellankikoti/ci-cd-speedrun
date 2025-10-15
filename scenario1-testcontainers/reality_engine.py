@@ -316,7 +316,15 @@ def check_rate_limit(user_id):
 
 @app.route('/')
 def index():
-    """Main Reality Engine interface"""
+    """Main theatrical interface - THE SHOW"""
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())[:8]
+
+    return render_template('theater.html')
+
+@app.route('/old')
+def old_interface():
+    """Old reality engine (backup)"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())[:8]
 

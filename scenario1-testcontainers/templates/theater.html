@@ -426,6 +426,9 @@
                 <button class="control-btn danger" onclick="injectChaos()" id="chaos-btn" style="display: none;">
                     💥 Inject Chaos
                 </button>
+                <button class="control-btn success" onclick="startPostgres()" id="postgres-btn" style="display: none;">
+                    🐘 Start PostgreSQL
+                </button>
                 <button class="control-btn" onclick="resetDemo()" id="reset-btn">
                     🔄 Reset
                 </button>
@@ -731,6 +734,7 @@ def test_redis_failure():
             const prevBtn = document.getElementById('prev-btn');
             const qrBtn = document.getElementById('qr-btn');
             const chaosBtn = document.getElementById('chaos-btn');
+            const postgresBtn = document.getElementById('postgres-btn');
 
             // Reset visibility
             nextBtn.style.display = actions.includes('next') ? 'block' : 'none';
@@ -738,6 +742,7 @@ def test_redis_failure():
             prevBtn.disabled = sceneIndex === 0;
             qrBtn.style.display = actions.includes('qr') ? 'block' : 'none';
             chaosBtn.style.display = actions.includes('chaos') ? 'block' : 'none';
+            postgresBtn.style.display = actions.includes('start_postgres') ? 'block' : 'none';
 
             // Update next button text
             if (sceneIndex === 0) {
@@ -843,6 +848,108 @@ def test_redis_failure():
                 `;
                 feed.insertBefore(event, feed.firstChild);
             }
+        }
+
+        async function startPostgres() {
+            // Update container status
+            const containerStatus = document.getElementById('container-status');
+            if (containerStatus) {
+                containerStatus.innerHTML = `
+                    <div class="container-status running">
+                        <div class="status-icon">🟢</div>
+                        <div class="status-details">
+                            <div class="status-name">PostgreSQL</div>
+                            <div class="status-info">Starting...</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const feed = document.getElementById('event-feed');
+            if (feed) {
+                feed.innerHTML = '';
+
+                // Event 1: Starting
+                setTimeout(() => {
+                    const event1 = document.createElement('div');
+                    event1.className = 'event';
+                    event1.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">🚀 Starting PostgreSQL container...</div>
+                    `;
+                    feed.appendChild(event1);
+                }, 100);
+
+                // Event 2: Ready
+                setTimeout(() => {
+                    const event2 = document.createElement('div');
+                    event2.className = 'event';
+                    event2.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">✅ PostgreSQL ready (1.2s)</div>
+                    `;
+                    feed.appendChild(event2);
+
+                    if (containerStatus) {
+                        containerStatus.innerHTML = `
+                            <div class="container-status running">
+                                <div class="status-icon">🟢</div>
+                                <div class="status-details">
+                                    <div class="status-name">PostgreSQL</div>
+                                    <div class="status-info">Running (port 5432)</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }, 1200);
+
+                // Event 3: Test running
+                setTimeout(() => {
+                    const event3 = document.createElement('div');
+                    event3.className = 'event';
+                    event3.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">🧪 Running test_duplicate_vote()...</div>
+                    `;
+                    feed.appendChild(event3);
+                }, 2000);
+
+                // Event 4: First vote
+                setTimeout(() => {
+                    const event4 = document.createElement('div');
+                    event4.className = 'event';
+                    event4.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">✅ First vote inserted successfully</div>
+                    `;
+                    feed.appendChild(event4);
+                }, 2800);
+
+                // Event 5: Second vote blocked!
+                setTimeout(() => {
+                    const event5 = document.createElement('div');
+                    event5.className = 'event magic';
+                    event5.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">❌ Second vote BLOCKED by UNIQUE constraint!</div>
+                    `;
+                    feed.appendChild(event5);
+                }, 3600);
+
+                // Event 6: Test passed
+                setTimeout(() => {
+                    const event6 = document.createElement('div');
+                    event6.className = 'event success';
+                    event6.innerHTML = `
+                        <div class="event-time">${new Date().toLocaleTimeString()}</div>
+                        <div class="event-message">🎉 Test PASSED! Bug caught in test!</div>
+                    `;
+                    feed.appendChild(event6);
+                }, 4400);
+            }
+
+            // Hide the postgres button after clicking
+            document.getElementById('postgres-btn').style.display = 'none';
         }
 
         async function resetDemo() {
